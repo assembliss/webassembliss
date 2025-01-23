@@ -1,0 +1,54 @@
+<html>
+<body>
+    <h1>Flask Sample with Jinja</h1>    
+    <input type="button" value="Save" onclick="save()" />
+    <input type="button" value="Upper case" onclick="upper()" />
+    <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
+    {{
+        rocher_editor(
+            "container",
+            "python",
+            source_code,
+            readOnly=false,
+	        theme="vs-dark",
+            lineHeight=20,
+            minimap={"enabled": False}
+        )
+    }}
+    
+    <!-- You can access to the editor instance via module rocher_editor followed by the container id -->
+    <script>
+        require(['rocher_editor_container'], function (editor) {
+            var myBinding = editor.addCommand(monaco.KeyCode.F9, function () {
+            	alert("F9 pressed!");
+            });
+        });
+
+        function save() {
+            require(['rocher_editor_container'], function (editor) {
+                var source_code = editor.getValue();
+                alert(source_code);
+            });
+        }
+
+        function upper() {
+            require(['rocher_editor_container'], function (editor) {
+                var source_code = editor.getValue();
+
+                fetch('/upper', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({source_code: source_code}),
+                }).then(response => response.json())
+                .then(data => {
+                    editor.setValue(data.source_code);
+                });
+            });
+        }
+    </script>
+
+    <a href="/colorize">Basic syntax highlighting is also available</a>
+</body>
+</html>
