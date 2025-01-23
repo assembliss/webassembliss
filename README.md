@@ -13,6 +13,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 3. alternatively, you can run `buildAndBash.sh`
 	- it will create an image from the `Dockerfile`
 	- it will then open a zsh terminal inside the container in the mounted directory
+4. lastly, you can also use a [dev-container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) to develop on vs-code within the docker environment
 
 ## Milestones
 - [ ] change the editor to hilight syntax for arm64 assembly
