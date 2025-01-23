@@ -9,7 +9,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 2. run `buildAndServe.sh`
 	- it will create an image from the `Dockerfile`
 	- it will then serve `app.py` in port 5000
-	- you can then access it through [http://localhost:5000/]
+	- you can then access it through http://localhost:5000/
 3. alternatively, you can run `buildAndBash.sh`
 	- it will create an image from the `Dockerfile`
 	- it will then open a zsh terminal inside the container in the mounted directory
@@ -32,3 +32,4 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow multiple files to work together
 - [ ] allow c-driver code
 - [ ] grading workflow
+- [ ] handle multiple architectures
