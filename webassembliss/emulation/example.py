@@ -1,16 +1,22 @@
 import subprocess
 import tempfile
 from qiling import Qiling
-from typing import List, Path
+from typing import List, Union
+from os import PathLike
 
 
-def create_source(path: Path, code: str):
+def create_source(path: Union[str, PathLike], code: str) -> None:
     """Create a file with the provided path and write the given code string inside of it."""
     with open(path, "w") as file_out:
         file_out.write(code)
 
 
-def assemble(as_cmd: str, src_path: Path, flags: List[str], obj_path: Path):
+def assemble(
+    as_cmd: str,
+    src_path: Union[str, PathLike],
+    flags: List[str],
+    obj_path: Union[str, PathLike],
+) -> None:
     """Use the given assembler command to process the source file and create an object."""
     # TODO: make sure command worked
     # TODO: display warnings/error messages
@@ -27,7 +33,12 @@ def assemble(as_cmd: str, src_path: Path, flags: List[str], obj_path: Path):
     )
 
 
-def link(ld_cmd: str, obj_path: Path, flags: List[str], bin_path: Path):
+def link(
+    ld_cmd: str,
+    obj_path: Union[str, PathLike],
+    flags: List[str],
+    bin_path: Union[str, PathLike],
+) -> None:
     """Use the given linker command to process the object file and create a binary."""
     # TODO: make sure command worked
     # TODO: display warnings/error messages
@@ -44,7 +55,7 @@ def link(ld_cmd: str, obj_path: Path, flags: List[str], bin_path: Path):
     )
 
 
-def emulate(rootfs_path, bin_path):
+def emulate(rootfs_path: Union[str, PathLike], bin_path: Union[str, PathLike]) -> None:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     ql = Qiling(
         [bin_path],
@@ -54,15 +65,15 @@ def emulate(rootfs_path, bin_path):
 
 
 def clean_run(
-    code,
-    rootfs_path,
-    as_cmd,
-    ld_cmd,
-    as_flags=[],
-    ld_flags=[],
-    source_name="usrCode.S",
-    workdir="userprograms",
-):
+    code: str,
+    rootfs_path: Union[str, PathLike],
+    as_cmd: str,
+    ld_cmd: str,
+    as_flags: List[str] = [],
+    ld_flags: List[str] = [],
+    source_name: str = "usrCode.S",
+    workdir: Union[str, PathLike] = "userprograms",
+) -> None:
     # Create a temporary directory so space gets freed after we're done with user files.
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
         # Create path names inside the temp dir.
