@@ -16,11 +16,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 4. lastly, you can also use a [dev-container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) to develop on vs-code within the docker environment
 
 ## Milestones
-- [ ] change the editor to hilight syntax for arm64 assembly
+- [x] generate object and binaries in a temp folder inside rootfs
 - [ ] add a button to assemble, link, and run the code from the editor
 - [ ] show output of the code in page
 - [ ] allow user to provide input to the code
-- [ ] generate object and binaries in a temp folder inside rootfs
+- [ ] change the editor to hilight syntax for arm64 assembly
+	- might be helpful: https://github.com/MKornelsen/vscode-arm64/blob/main/syntaxes/arm64.tmLanguage.json
 - [ ] allow user to debug code (run line by line)
 - [ ] show registers as they get modified line by line
 - [ ] highlight modified register
