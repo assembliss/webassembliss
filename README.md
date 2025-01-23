@@ -30,4 +30,5 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] measure lines of code
 - [ ] measure executed instructions
 - [ ] allow multiple files to work together
+- [ ] allow c-driver code
 - [ ] grading workflow

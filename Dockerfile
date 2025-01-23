@@ -15,7 +15,7 @@ RUN pip install rocher Flask --break-system-packages
 
 # Install arm toolchain
 RUN apt update &&\
-    apt install gcc-aarch64-linux-gnu -y
+    apt install make gcc-aarch64-linux-gnu -y
 
 # Mount and change into the directory where the app code is
 VOLUME webassembliss
