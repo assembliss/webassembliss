@@ -29,9 +29,13 @@ def arm64_linux_run():
         return "No JSON data received", 400
     if "source_code" not in request.json:
         return "No source_code in JSON data", 400
+    if "user_input" not in request.json:
+        return "No user_input in JSON data", 400
     user_code = request.json["source_code"]
     user_input = request.json["user_input"]
     emu_results = arm64_linux_emulation(user_code, stdin=user_input)
+    # TODO: return simply emu_results and do parsing of results on javascript side;
+    #        would make it easier/cleaner to add new archs later on in the app.py.
     return {
         "stdout": emu_results.run_stdout,
         "stderr": emu_results.print_stderr(),
