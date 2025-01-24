@@ -20,6 +20,8 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] add a button to assemble, link, and run the code from the editor
 - [x] show output of the code in page
 - [x] allow user to provide input to the code
+- [x] allow user to download code
+- [x] allow user to download emulation information
 - [ ] change the editor to hilight syntax for arm64 assembly
 	- might be helpful: https://github.com/MKornelsen/vscode-arm64/blob/main/syntaxes/arm64.tmLanguage.json
 - [ ] allow user to debug code (run line by line)
@@ -27,12 +29,17 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] highlight modified register
 - [ ] show condition codes / status bits
 - [ ] show memory
-- [ ] make sure app works with multiple users accessing concurrently
 - [ ] allow testing of code (given input, expected output)
+- [ ] make sure app works with multiple users accessing concurrently
 - [ ] measure lines of code
 - [ ] measure executed instructions
+- [ ] measure documentation level
 - [ ] allow multiple files to work together
 - [ ] allow c-driver code
+- [ ] allow user to change themes
+- [ ] allow user to change timeout
+- [ ] allow user to change registers shown
+- [ ] allow user to change memory area shown
 - [ ] improve the gui -- make everything look nicer :)
 - [ ] grading workflow
 - [ ] handle multiple architectures

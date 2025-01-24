@@ -14,6 +14,7 @@ class EmulationResults:
 
     all_ok: bool = False
     create_source_ok: bool = False
+    source_code: str = ""
     create_source_error: str = ""
     assembled_ok: bool = False
     as_args: str = ""
@@ -24,35 +25,79 @@ class EmulationResults:
     ld_out: str = ""
     ld_err: str = ""
     run_ok: bool = False
-    run_exit_code: int = 1
+    run_exit_code: int = None
     run_timeout: bool = False
     run_stdin: str = ""
     run_stdout: str = ""
     run_stderr: str = ""
 
-    def print_stdout(self) -> str:
-        return f"""{self.run_stdout}<<< end of output >>>
-
-Assembler output: {self.as_out if self.as_out else '<<< no output >>>'}
-Linker output: {self.ld_out if self.ld_out else '<<< no output >>>'}"""
+    def _prep_output(
+        self,
+        msg: str,
+        empty: str,
+        left_padding: str = "\t",
+        split_char="\n",
+        line_num_format: str = "[Line {:>02}]: ",
+        keep_empty_tokens: bool = False,
+    ) -> str:
+        out = left_padding
+        if msg:
+            tokens = [t for t in msg.split(split_char) if t or keep_empty_tokens]
+            if line_num_format:
+                out += line_num_format.format(1)
+            out += tokens[0]
+            for i in range(1, len(tokens)):
+                out += f"{split_char}{left_padding}"
+                if line_num_format:
+                    out += line_num_format.format(i + 1)
+                out += tokens[i]
+        else:
+            out += empty
+        return out
 
     def print_stderr(self) -> str:
         return f"""Exit code: {self.run_exit_code if self.run_exit_code is not None else "not set"}
 Timeout (or no sys.exit call) detected: {self.run_timeout}
-Code errors: {self.run_stderr if self.run_stderr else '<<< no reported errors >>>'}
-Assembler errors: {self.as_err if self.as_err else '<<< no reported errors >>>'}
-Linker errors: {self.ld_err if self.ld_err else '<<< no reported errors >>>'}"""
+Code errors:
+{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}
+Assembler errors:
+{self._prep_output(self.as_err, '<<< no reported errors >>>')}
+Linker errors:
+{self._prep_output(self.ld_err, '<<< no reported errors >>>')}"""
+
+    def print(self) -> str:
+        out = f"All checks ok: {self.all_ok}\n"
+        out += f"Able to create source file: {self.create_source_ok}\n"
+        out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
+        out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
+        out += f"Able to assemble source: {self.assembled_ok}\n"
+        out += f"Assembler command: '{self.as_args}'\n"
+        out += f"Assembler output:\n{self._prep_output(self.as_out, '<<< no output >>>')}\n"
+        out += f"Assembler errors:\n{self._prep_output(self.as_err, '<<< no reported errors >>>')}\n"
+        out += f"Able to link object: {self.linked_ok}\n"
+        out += f"Linker command: '{self.ld_args}'\n"
+        out += (
+            f"Linker output:\n{self._prep_output(self.ld_out, '<<< no output >>>')}\n"
+        )
+        out += f"Linker errors:\n{self._prep_output(self.ld_err, '<<< no reported errors >>>')}\n"
+        out += f"Execution finished successfully: {self.run_ok}\n"
+        out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
+        out += f"Timeout detected: {self.run_timeout}\n"
+        out += f"Execution input:\n{self._prep_output(self.run_stdin, '<<< no user input given >>>', keep_empty_tokens=True)}\n"
+        out += f"Execution output:\n{self._prep_output(self.run_stdout, '<<< no output >>>', keep_empty_tokens=True)}\n"
+        out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"
+        return out
 
 
-def _create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
+def _create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str, str]:
     """Create a file with the provided path and write the given code string inside of it."""
     # TODO: add tests to make sure this function works as expected.
     try:
         with open(path, "w") as file_out:
             file_out.write(code)
-        return True, ""
+        return True, code, ""
     except FileNotFoundError as e:
-        return False, f"{e}"
+        return False, code, f"{e}"
 
 
 def _assemble(
@@ -64,6 +109,7 @@ def _assemble(
     """Use the given assembler command to process the source file and create an object."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions are in the source file and return that as well.
+    # TODO: find the ratio of instructions and comments and report that to result as well.
 
     # Combine the different pieces into a complete assembling command.
     # TODO: handle assembling commands that expect a different format than below.
@@ -191,7 +237,9 @@ def clean_emulation(
         bin_path = f"{tmpdirname}/{bin_name}"
 
         # Create a source file in the temp dir and go through the steps to emulate it.
-        er.create_source_ok, er.create_source_error = _create_source(src_path, code)
+        er.create_source_ok, er.source_code, er.create_source_error = _create_source(
+            src_path, code
+        )
         if not er.create_source_ok:
             return er
 

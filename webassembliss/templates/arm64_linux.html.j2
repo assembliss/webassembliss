@@ -1,8 +1,42 @@
+<!DOCTYPE html>
 <html>
+<head>
+<style>
+    /* Style the button that is used to open and close the collapsible content */
+    .collapsible {
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 18px;
+    width: 400px;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    }
+
+    /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
+    .active, .collapsible:hover {
+    background-color: #ccc;
+    }
+
+    /* Style the collapsible content. Note: hidden by default */
+    .collapsibleContent {
+    padding: 2 10px;
+    width: 600px;
+    display: none;
+    overflow: visible;
+    background-color:rgb(255, 225, 225);
+    } 
+</style>
+</head>
 <body>
     <h1>WebAssembliss (arm64_linux)</h1>
     <input type="button" value="Run" onclick="runCode()" />
-    <input type="button" value="Debug" onclick="debug()" />
+    <input type="button" value="Debug" onclick="notImplemented()" />
+    <input type="button" value="Clear Results" onclick="clearOutput()" />
+    <input type="button" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
+    <input type="button" value="Load" onclick="notImplemented()" />
     <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
     {{
         rocher_editor(
@@ -22,32 +56,48 @@
     <table>
         <tr>
             <th>Done?</th>
-            <th>Assembled?</th>
-            <th>Linked?</th>
-            <th>Exited succesfully?</th>
+            <td id="runStatus">⭕</td>
         </tr>
         <tr>
-            <td id="runStatus"></td>
-            <td id="asStatus"></td>
-            <td id="ldStatus"></td>
-            <td id="execStatus"></td>
+            <th>Assembled?</th>
+            <td id="asStatus">⭕</td>
+        </tr>
+        <tr>
+            <th>Linked?</th>
+            <td id="ldStatus">⭕</td>
+        </tr>
+        <tr>
+            <th>Exited successfully?</th>
+            <td id="execStatus">⭕</td>
         </tr>
     </table> 
 
     <br/>
 
     <label for="inputBox"><b>Input:</b><br/></label>
-    <textarea id="inputBox" name="inputBox" rows=3 cols=80 wrap="soft" placeholder="type any input your code will use here"></textarea>
+    <textarea id="inputBox" name="inputBox" rows=5 cols=80 placeholder="type any input your code will use here"></textarea>
 
     <br/>
 
     <label for="outputBox"><b>Output:</b><br/></label>
-    <textarea id="outputBox" name="outputBox" readOnly=true rows=3 cols=80 placeholder="your output will appear here after you run your code..."></textarea>
+    <textarea id="outputBox" name="outputBox" readOnly=true rows=5 cols=80 placeholder="your output will appear here after your code finishes running..."></textarea>
 
     <br/>
+    <br/>
 
-    <label for="errorBox"><b>Errors:</b><br/></label>
-    <textarea id="errorBox" name="errorBox" readOnly=true rows=3 cols=80 placeholder="any errors will appear here after you run your code..."></textarea>
+    <button type="button" class="collapsible">Show/hide error information</button>
+    <div class="collapsibleContent">
+        <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=75 placeholder="any errors will appear here after your code finishes running..."></textarea>
+    </div> 
+    
+    <br/>
+    <br/>
+
+    <button type="button" class="collapsible">Show/hide all emulation information</button>
+    <div class="collapsibleContent">
+        <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=75 placeholder="emulation info will appear here after your code finishes running..."></textarea>
+       <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true"/>
+    </div>
 
     <h3>Missing elements:</h3>
     <ul>
@@ -60,24 +110,53 @@
     
     <!-- You can access to the editor instance via module rocher_editor followed by the container id -->
     <script>
+        const WAITING_SYMBOL = "⭕";
+        const OK_SYMBOL = "✅";
+        const ERROR_SYMBOL = "❌";
+        var lastRunInfo = null;
+
+        var coll = document.getElementsByClassName("collapsible");
+        var i;
+        for (i = 0; i < coll.length; i++) {
+            coll[i].addEventListener("click", function() {
+                this.classList.toggle("active");
+                var content = this.nextElementSibling;
+                if (content.style.display === "block") {
+                content.style.display = "none";
+                } else {
+                content.style.display = "block";
+                }
+            });
+        }
+
         require(['rocher_editor_container'], function (editor) {
             var myBinding = editor.addCommand(monaco.KeyCode.F9, function () {
             	alert("F9 pressed!");
             });
         });
 
-        function debug() {
+        function notImplemented() {
             alert("Not implemented yet...");
+        }
+
+        function clearOutput() {
+            document.getElementById("runStatus").innerHTML = WAITING_SYMBOL;
+            document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
+            document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
+            document.getElementById("execStatus").innerHTML = WAITING_SYMBOL;
+            document.getElementById("outputBox").value = "";
+            document.getElementById("errorBox").value = "";
+            document.getElementById("emulationInfo").value = "";
+            lastRunInfo = null;
+            document.getElementById("downloadButton").disabled = true;
         }
 
         function runCode() {
             require(['rocher_editor_container'], function (editor) {
                 var source_code = editor.getValue();
                 var user_input = document.getElementById("inputBox").value;
+                clearOutput();
                 document.getElementById("runStatus").innerHTML = "⏳";
-                document.getElementById("asStatus").innerHTML = "";
-                document.getElementById("ldStatus").innerHTML = "";
-                document.getElementById("execStatus").innerHTML = "";
 
                 fetch('/arm64_linux/run/', {
                     method: 'POST',
@@ -86,15 +165,49 @@
                     },
                     body: JSON.stringify({source_code: source_code, user_input: user_input}),
                 }).then(response => response.json())
-                .then(data => {
+                .then(data => {                 
+                    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+                    document.getElementById("asStatus").innerHTML = data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                    document.getElementById("ldStatus").innerHTML = data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                    document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
                     document.getElementById("outputBox").value = data.stdout;
                     document.getElementById("errorBox").value = data.stderr;
-                    document.getElementById("runStatus").innerHTML = "✅";
-                    document.getElementById("asStatus").innerHTML = data.as_ok ? "✅" : "❌";
-                    document.getElementById("ldStatus").innerHTML = data.ld_ok ? "✅" : "❌";
-                    document.getElementById("execStatus").innerHTML = data.ran_ok ? "✅" : "❌";
+                    document.getElementById("emulationInfo").value = data.all_info;
+                    lastRunInfo = data.info_obj;
+                    document.getElementById("downloadButton").disabled = false;
                 });
             });
+        }
+
+        function getSource() {
+            var source_code = ""; 
+            require(['rocher_editor_container'], function (editor) {
+                source_code = editor.getValue();
+            });
+            return source_code;
+        }
+
+        function getLastRunInfo() {
+            return JSON.stringify(lastRunInfo);
+        }
+
+        function download_file(name, contents, mime_type) {
+            mime_type = mime_type || "text/plain";
+
+            var blob = new Blob([contents], {type: mime_type});
+
+            var dlink = document.createElement('a');
+            dlink.download = name;
+            dlink.href = window.URL.createObjectURL(blob);
+            dlink.onclick = function(e) {
+                // revokeObjectURL needs a delay to work properly
+                var that = this;
+                setTimeout(function() {
+                    window.URL.revokeObjectURL(that.href);
+                }, 1500);
+            };
+            dlink.click();
+            dlink.remove();
         }
     </script>
 </body>

@@ -33,11 +33,13 @@ def arm64_linux_run():
     user_input = request.json["user_input"]
     emu_results = arm64_linux_emulation(user_code, stdin=user_input)
     return {
-        "stdout": emu_results.print_stdout(),
+        "stdout": emu_results.run_stdout,
         "stderr": emu_results.print_stderr(),
         "as_ok": emu_results.assembled_ok,
         "ld_ok": emu_results.linked_ok,
         "ran_ok": emu_results.run_ok,
+        "all_info": emu_results.print(),
+        "info_obj": emu_results,
     }
 
 
