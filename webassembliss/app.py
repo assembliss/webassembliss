@@ -19,7 +19,7 @@ def index():
 @app.route("/arm64_linux/")
 def arm64_linux_index():
     # Read the source code of this file to highlight it in the editor
-    with open("/webassembliss/arm64_extra_examples/hello.S") as file_in:
+    with open("/webassembliss/examples/arm64/hello.S") as file_in:
         return render_template("arm64_linux.html.j2", source_code=file_in.read())
 
 
