@@ -17,9 +17,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 
 ## Milestones
 - [x] generate object and binaries in a temp folder inside rootfs
-- [ ] add a button to assemble, link, and run the code from the editor
-- [ ] show output of the code in page
-- [ ] allow user to provide input to the code
+- [x] add a button to assemble, link, and run the code from the editor
+- [x] show output of the code in page
+- [x] allow user to provide input to the code
 - [ ] change the editor to hilight syntax for arm64 assembly
 	- might be helpful: https://github.com/MKornelsen/vscode-arm64/blob/main/syntaxes/arm64.tmLanguage.json
 - [ ] allow user to debug code (run line by line)
@@ -33,5 +33,6 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] measure executed instructions
 - [ ] allow multiple files to work together
 - [ ] allow c-driver code
+- [ ] improve the gui -- make everything look nicer :)
 - [ ] grading workflow
 - [ ] handle multiple architectures

@@ -30,6 +30,19 @@ class EmulationResults:
     run_stdout: str = ""
     run_stderr: str = ""
 
+    def print_stdout(self) -> str:
+        return f"""{self.run_stdout}<<< end of output >>>
+
+Assembler output: {self.as_out if self.as_out else '<<< no output >>>'}
+Linker output: {self.ld_out if self.ld_out else '<<< no output >>>'}"""
+
+    def print_stderr(self) -> str:
+        return f"""Exit code: {self.run_exit_code if self.run_exit_code is not None else "not set"}
+Timeout (or no sys.exit call) detected: {self.run_timeout}
+Code errors: {self.run_stderr if self.run_stderr else '<<< no reported errors >>>'}
+Assembler errors: {self.as_err if self.as_err else '<<< no reported errors >>>'}
+Linker errors: {self.ld_err if self.ld_err else '<<< no reported errors >>>'}"""
+
 
 def _create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
     """Create a file with the provided path and write the given code string inside of it."""
@@ -122,6 +135,7 @@ def _timed_emulation(
     # Redirect input, output, and error streams.
     out = BytesIO()
     err = BytesIO()
+    # TODO: make emulation crash if code asks for user input but stdin is exhausted.
     ql.os.stdin = stdin
     ql.os.stdout = out
     ql.os.stderr = err

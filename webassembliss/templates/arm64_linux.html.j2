@@ -1,0 +1,101 @@
+<html>
+<body>
+    <h1>WebAssembliss (arm64_linux)</h1>
+    <input type="button" value="Run" onclick="runCode()" />
+    <input type="button" value="Debug" onclick="debug()" />
+    <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
+    {{
+        rocher_editor(
+            "container",
+            "python",
+            source_code,
+            readOnly=false,
+	        theme="vs-dark",
+            lineHeight=20,
+            minimap={"enabled": False}
+        )
+    }}
+    
+    <br/>
+    
+    <b>Run status:</b>
+    <table>
+        <tr>
+            <th>Done?</th>
+            <th>Assembled?</th>
+            <th>Linked?</th>
+            <th>Exited succesfully?</th>
+        </tr>
+        <tr>
+            <td id="runStatus"></td>
+            <td id="asStatus"></td>
+            <td id="ldStatus"></td>
+            <td id="execStatus"></td>
+        </tr>
+    </table> 
+
+    <br/>
+
+    <label for="inputBox"><b>Input:</b><br/></label>
+    <textarea id="inputBox" name="inputBox" rows=3 cols=80 wrap="soft" placeholder="type any input your code will use here"></textarea>
+
+    <br/>
+
+    <label for="outputBox"><b>Output:</b><br/></label>
+    <textarea id="outputBox" name="outputBox" readOnly=true rows=3 cols=80 placeholder="your output will appear here after you run your code..."></textarea>
+
+    <br/>
+
+    <label for="errorBox"><b>Errors:</b><br/></label>
+    <textarea id="errorBox" name="errorBox" readOnly=true rows=3 cols=80 placeholder="any errors will appear here after you run your code..."></textarea>
+
+    <h3>Missing elements:</h3>
+    <ul>
+        <li>Register values</li>
+        <li>Status flags values</li>
+        <li>Memory values</li>
+        <li>Debug buttons</li>
+        <li>Editor tabs for multi-file</li>
+    </ul>
+    
+    <!-- You can access to the editor instance via module rocher_editor followed by the container id -->
+    <script>
+        require(['rocher_editor_container'], function (editor) {
+            var myBinding = editor.addCommand(monaco.KeyCode.F9, function () {
+            	alert("F9 pressed!");
+            });
+        });
+
+        function debug() {
+            alert("Not implemented yet...");
+        }
+
+        function runCode() {
+            require(['rocher_editor_container'], function (editor) {
+                var source_code = editor.getValue();
+                var user_input = document.getElementById("inputBox").value;
+                document.getElementById("runStatus").innerHTML = "⏳";
+                document.getElementById("asStatus").innerHTML = "";
+                document.getElementById("ldStatus").innerHTML = "";
+                document.getElementById("execStatus").innerHTML = "";
+
+                fetch('/arm64_linux/run/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({source_code: source_code, user_input: user_input}),
+                }).then(response => response.json())
+                .then(data => {
+                    document.getElementById("outputBox").value = data.stdout;
+                    document.getElementById("errorBox").value = data.stderr;
+                    document.getElementById("runStatus").innerHTML = "✅";
+                    document.getElementById("asStatus").innerHTML = data.as_ok ? "✅" : "❌";
+                    document.getElementById("ldStatus").innerHTML = data.ld_ok ? "✅" : "❌";
+                    document.getElementById("execStatus").innerHTML = data.ran_ok ? "✅" : "❌";
+                });
+            });
+        }
+    </script>
+</body>
+</html>

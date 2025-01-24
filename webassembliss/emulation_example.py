@@ -29,9 +29,9 @@ _start:
 """
 
 # Call the arm64 main function that will emulate the provided code.
-# ok_results1 = emulate(code=hello_world)
-# print(f"{ok_results1=}")
-# print("\n")
+ok_results1 = emulate(code=hello_world)
+print(f"{ok_results1=}")
+print("\n")
 
 # Example code with errors the user might provide.
 infinite_loop = """
@@ -51,9 +51,9 @@ _start:
     svc     #0          /* invoke syscall */
 """
 
-# bad_results1 = emulate(code=infinite_loop, timeout=1_000_000)
-# print(f"{bad_results1=}")
-# print("\n")
+bad_results1 = emulate(code=infinite_loop, timeout=1_000_000)
+print(f"{bad_results1=}")
+print("\n")
 
 # Example code the user might provide that asks for input.
 io_example = """
@@ -90,13 +90,12 @@ _start:
 """
 
 # We have input for the read instruction!
-ok_results2 = emulate(
-    code=io_example, timeout=1_000_000, stdin=BytesIO("hello-hello!".encode())
-)
+ok_results2 = emulate(code=io_example, timeout=1_000_000, stdin="hello-hello!")
 print(f"{ok_results2=}")
 print("\n")
 
 # We do NOT have input for the read instruction!
+# This should eventually crash, but it's fine to ignore for now.
 bad_results2 = emulate(code=io_example, timeout=1_000_000)
 print(f"{bad_results2=}")
 print("\n")

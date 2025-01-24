@@ -13,15 +13,13 @@ def emulate(
     as_flags: List[str] = None,
     ld_flags: List[str] = None,
     timeout: int = 5_000_000,  # 5 seconds
-    stdin: BytesIO = None,
+    stdin: str = "",
 ) -> EmulationResults:
     # Create default mutable values if needed.
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
         ld_flags = ["-o"]
-    if stdin is None:
-        stdin = BytesIO("".encode())
 
     # Run the emulation and return its status and results.
     return clean_emulation(
@@ -32,5 +30,5 @@ def emulate(
         as_flags=as_flags,
         ld_flags=ld_flags,
         timeout=timeout,
-        stdin=stdin,
+        stdin=BytesIO(stdin.encode()),
     )

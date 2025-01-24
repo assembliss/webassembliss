@@ -1,17 +1,5 @@
-"""
-This demonstrates a simple Flask app with
-the Monaco editor.
-
-To run this sample, you need to install flask:
-    pip install flask
-
-Then run the app:
-    python app.py
-
-Then open your browser to http://localhost:5000
-"""
-
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect
+from emulation.arm64_linux import emulate as arm64_linux_emulation
 
 import rocher.flask
 
@@ -21,28 +9,36 @@ app = Flask(__name__)
 # and expose the rocher_editor function to Jinja templates
 rocher.flask.editor_register(app)
 
-# Read the source code of this file to highlight it in the editor
-with open(__file__) as f:
-    source_code = f.read()
-
 
 @app.route("/")
 def index():
-    return render_template("index.html.j2", source_code=source_code)
+    # TODO: add a landing page whenever we have more architectures available.
+    return redirect("/arm64_linux/")
 
 
-@app.route("/colorize")
-def colorize():
-    return render_template("colorize.html.j2", source_code=source_code)
+@app.route("/arm64_linux/")
+def arm64_linux_index():
+    # Read the source code of this file to highlight it in the editor
+    with open("/webassembliss/arm64_extra_examples/hello.S") as file_in:
+        return render_template("arm64_linux.html.j2", source_code=file_in.read())
 
 
-@app.route("/upper", methods=["POST"])
-def upper():
+@app.route("/arm64_linux/run/", methods=["POST"])
+def arm64_linux_run():
     if request.json is None:
         return "No JSON data received", 400
     if "source_code" not in request.json:
         return "No source_code in JSON data", 400
-    return {"source_code": request.json["source_code"].upper()}
+    user_code = request.json["source_code"]
+    user_input = request.json["user_input"]
+    emu_results = arm64_linux_emulation(user_code, stdin=user_input)
+    return {
+        "stdout": emu_results.print_stdout(),
+        "stderr": emu_results.print_stderr(),
+        "as_ok": emu_results.assembled_ok,
+        "ld_ok": emu_results.linked_ok,
+        "ran_ok": emu_results.run_ok,
+    }
 
 
 if __name__ == "__main__":
