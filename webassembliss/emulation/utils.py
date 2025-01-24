@@ -218,9 +218,9 @@ def clean_emulation(
     as_flags: List[str],
     ld_flags: List[str],
     stdin: BytesIO,
-    source_name: str = "usrCode.S",
-    obj_name: str = "usrCode.o",
-    bin_name: str = "usrCode.exe",
+    source_name: str,
+    obj_name: str,
+    bin_name: str,
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
 ) -> EmulationResults:
