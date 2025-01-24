@@ -27,6 +27,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] highlight modified register
 - [ ] show condition codes / status bits
 - [ ] show memory
+- [ ] make sure app works with multiple users accessing concurrently
 - [ ] allow testing of code (given input, expected output)
 - [ ] measure lines of code
 - [ ] measure executed instructions

@@ -3,7 +3,9 @@ from qiling.const import QL_VERBOSE
 
 if __name__ == "__main__":
     # Emulates one program at a time.
-    for program in ["hello.out", "ioExample.out", "multiExample.out", "cExample.out"]:
+    for program in [
+        "ioExample.out"
+    ]:  # ["hello.out", "ioExample.out", "multiExample.out", "cExample.out"]:
         print("\n\n---- ---- ---- ---- ----\n---- ---- ---- ---- ----\n")
         print(f"Emulating {program}:\n\n")
 

@@ -1,0 +1,36 @@
+from .utils import clean_emulation, EmulationResults
+from typing import List
+from io import BytesIO
+
+
+ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
+AS_CMD = "aarch64-linux-gnu-as"
+LD_CMD = "aarch64-linux-gnu-ld"
+
+
+def emulate(
+    code: str,
+    as_flags: List[str] = None,
+    ld_flags: List[str] = None,
+    timeout: int = 5_000_000,  # 5 seconds
+    stdin: BytesIO = None,
+) -> EmulationResults:
+    # Create default mutable values if needed.
+    if as_flags is None:
+        as_flags = ["-o"]
+    if ld_flags is None:
+        ld_flags = ["-o"]
+    if stdin is None:
+        stdin = BytesIO("".encode())
+
+    # Run the emulation and return its status and results.
+    return clean_emulation(
+        code=code,
+        rootfs_path=ROOTFS_PATH,
+        as_cmd=AS_CMD,
+        ld_cmd=LD_CMD,
+        as_flags=as_flags,
+        ld_flags=ld_flags,
+        timeout=timeout,
+        stdin=stdin,
+    )

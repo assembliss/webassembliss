@@ -14,7 +14,7 @@ _start:
     mov     x0, #0      /* fd := STDIN_FILENO */
     ldr     x1, =msg    /* buf := msg */
     ldr     x2, =len    /* count := len */
-    mov     w8, #63     /* write is syscall #64 */
+    mov     w8, #63     /* read is syscall #63 */
     svc     #0          /* invoke syscall */
     
     /* syscall write(int fd, const void *buf, size_t count) */
