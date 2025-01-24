@@ -29,6 +29,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 		- https://microsoft.github.io/monaco-editor/monarch.html
 - [ ] show registers after execution
 - [ ] highlight modified register
+- [ ] highlight assembler errors in source code (mark line and popup with error)
 - [ ] show condition codes / status bits
 - [ ] show memory
 - [ ] allow user to debug code (continue, step, set breakpoint)

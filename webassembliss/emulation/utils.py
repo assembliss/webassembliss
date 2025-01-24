@@ -114,23 +114,16 @@ def _assemble(
     # Combine the different pieces into a complete assembling command.
     # TODO: handle assembling commands that expect a different format than below.
     as_full_cmd = [as_cmd, src_path] + flags + [obj_path]
-    try:
-        # Try running the assembling command and capture the output.
-        result = subprocess.run(
-            as_full_cmd,
-            check=True,
-            text=True,
-            capture_output=True,
-        )
+    with subprocess.Popen(
+        as_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as process:
+        stdout, stderr = process.communicate()
         return (
-            result.returncode == 0,
-            " ".join(result.args),
-            result.stdout,
-            result.stderr,
+            process.returncode == 0,
+            " ".join(process.args),
+            stdout.decode(),
+            stderr.decode(),
         )
-
-    except subprocess.CalledProcessError as e:
-        return False, " ".join(as_full_cmd), "", f"{e}"
 
 
 def _link(
@@ -145,22 +138,16 @@ def _link(
     # Combine the different pieces into a complete linking command.
     # TODO: handle linking commands that expect a different format than below.
     ld_full_cmd = [ld_cmd, obj_path] + flags + [bin_path]
-    try:
-        # Try running the linking command and capture the output.
-        result = subprocess.run(
-            ld_full_cmd,
-            check=True,
-            text=True,
-            capture_output=True,
-        )
+    with subprocess.Popen(
+        ld_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as process:
+        stdout, stderr = process.communicate()
         return (
-            result.returncode == 0,
-            " ".join(result.args),
-            result.stdout,
-            result.stderr,
+            process.returncode == 0,
+            " ".join(process.args),
+            stdout.decode(),
+            stderr.decode(),
         )
-    except subprocess.CalledProcessError as e:
-        return False, " ".join(ld_full_cmd), "", f"{e}"
 
 
 def _timed_emulation(
