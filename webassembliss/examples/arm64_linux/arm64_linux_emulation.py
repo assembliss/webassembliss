@@ -15,7 +15,7 @@ if __name__ == "__main__":
 
         # Set up command line argv, emulated os root path, os default profile, and verboseness level.
         argv = [program]
-        rootfs = "../rootfs/arm64_linux"
+        rootfs = "../../rootfs/arm64_linux"
         profile = "linux.ql"
         # QL_VERBOSE.DISABLED   logging is disabled entirely
         # QL_VERBOSE.OFF    logging is restricted to warnings, errors and critical entries
