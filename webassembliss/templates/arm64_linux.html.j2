@@ -4,30 +4,49 @@
 <style>
     /* Style the button that is used to open and close the collapsible content */
     .collapsible {
-    background-color: #eee;
-    color: #444;
-    cursor: pointer;
-    padding: 18px;
-    width: 400px;
-    border: none;
-    text-align: left;
-    outline: none;
-    font-size: 15px;
+        background-color: #eee;
+        color: #444;
+        cursor: pointer;
+        padding: 18px;
+        width: 400px;
+        border: none;
+        text-align: left;
+        outline: none;
+        font-size: 15px;
     }
 
     /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
     .active, .collapsible:hover {
-    background-color: #ccc;
+        background-color: #ccc;
     }
 
     /* Style the collapsible content. Note: hidden by default */
     .collapsibleContent {
-    padding: 2 10px;
-    width: 600px;
-    display: none;
-    overflow: visible;
-    background-color:rgb(255, 225, 225);
+        padding: 2 10px;
+        width: 600px;
+        display: none;
+        overflow: visible;
+        background-color:rgb(255, 225, 225);
     } 
+
+    td {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    th {
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    table {
+        border: 1px solid black;
+        border-collapse: separate;
+        border-spacing: 10px;
+        border-radius: 20px;
+    }
 </style>
 </head>
 <body>
@@ -49,37 +68,21 @@
             minimap={"enabled": False}
         )
     }}
-    
     <br/>
-    
-    <b>Run status:</b>
     <table>
         <tr>
-            <th>Done?</th>
-            <td id="runStatus">⭕</td>
-        </tr>
-        <tr>
-            <th>Assembled?</th>
-            <td id="asStatus">⭕</td>
-        </tr>
-        <tr>
-            <th>Linked?</th>
-            <td id="ldStatus">⭕</td>
-        </tr>
-        <tr>
-            <th>Exited successfully?</th>
-            <td id="execStatus">⭕</td>
+            <th>Run Status</th>
+            <td>Done: <span id="runStatus">⭕</span></td>
+            <td>Assembled: <span id="asStatus">⭕</span></td>
+            <td>Linked: <span id="ldStatus">⭕</span></td>
+            <td>Exited: <span id="execStatus">⭕</span></td>
         </tr>
     </table> 
 
-    <br/>
-
-    <label for="inputBox"><b>Input:</b><br/></label>
+    <h3>Input</h3>
     <textarea id="inputBox" name="inputBox" rows=5 cols=80 placeholder="type any input your code will use here"></textarea>
 
-    <br/>
-
-    <label for="outputBox"><b>Output:</b><br/></label>
+    <h3>Output</h3>
     <textarea id="outputBox" name="outputBox" readOnly=true rows=5 cols=80 placeholder="your output will appear here after your code finishes running..."></textarea>
 
     <br/>
@@ -99,13 +102,21 @@
        <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true"/>
     </div>
 
-    <h3>Missing elements:</h3>
+    <h3>ARM64 Assembly Reference</h3>
+    <ul>
+        <li><a target="_blank" rel="noopener noreferrer" href="https://developer.arm.com/documentation/102374/latest/">Official Documentation</a></li>
+        <li><a target="_blank" rel="noopener noreferrer" href="https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf">Swarthmore College's ARM64 (AArch64) Reference Sheet</a></li>
+        <li><a target="_blank" rel="noopener noreferrer" href="https://courses.cs.washington.edu/courses/cse469/19wi/arm64.pdf">University of Washington's ARMv8 A64 Quick Reference</a></li>
+    </ul>
+
+    <h3>Missing elements</h3>
     <ul>
         <li>Register values</li>
         <li>Status flags values</li>
         <li>Memory values</li>
-        <li>Debug buttons</li>
+        <li>Debug menu (continue, step, stop, breakpoints)</li>
         <li>Editor tabs for multi-file</li>
+        <li>Menus so the user can customize view (e.g., which registers show, dark vs light theme)</li>
     </ul>
     
     <!-- You can access to the editor instance via module rocher_editor followed by the container id -->
@@ -114,6 +125,10 @@
         const OK_SYMBOL = "✅";
         const ERROR_SYMBOL = "❌";
         var lastRunInfo = null;
+
+        if (lastRunInfo === null) {
+            document.getElementById("downloadButton").disabled = true;
+        }
 
         var coll = document.getElementsByClassName("collapsible");
         var i;
