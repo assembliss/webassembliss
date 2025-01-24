@@ -4,8 +4,12 @@ from qiling.const import QL_VERBOSE
 if __name__ == "__main__":
     # Emulates one program at a time.
     for program in [
-        "ioExample.out"
-    ]:  # ["hello.out", "ioExample.out", "multiExample.out", "cExample.out"]:
+        "hello.out",
+        "infiniteLoop.out",
+        "ioExample.out",
+        "multiExample.out",
+        "cExample.out",
+    ]:
         print("\n\n---- ---- ---- ---- ----\n---- ---- ---- ---- ----\n")
         print(f"Emulating {program}:\n\n")
 
@@ -29,4 +33,4 @@ if __name__ == "__main__":
         # You can optionally turn on the debugger.
         # ql.debugger = True
 
-        ql.run()
+        ql.run(timeout=5_000_000)
