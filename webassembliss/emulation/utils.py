@@ -13,20 +13,20 @@ class EmulationResults:
     """Class to keep track of the results of a single emulation."""
 
     all_ok: bool = False
-    create_source_ok: bool = False
+    create_source_ok: bool = None
     source_code: str = ""
     create_source_error: str = ""
-    assembled_ok: bool = False
+    assembled_ok: bool = None
     as_args: str = ""
     as_out: str = ""
     as_err: str = ""
-    linked_ok: bool = False
+    linked_ok: bool = None
     ld_args: str = ""
     ld_out: str = ""
     ld_err: str = ""
-    run_ok: bool = False
+    run_ok: bool = None
     run_exit_code: int = None
-    run_timeout: bool = False
+    run_timeout: bool = None
     run_stdin: str = ""
     run_stdout: str = ""
     run_stderr: str = ""
@@ -66,23 +66,23 @@ Linker errors:
 {self._prep_output(self.ld_err, '<<< no reported errors >>>')}"""
 
     def print(self) -> str:
-        out = f"All checks ok: {self.all_ok}\n"
-        out += f"Able to create source file: {self.create_source_ok}\n"
+        out = f"All checks ok: {'yes' if self.all_ok else 'no'}\n"
+        out += f"Able to create source file: {'skipped' if self.create_source_ok is None else 'yes' if self.create_source_ok else 'no'}\n"
+        out += f"Able to assemble source: {'skipped' if self.assembled_ok is None else 'yes' if self.assembled_ok else 'no'}\n"
+        out += f"Able to link object: {'skipped' if self.linked_ok is None else 'yes' if self.linked_ok else 'no'}\n"
+        out += f"Execution finished successfully: {'skipped' if self.run_ok is None else 'yes' if self.run_ok else 'no'}\n"
+        out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
+        out += f"Timeout detected: {'yes' if self.run_timeout else 'no'}\n"
         out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
         out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
-        out += f"Able to assemble source: {self.assembled_ok}\n"
         out += f"Assembler command: '{self.as_args}'\n"
         out += f"Assembler output:\n{self._prep_output(self.as_out, '<<< no output >>>')}\n"
         out += f"Assembler errors:\n{self._prep_output(self.as_err, '<<< no reported errors >>>')}\n"
-        out += f"Able to link object: {self.linked_ok}\n"
         out += f"Linker command: '{self.ld_args}'\n"
         out += (
             f"Linker output:\n{self._prep_output(self.ld_out, '<<< no output >>>')}\n"
         )
         out += f"Linker errors:\n{self._prep_output(self.ld_err, '<<< no reported errors >>>')}\n"
-        out += f"Execution finished successfully: {self.run_ok}\n"
-        out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
-        out += f"Timeout detected: {self.run_timeout}\n"
         out += f"Execution input:\n{self._prep_output(self.run_stdin, '<<< no user input given >>>', keep_empty_tokens=True)}\n"
         out += f"Execution output:\n{self._prep_output(self.run_stdout, '<<< no output >>>', keep_empty_tokens=True)}\n"
         out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"

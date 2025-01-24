@@ -182,9 +182,9 @@
                 }).then(response => response.json())
                 .then(data => {                 
                     document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-                    document.getElementById("asStatus").innerHTML = data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                    document.getElementById("ldStatus").innerHTML = data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                    document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                    document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                    document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                    document.getElementById("execStatus").innerHTML = data.ran_ok ===null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
                     document.getElementById("outputBox").value = data.stdout;
                     document.getElementById("errorBox").value = data.stderr;
                     document.getElementById("emulationInfo").value = data.all_info;
