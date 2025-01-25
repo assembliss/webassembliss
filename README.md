@@ -28,6 +28,8 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] show memory
 - [x] highlight modified registers
 - [ ] highlight assembler errors in source code (mark line and popup with error)
+- [ ] allow user to submit an issue through the webapp
+	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
 - [ ] allow user to debug code (continue, step, set breakpoint)
 - [ ] allow testing of code (given input, expected output)
 - [ ] make sure app works with multiple users accessing concurrently
