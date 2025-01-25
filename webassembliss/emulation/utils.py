@@ -36,6 +36,7 @@ class EmulationResults:
     run_stderr: str = ""
     registers: Dict[str, Tuple[int, bool]] = None  # {reg1: (val1, changed), ...}
     reg_num_bits: int = None
+    little_endian: bool = None
     memory: Dict[int, Tuple[str, Tuple[int]]] = (
         None  # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
@@ -101,7 +102,7 @@ Linker errors:
     ):
         """Pretty-print memory values."""
         # TODO: improve the memory visualization.
-        out = f"Memory values:{split_token}"
+        out = f"Memory values ({'little' if self.little_endian else 'big'} endian):{split_token}"
         for addr, (fmt, values) in self.memory.items():
             mapped_area = struct.pack(fmt, *values)
             out += f"{left_padding}{addr}: {mapped_area}{split_token}"
@@ -212,8 +213,7 @@ def _link(
 def _filter_memory(
     og_mem: Dict[int, bytearray],
     cur_mem: Dict[int, bytearray],
-    bits: int,
-    endian: QL_ENDIAN,
+    little_endian: bool,
 ) -> Dict[int, Tuple[str, Tuple[int]]]:
     """Find interesting parts of memory we want to display; qiling reserves a lot of memory even for small programs."""
 
@@ -227,7 +227,7 @@ def _filter_memory(
     assert og_mem.keys() == cur_mem.keys()
 
     out = {}
-    endian_mod = "<" if endian == QL_ENDIAN.EL else ">"
+    endian_mod = "<" if little_endian else ">"
     for addr in og_mem:
 
         # Find largest relevant chunk between old and current.
@@ -281,7 +281,16 @@ def _timed_emulation(
     registers: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
-    bool, bool, str, str, Dict[str, Tuple[int, bool]], Dict[int, Tuple[str, Tuple[int]]]
+    bool,  # run_ok
+    int,  # exit code
+    bool,  # timeout
+    str,  # stdin
+    str,  # stdout
+    str,  # stderr
+    Dict[str, Tuple[int, bool]],  # registers
+    int,  # num_bits
+    bool,  # little_endian
+    Dict[int, Tuple[str, Tuple[int]]],  # memory
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
@@ -328,6 +337,9 @@ def _timed_emulation(
     # Take a snapshot of memory after execution.
     cur_mem_values = {s: ql.mem.read(s, e - s) for s, e in relevant_mem_area}
 
+    # Find endianess.
+    little_endian = ql.arch.endian == QL_ENDIAN.EL
+
     # Return status flags and contents of stdin/stdout/stderr.
     return (
         run_exit_code == 0 and not run_timeout,
@@ -341,7 +353,8 @@ def _timed_emulation(
             for r, v in {r: ql.arch.regs.read(r) for r in registers}.items()
         },
         ql.arch.bits,
-        _filter_memory(og_mem_values, cur_mem_values, ql.arch.bits, ql.arch.endian),
+        little_endian,
+        _filter_memory(og_mem_values, cur_mem_values, little_endian),
     )
 
 
@@ -407,6 +420,7 @@ def clean_emulation(
             er.run_stderr,
             er.registers,
             er.reg_num_bits,
+            er.little_endian,
             er.memory,
         ) = _timed_emulation(rootfs_path, bin_path, bin_name, timeout, stdin, registers)
 

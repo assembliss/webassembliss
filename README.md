@@ -16,6 +16,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 4. lastly, you can also use a [dev-container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) to develop on vs-code within the docker environment
 
 ## Milestones
+- [ ] add auto-format on project
+	- https://github.com/jpetrucciani/black-check
+- [ ] add auto-lint on project
+	- https://github.com/rhysd/actionlint
+- [ ] add auto-typehint-checker on project
+	- https://github.com/python/mypy
 - [x] generate object and binaries in a temp folder inside rootfs
 - [x] add a button to assemble, link, and run the code from the editor
 - [x] show output of the code in page
