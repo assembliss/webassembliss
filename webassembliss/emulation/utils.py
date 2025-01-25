@@ -36,7 +36,9 @@ class EmulationResults:
     run_stderr: str = ""
     registers: Dict[str, Tuple[int, bool]] = None  # {reg1: (val1, changed), ...}
     reg_num_bits: int = None
-    memory: Dict[int, Tuple[int, str]] = None
+    memory: Dict[int, Tuple[str, Tuple[int]]] = (
+        None  # {addr1: (struct.format, (val1, val2, ...)), ...}
+    )
 
     def _prep_output(
         self,
@@ -95,15 +97,13 @@ Linker errors:
         split_token: str = "\n",
         min_size: int = 0,
         show_ascii: bool = False,
+        show_addr_in_hex: bool = True,
     ):
         """Pretty-print memory values."""
+        # TODO: improve the memory visualization.
         out = f"Memory values:{split_token}"
-        for addr, pairs in self.memory.items():
-            mapped_area = bytearray()
-            for value, fmt in pairs:
-                bs = struct.pack(fmt, value)
-                mapped_area += bs
-            # TODO: align the output better so it's easier to read.
+        for addr, (fmt, values) in self.memory.items():
+            mapped_area = struct.pack(fmt, *values)
             out += f"{left_padding}{addr}: {mapped_area}{split_token}"
         return out
 
@@ -214,7 +214,7 @@ def _filter_memory(
     cur_mem: Dict[int, bytearray],
     bits: int,
     endian: QL_ENDIAN,
-) -> Dict[int, Tuple[int, str]]:
+) -> Dict[int, Tuple[str, Tuple[int]]]:
     """Find interesting parts of memory we want to display; qiling reserves a lot of memory even for small programs."""
 
     def _find_last_nonzero_byte(ba: bytearray):
@@ -227,43 +227,47 @@ def _filter_memory(
     assert og_mem.keys() == cur_mem.keys()
 
     out = {}
+    endian_mod = "<" if endian == QL_ENDIAN.EL else ">"
     for addr in og_mem:
 
         # Find largest relevant chunk between old and current.
         og_len = _find_last_nonzero_byte(og_mem[addr])
         cur_len = _find_last_nonzero_byte(cur_mem[addr])
-        relevant_size = max(og_len, cur_len)
+        # Add one since we use this range as non-inclusive and we want the last non-zero byte.
+        relevant_size = max(og_len, cur_len) + 1
 
         # Convert the relevant chunk of current memory into a sequence of ints.
-        qcs = QlCoreStructs(endian=endian, bit=bits)
         data = []
+        fmt = endian_mod
         next_byte = 0
 
         # Packs 8-byte values first, then 4-, 2-, 1- bytes so we get the least number of elements as possible.
-        for bytes, (unpack, fmt) in sorted(
+        for bytes, unpack_size in sorted(
             {
-                1: (qcs.unpack8, qcs._fmt8),
-                2: (qcs.unpack16, qcs._fmt16),
-                4: (qcs.unpack32, qcs._fmt32),
-                8: (qcs.unpack64, qcs._fmt64),
+                1: "B",
+                2: "H",
+                4: "I",
+                8: "Q",
             }.items(),
             key=lambda x: -x[0],
         ):
-            if next_byte >= relevant_size:
+            if next_byte > relevant_size:
                 # Already packed everything.
                 break
             # Loop while we can pack this number of bytes.
             while (relevant_size - next_byte) >= bytes:
                 # Pack the next window.
                 window = cur_mem[addr][next_byte : next_byte + bytes]
-                unpacked = unpack(window)
-                # Add unpacked value and the format used to create it to our collection.
-                data.append((unpacked, fmt))
+                unpacked = struct.unpack(f"{endian_mod}{unpack_size}", window)
+                # Add unpacked value and the size used to create it to our collection.
+                # Unpacked should be a 1-value tuple, but calling extend in case this can be helpful in future.
+                data.extend(unpacked)
+                fmt += unpack_size
                 # Advance our pointer.
                 next_byte += bytes
 
         # Assign the collection of values to this memory addr in our map.
-        out[addr] = tuple(data)
+        out[addr] = fmt, tuple(data)
 
     return out
 
@@ -277,7 +281,7 @@ def _timed_emulation(
     registers: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
-    bool, bool, str, str, Dict[str, Tuple[int, bool]], Dict[int, Tuple[int, str]]
+    bool, bool, str, str, Dict[str, Tuple[int, bool]], Dict[int, Tuple[str, Tuple[int]]]
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
