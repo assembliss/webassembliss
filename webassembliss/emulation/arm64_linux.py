@@ -1,7 +1,7 @@
 from .utils import clean_emulation, EmulationResults
 from typing import List
 from io import BytesIO
-
+from qiling.arch.arm64_const import reg_map
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
@@ -17,12 +17,15 @@ def emulate(
     source_name: str = "usrCode.S",
     obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
+    registers: List[str] = None,
 ) -> EmulationResults:
     # Create default mutable values if needed.
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
         ld_flags = ["-o"]
+    if registers is None:
+        registers = list(reg_map.keys())
 
     # Run the emulation and return its status and results.
     return clean_emulation(
@@ -37,4 +40,5 @@ def emulate(
         source_name=source_name,
         obj_name=obj_name,
         bin_name=bin_name,
+        registers=registers,
     )

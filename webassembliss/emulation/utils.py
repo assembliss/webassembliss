@@ -2,7 +2,7 @@ import subprocess
 import tempfile
 from qiling import Qiling
 from qiling.const import QL_VERBOSE
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Dict
 from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
@@ -30,6 +30,8 @@ class EmulationResults:
     run_stdin: str = ""
     run_stdout: str = ""
     run_stderr: str = ""
+    registers: Dict[str, Tuple[int, bool]] = None  # {reg1: (val1, changed), ...}
+    reg_num_bits: int = None
 
     def _prep_output(
         self,
@@ -65,6 +67,18 @@ Assembler errors:
 Linker errors:
 {self._prep_output(self.ld_err, '<<< no reported errors >>>')}"""
 
+    def print_registers(
+        self,
+        left_padding: str = "\t",
+        split_token: str = "\n",
+        change_token: str = " <--- changed",
+    ) -> str:
+        max_len = max([len(r) for r in self.registers])
+        out = f"Register values:{split_token}"
+        for r, (val, changed) in self.registers.items():
+            out += f"{left_padding}{r: >{max_len}}: {val:#0{self.reg_num_bits//4}x}{change_token if changed else ''}{split_token}"
+        return out
+
     def print(self) -> str:
         out = f"All checks ok: {'yes' if self.all_ok else 'no'}\n"
         out += f"Able to create source file: {'skipped' if self.create_source_ok is None else 'yes' if self.create_source_ok else 'no'}\n"
@@ -86,6 +100,8 @@ Linker errors:
         out += f"Execution input:\n{self._prep_output(self.run_stdin, '<<< no user input given >>>', keep_empty_tokens=True)}\n"
         out += f"Execution output:\n{self._prep_output(self.run_stdout, '<<< no output >>>', keep_empty_tokens=True)}\n"
         out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"
+        out += f"Number of bits in registers: {self.reg_num_bits}\n"
+        out += self.print_registers()
         return out
 
 
@@ -155,8 +171,9 @@ def _timed_emulation(
     bin_path: Union[str, PathLike],
     timeout: int,
     stdin: BytesIO,
+    registers: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
-) -> Tuple[bool, bool, str, str]:
+) -> Tuple[bool, bool, str, str, Dict[str, Tuple[int, bool]]]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions were executed and return that as well.
@@ -176,6 +193,9 @@ def _timed_emulation(
     # Clear any old exit code.
     ql.os.exit_code = None
 
+    # Stores a checkpoint of register values.
+    og_reg_values = {r: ql.arch.regs.read(r) for r in registers}
+
     # Run the program with specified timeout.
     ql.run(timeout=timeout)
 
@@ -194,10 +214,16 @@ def _timed_emulation(
         given_stdin,
         out.getvalue().decode(),
         err.getvalue().decode(),
+        {
+            r: (v, v != og_reg_values[r])
+            for r, v in {r: ql.arch.regs.read(r) for r in registers}.items()
+        },
+        ql.arch.bits,
     )
 
 
 def clean_emulation(
+    *,  # force naming arguments
     code: str,
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
@@ -208,6 +234,7 @@ def clean_emulation(
     source_name: str,
     obj_name: str,
     bin_name: str,
+    registers: List[str],
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
 ) -> EmulationResults:
@@ -255,7 +282,9 @@ def clean_emulation(
             er.run_stdin,
             er.run_stdout,
             er.run_stderr,
-        ) = _timed_emulation(rootfs_path, bin_path, timeout, stdin)
+            er.registers,
+            er.reg_num_bits,
+        ) = _timed_emulation(rootfs_path, bin_path, timeout, stdin, registers)
 
         # Sets global status field to match whether execution exited successfully.
         er.all_ok = er.run_ok

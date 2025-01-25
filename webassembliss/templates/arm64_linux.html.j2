@@ -213,6 +213,14 @@
     <br/>
     <br/>
 
+    <button type="button" class="collapsible">Show/hide registers</button>
+    <div class="collapsibleContent">
+        <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=75 placeholder="register values will appear here after your code finishes running..."></textarea>
+    </div> 
+
+    <br/>
+    <br/>
+
     <button type="button" class="collapsible">Show/hide error information</button>
     <div class="collapsibleContent">
         <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=75 placeholder="any errors will appear here after your code finishes running..."></textarea>
@@ -281,6 +289,7 @@
             document.getElementById("outputBox").value = "";
             document.getElementById("errorBox").value = "";
             document.getElementById("emulationInfo").value = "";
+            document.getElementById("regValues").value = "";
             lastRunInfo = null;
             document.getElementById("downloadButton").disabled = true;
         }
@@ -305,6 +314,7 @@
                 document.getElementById("outputBox").value = data.stdout;
                 document.getElementById("errorBox").value = data.stderr;
                 document.getElementById("emulationInfo").value = data.all_info;
+                document.getElementById("regValues").value = data.registers;
                 lastRunInfo = data.info_obj;
                 document.getElementById("downloadButton").disabled = false;
             });
