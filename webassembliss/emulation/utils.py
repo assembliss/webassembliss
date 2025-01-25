@@ -121,6 +121,7 @@ def _assemble(
     src_path: Union[str, PathLike],
     flags: List[str],
     obj_path: Union[str, PathLike],
+    as_cmd_format: str = "{as_cmd} {src_path} {joined_flags} {obj_path}",
 ) -> Tuple[bool, str, str]:
     """Use the given assembler command to process the source file and create an object."""
     # TODO: add tests to make sure this function works as expected.
@@ -128,8 +129,13 @@ def _assemble(
     # TODO: find the ratio of instructions and comments and report that to result as well.
 
     # Combine the different pieces into a complete assembling command.
-    # TODO: handle assembling commands that expect a different format than below.
-    as_full_cmd = [as_cmd, src_path] + flags + [obj_path]
+    as_full_cmd = as_cmd_format.format(
+        as_cmd=as_cmd,
+        src_path=src_path,
+        joined_flags=" ".join(flags),
+        obj_path=obj_path,
+    ).split()
+
     with subprocess.Popen(
         as_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as process:
@@ -147,13 +153,19 @@ def _link(
     obj_path: Union[str, PathLike],
     flags: List[str],
     bin_path: Union[str, PathLike],
+    ld_cmd_format: str = "{ld_cmd} {obj_path} {joined_flags} {bin_path}",
 ) -> Tuple[bool, str, str]:
     """Use the given linker command to process the object file and create a binary."""
     # TODO: add tests to make sure this function works as expected.
 
     # Combine the different pieces into a complete linking command.
-    # TODO: handle linking commands that expect a different format than below.
-    ld_full_cmd = [ld_cmd, obj_path] + flags + [bin_path]
+    ld_full_cmd = ld_cmd_format.format(
+        ld_cmd=ld_cmd,
+        obj_path=obj_path,
+        joined_flags=" ".join(flags),
+        bin_path=bin_path,
+    ).split()
+
     with subprocess.Popen(
         ld_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as process:
