@@ -32,7 +32,6 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [x] allow user to download emulation information
 - [x] change the editor to hilight syntax for arm64 assembly
 - [x] show registers after execution
-- [ ] show condition codes / status bits
 - [x] show memory
 - [x] highlight modified registers
 - [ ] highlight assembler errors in source code (mark line and popup with error)
@@ -44,6 +43,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 		- [turn on gdb](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/examples/arm64_linux/arm64_linux_emulation.py#L32-L34) through qiling
 		- connect to the gdb server ([maybe useful?](https://python3-pwntools.readthedocs.io/en/latest/gdb.html#module-pwnlib.gdb))
 		- generator receives command (e.g., continue or step), sends it to the gdb server, and then yields the updated EmulationResullt
+- [ ] show condition codes / status bits
 - [ ] allow testing of code (given input, expected output)
 - [ ] make sure app works with multiple users accessing concurrently
 - [ ] add a production deployment server (e.g., [gunicorn](https://rest-apis-flask.teclado.com/docs/deploy_to_render/docker_with_gunicorn/))
