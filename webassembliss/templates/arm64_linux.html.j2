@@ -57,17 +57,17 @@
     <input type="button" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
     <input type="button" value="Load" onclick="notImplemented()" />
     <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
-    {{
-        rocher_editor(
-            "container",
-            "python",
-            source_code,
-            readOnly=false,
-	        theme="vs-dark",
-            lineHeight=20,
-            minimap={"enabled": False}
-        )
-    }}
+    <script src="/static/vs/loader.js"></script>
+    <script>
+        require.config({ paths: { vs: '/static/vs' } });
+        require(['vs/editor/editor.main'], function () {
+                window.editor = monaco.editor.create(document.getElementById('container'), {
+                    value: {{ default_code }}.join('\n'),
+                    language: 'python',
+                    theme: 'vs-dark',
+                });
+            });
+    </script>
     <br/>
     <table>
         <tr>
@@ -144,12 +144,6 @@
             });
         }
 
-        require(['rocher_editor_container'], function (editor) {
-            var myBinding = editor.addCommand(monaco.KeyCode.F9, function () {
-            	alert("F9 pressed!");
-            });
-        });
-
         function notImplemented() {
             alert("Not implemented yet...");
         }
@@ -167,30 +161,27 @@
         }
 
         function runCode() {
-            require(['rocher_editor_container'], function (editor) {
-                var source_code = editor.getValue();
-                var user_input = document.getElementById("inputBox").value;
-                clearOutput();
-                document.getElementById("runStatus").innerHTML = "⏳";
-
-                fetch('/arm64_linux/run/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({source_code: source_code, user_input: user_input}),
-                }).then(response => response.json())
-                .then(data => {                 
-                    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-                    document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                    document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                    document.getElementById("execStatus").innerHTML = data.ran_ok ===null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                    document.getElementById("outputBox").value = data.stdout;
-                    document.getElementById("errorBox").value = data.stderr;
-                    document.getElementById("emulationInfo").value = data.all_info;
-                    lastRunInfo = data.info_obj;
-                    document.getElementById("downloadButton").disabled = false;
-                });
+            var source_code = window.editor.getValue();
+            var user_input = document.getElementById("inputBox").value;
+            clearOutput();
+            document.getElementById("runStatus").innerHTML = "⏳";
+            fetch('/arm64_linux/run/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({source_code: source_code, user_input: user_input}),
+            }).then(response => response.json())
+            .then(data => {                 
+                document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+                document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("execStatus").innerHTML = data.ran_ok ===null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("outputBox").value = data.stdout;
+                document.getElementById("errorBox").value = data.stderr;
+                document.getElementById("emulationInfo").value = data.all_info;
+                lastRunInfo = data.info_obj;
+                document.getElementById("downloadButton").disabled = false;
             });
         }
 
