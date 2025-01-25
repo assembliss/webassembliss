@@ -277,6 +277,14 @@
             });
         }
 
+        document.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                // Prevent the Save dialog to open
+                e.preventDefault();
+                download_file("usrCode.S", getSource(), "text/plain");
+            }
+        });
+
         function notImplemented() {
             alert("Not implemented yet...");
         }
