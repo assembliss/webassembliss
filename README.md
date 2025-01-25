@@ -24,10 +24,10 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to download emulation information
 - [x] change the editor to hilight syntax for arm64 assembly
 - [ ] show registers after execution
-- [ ] highlight modified register
-- [ ] highlight assembler errors in source code (mark line and popup with error)
 - [ ] show condition codes / status bits
 - [ ] show memory
+- [ ] highlight modified register
+- [ ] highlight assembler errors in source code (mark line and popup with error)
 - [ ] allow user to debug code (continue, step, set breakpoint)
 - [ ] allow testing of code (given input, expected output)
 - [ ] make sure app works with multiple users accessing concurrently
