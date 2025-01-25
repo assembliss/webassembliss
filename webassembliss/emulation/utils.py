@@ -6,12 +6,16 @@ from typing import List, Union, Tuple, Dict
 from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
+from qiling.core_struct import QlCoreStructs
+from qiling.const import QL_ENDIAN
+import struct
 
 
 @dataclass
 class EmulationResults:
     """Class to keep track of the results of a single emulation."""
 
+    rootfs: str = None
     all_ok: bool = False
     create_source_ok: bool = None
     source_code: str = ""
@@ -32,6 +36,7 @@ class EmulationResults:
     run_stderr: str = ""
     registers: Dict[str, Tuple[int, bool]] = None  # {reg1: (val1, changed), ...}
     reg_num_bits: int = None
+    memory: Dict[int, Tuple[int, str]] = None
 
     def _prep_output(
         self,
@@ -42,6 +47,7 @@ class EmulationResults:
         line_num_format: str = "[Line {:>02}]: ",
         keep_empty_tokens: bool = False,
     ) -> str:
+        """Pretty-print multi-line output for any command in a standard way."""
         out = left_padding
         if msg:
             tokens = [t for t in msg.split(split_char) if t or keep_empty_tokens]
@@ -58,6 +64,7 @@ class EmulationResults:
         return out
 
     def print_stderr(self) -> str:
+        """Pretty-print stderr from the different steps."""
         return f"""Exit code: {self.run_exit_code if self.run_exit_code is not None else "not set"}
 Timeout (or no sys.exit call) detected: {self.run_timeout}
 Code errors:
@@ -73,13 +80,35 @@ Linker errors:
         split_token: str = "\n",
         change_token: str = " <--- changed",
     ) -> str:
+        """Pretty-print register values."""
         max_len = max([len(r) for r in self.registers])
         out = f"Register values:{split_token}"
         for r, (val, changed) in self.registers.items():
             out += f"{left_padding}{r: >{max_len}}: {val:#0{self.reg_num_bits//4}x}{change_token if changed else ''}{split_token}"
         return out
 
+    def print_memory(
+        self,
+        left_padding: str = "\t",
+        bytes_per_line: int = 16,
+        byte_sep: str = "__",
+        split_token: str = "\n",
+        min_size: int = 0,
+        show_ascii: bool = False,
+    ):
+        """Pretty-print memory values."""
+        out = f"Memory values:{split_token}"
+        for addr, pairs in self.memory.items():
+            mapped_area = bytearray()
+            for value, fmt in pairs:
+                bs = struct.pack(fmt, value)
+                mapped_area += bs
+            # TODO: align the output better so it's easier to read.
+            out += f"{left_padding}{addr}: {mapped_area}{split_token}"
+        return out
+
     def print(self) -> str:
+        """Pretty-print all fields in this dataclass."""
         out = f"All checks ok: {'yes' if self.all_ok else 'no'}\n"
         out += f"Able to create source file: {'skipped' if self.create_source_ok is None else 'yes' if self.create_source_ok else 'no'}\n"
         out += f"Able to assemble source: {'skipped' if self.assembled_ok is None else 'yes' if self.assembled_ok else 'no'}\n"
@@ -87,6 +116,7 @@ Linker errors:
         out += f"Execution finished successfully: {'skipped' if self.run_ok is None else 'yes' if self.run_ok else 'no'}\n"
         out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
         out += f"Timeout detected: {'yes' if self.run_timeout else 'no'}\n"
+        out += f"rootfs: {self.rootfs}\n"
         out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
         out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
         out += f"Assembler command: '{self.as_args}'\n"
@@ -102,6 +132,7 @@ Linker errors:
         out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"
         out += f"Number of bits in registers: {self.reg_num_bits}\n"
         out += self.print_registers()
+        out += self.print_memory()
         return out
 
 
@@ -178,14 +209,76 @@ def _link(
         )
 
 
+def _filter_memory(
+    og_mem: Dict[int, bytearray],
+    cur_mem: Dict[int, bytearray],
+    bits: int,
+    endian: QL_ENDIAN,
+) -> Dict[int, Tuple[int, str]]:
+    """Find interesting parts of memory we want to display; qiling reserves a lot of memory even for small programs."""
+
+    def _find_last_nonzero_byte(ba: bytearray):
+        for i in range(len(ba) - 1, -1, -1):
+            if ba[i]:
+                return i
+        return -1
+
+    # Ensure we have the same memory locations before and after execution.
+    assert og_mem.keys() == cur_mem.keys()
+
+    out = {}
+    for addr in og_mem:
+
+        # Find largest relevant chunk between old and current.
+        og_len = _find_last_nonzero_byte(og_mem[addr])
+        cur_len = _find_last_nonzero_byte(cur_mem[addr])
+        relevant_size = max(og_len, cur_len)
+
+        # Convert the relevant chunk of current memory into a sequence of ints.
+        qcs = QlCoreStructs(endian=endian, bit=bits)
+        data = []
+        next_byte = 0
+
+        # Packs 8-byte values first, then 4-, 2-, 1- bytes so we get the least number of elements as possible.
+        for bytes, (unpack, fmt) in sorted(
+            {
+                1: (qcs.unpack8, qcs._fmt8),
+                2: (qcs.unpack16, qcs._fmt16),
+                4: (qcs.unpack32, qcs._fmt32),
+                8: (qcs.unpack64, qcs._fmt64),
+            }.items(),
+            key=lambda x: -x[0],
+        ):
+            if next_byte >= relevant_size:
+                # Already packed everything.
+                break
+            # Loop while we can pack this number of bytes.
+            while (relevant_size - next_byte) >= bytes:
+                # Pack the next window.
+                window = cur_mem[addr][next_byte : next_byte + bytes]
+                unpacked = unpack(window)
+                # Add unpacked value and the format used to create it to our collection.
+                data.append((unpacked, fmt))
+                # Advance our pointer.
+                next_byte += bytes
+
+        # Assign the collection of values to this memory addr in our map.
+        out[addr] = tuple(data)
+
+    return out
+
+
 def _timed_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],
+    bin_name: str,
     timeout: int,
     stdin: BytesIO,
     registers: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
-) -> Tuple[bool, bool, str, str, Dict[str, Tuple[int, bool]]]:
+) -> Tuple[
+    bool, bool, str, str, Dict[str, Tuple[int, bool]], Dict[int, Tuple[int, str]]
+]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions were executed and return that as well.
@@ -193,6 +286,16 @@ def _timed_emulation(
     # Instantiate a qiling object with the binary and rootfs we want to use.
     ql = Qiling([bin_path], rootfs_path, verbose=verbose, console=False)
     given_stdin = stdin.getvalue().decode()
+
+    # Find memory allocated for the user code's execution.
+    relevant_mem_area = []
+    for _start, _end, _, _label, _ in ql.mem.get_mapinfo():
+        if _label != bin_name:
+            continue
+        relevant_mem_area.append((_start, _end))
+
+    # Take a snapshot of memory before execution.
+    og_mem_values = {s: ql.mem.read(s, e - s) for s, e in relevant_mem_area}
 
     # Redirect input, output, and error streams.
     out = BytesIO()
@@ -218,6 +321,9 @@ def _timed_emulation(
     # If it hasn't, sys.exit wasn't called, either because it's missing or never reached.
     run_timeout = run_exit_code is None
 
+    # Take a snapshot of memory after execution.
+    cur_mem_values = {s: ql.mem.read(s, e - s) for s, e in relevant_mem_area}
+
     # Return status flags and contents of stdin/stdout/stderr.
     return (
         run_exit_code == 0 and not run_timeout,
@@ -231,6 +337,7 @@ def _timed_emulation(
             for r, v in {r: ql.arch.regs.read(r) for r in registers}.items()
         },
         ql.arch.bits,
+        _filter_memory(og_mem_values, cur_mem_values, ql.arch.bits, ql.arch.endian),
     )
 
 
@@ -253,7 +360,7 @@ def clean_emulation(
     # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
-    er = EmulationResults()
+    er = EmulationResults(rootfs=rootfs_path)
 
     # Create a temporary directory so space gets freed after we're done with user files.
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
@@ -296,7 +403,8 @@ def clean_emulation(
             er.run_stderr,
             er.registers,
             er.reg_num_bits,
-        ) = _timed_emulation(rootfs_path, bin_path, timeout, stdin, registers)
+            er.memory,
+        ) = _timed_emulation(rootfs_path, bin_path, bin_name, timeout, stdin, registers)
 
         # Sets global status field to match whether execution exited successfully.
         er.all_ok = er.run_ok

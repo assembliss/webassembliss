@@ -221,6 +221,14 @@
     <br/>
     <br/>
 
+    <button type="button" class="collapsible">Show/hide memory</button>
+    <div class="collapsibleContent">
+        <textarea id="memValues" name="memValues" readOnly=true rows=10 cols=75 placeholder="memory values will appear here after your code finishes running..."></textarea>
+    </div> 
+
+    <br/>
+    <br/>
+
     <button type="button" class="collapsible">Show/hide error information</button>
     <div class="collapsibleContent">
         <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=75 placeholder="any errors will appear here after your code finishes running..."></textarea>
@@ -298,6 +306,7 @@
             document.getElementById("errorBox").value = "";
             document.getElementById("emulationInfo").value = "";
             document.getElementById("regValues").value = "";
+            document.getElementById("memValues").value = "";
             lastRunInfo = null;
             document.getElementById("downloadButton").disabled = true;
         }
@@ -323,6 +332,7 @@
                 document.getElementById("errorBox").value = data.stderr;
                 document.getElementById("emulationInfo").value = data.all_info;
                 document.getElementById("regValues").value = data.registers;
+                document.getElementById("memValues").value = data.memory;
                 lastRunInfo = data.info_obj;
                 document.getElementById("downloadButton").disabled = false;
             });

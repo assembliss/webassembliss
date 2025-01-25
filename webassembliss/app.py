@@ -45,6 +45,7 @@ def arm64_linux_run():
         "ld_ok": emu_results.linked_ok,
         "ran_ok": emu_results.run_ok,
         "registers": emu_results.print_registers(),
+        "memory": emu_results.print_memory(),
         "all_info": emu_results.print(),
         "info_obj": emu_results,
     }
