@@ -48,6 +48,7 @@ def arm64_linux_run():
             change_token=" <--- changed", byte_split_token="_"
         ),
         "memory": emu_results.print_memory(show_ascii=True),
+        "flags": emu_results.flags,
         "all_info": emu_results.print(),
         "info_obj": emu_results,
     }

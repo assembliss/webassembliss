@@ -34,17 +34,19 @@
         padding-bottom: 5px;
         padding-left: 10px;
         padding-right: 10px;
+        text-align: center;
     }
 
     th {
         padding-top: 5px;
         padding-bottom: 5px;
+        text-align: left;
     }
 
     table {
         border: 1px solid black;
         border-collapse: separate;
-        border-spacing: 10px;
+        border-spacing: 5px;
         border-radius: 20px;
     }
 </style>
@@ -203,6 +205,13 @@
             <td>Linked: <span id="ldStatus">⭕</span></td>
             <td>Exited: <span id="execStatus">⭕</span></td>
         </tr>
+        <tr>
+            <th>Status Flags</th>
+            <td>N: <span id="nFlag">⭕</span></td>
+            <td>Z: <span id="zFlag">⭕</span></td>
+            <td>C: <span id="cFlag">⭕</span></td>
+            <td>V: <span id="vFlag">⭕</span></td>
+        </tr>
     </table> 
 
     <h3>Input</h3>
@@ -317,6 +326,10 @@
             document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
             document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
             document.getElementById("execStatus").innerHTML = WAITING_SYMBOL;
+            document.getElementById("nFlag").innerHTML = WAITING_SYMBOL;
+            document.getElementById("zFlag").innerHTML = WAITING_SYMBOL;
+            document.getElementById("cFlag").innerHTML = WAITING_SYMBOL;
+            document.getElementById("vFlag").innerHTML = WAITING_SYMBOL;
             document.getElementById("outputBox").value = "";
             document.getElementById("errorBox").value = "";
             document.getElementById("emulationInfo").value = "";
@@ -342,7 +355,11 @@
                 document.getElementById("runStatus").innerHTML = OK_SYMBOL;
                 document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
                 document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-                document.getElementById("execStatus").innerHTML = data.ran_ok ===null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("execStatus").innerHTML = data.ran_ok === null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("nFlag").innerHTML = data.flags.N === null ? WAITING_SYMBOL : data.flags.N ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("zFlag").innerHTML = data.flags.Z === null ? WAITING_SYMBOL : data.flags.Z ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("cFlag").innerHTML = data.flags.C === null ? WAITING_SYMBOL : data.flags.C ? OK_SYMBOL : ERROR_SYMBOL;
+                document.getElementById("vFlag").innerHTML = data.flags.V === null ? WAITING_SYMBOL : data.flags.V ? OK_SYMBOL : ERROR_SYMBOL;
                 document.getElementById("outputBox").value = data.stdout;
                 document.getElementById("errorBox").value = data.stderr;
                 document.getElementById("emulationInfo").value = data.all_info;

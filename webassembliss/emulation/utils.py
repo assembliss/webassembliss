@@ -2,12 +2,11 @@ import subprocess
 import tempfile
 from qiling import Qiling
 from qiling.const import QL_VERBOSE
-from typing import List, Union, Tuple, Dict
+from typing import List, Union, Tuple, Dict, Callable
 from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
-from qiling.core_struct import QlCoreStructs
-from qiling.const import QL_ENDIAN
+from qiling.const import QL_ENDIAN, QL_STOP
 import struct
 
 
@@ -40,6 +39,7 @@ class EmulationResults:
     memory: Dict[int, Tuple[str, Tuple[int]]] = (
         None  # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
+    flags: Dict[str, bool] = None  # {N: False, Z: True, ...}
 
     def _prep_output(
         self,
@@ -85,6 +85,10 @@ Linker errors:
         byte_split_token: str = "",
     ) -> str:
         """Pretty-print register values."""
+        # Check for empty register information (i.e., code did not run)
+        if not self.registers:
+            return f"Register values: <<< no register information >>>{split_token}"
+
         max_len = max([len(r) for r in self.registers])
         out = f"Register values:{split_token}"
         for r, (val, changed) in self.registers.items():
@@ -134,6 +138,10 @@ Linker errors:
                 _out += split_token
             return _out
 
+        # Check for empty memory information (i.e., code did not run)
+        if not self.memory:
+            return f"Memory: <<< no memory information >>>{split_token}"
+
         # Create header for output, then parses each chunk individually.
         out = f"Memory contents ({'little' if self.little_endian else 'big'} endian):{split_token}"
         chunks_info = []
@@ -172,6 +180,7 @@ Linker errors:
         out += f"Number of bits in registers: {self.reg_num_bits}\n"
         out += self.print_registers()
         out += self.print_memory()
+        out += f"Flags: {self.flags}\n"
         return out
 
 
@@ -317,6 +326,7 @@ def _timed_emulation(
     timeout: int,
     stdin: BytesIO,
     registers: List[str],
+    get_flags_func: Callable[[Qiling], Dict[str, bool]],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
     bool,  # run_ok
@@ -329,13 +339,16 @@ def _timed_emulation(
     int,  # num_bits
     bool,  # little_endian
     Dict[int, Tuple[str, Tuple[int]]],  # memory
+    Dict[str, bool],  # flags
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions were executed and return that as well.
 
     # Instantiate a qiling object with the binary and rootfs we want to use.
-    ql = Qiling([bin_path], rootfs_path, verbose=verbose, console=False)
+    ql = Qiling(
+        [bin_path], rootfs_path, verbose=verbose, console=False, stop=QL_STOP.EXIT_TRAP
+    )
     given_stdin = stdin.getvalue().decode()
 
     # Find memory allocated for the user code's execution.
@@ -393,6 +406,7 @@ def _timed_emulation(
         ql.arch.bits,
         little_endian,
         _filter_memory(og_mem_values, cur_mem_values, little_endian),
+        get_flags_func(ql),
     )
 
 
@@ -409,6 +423,7 @@ def clean_emulation(
     obj_name: str,
     bin_name: str,
     registers: List[str],
+    get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
 ) -> EmulationResults:
@@ -460,7 +475,10 @@ def clean_emulation(
             er.reg_num_bits,
             er.little_endian,
             er.memory,
-        ) = _timed_emulation(rootfs_path, bin_path, bin_name, timeout, stdin, registers)
+            er.flags,
+        ) = _timed_emulation(
+            rootfs_path, bin_path, bin_name, timeout, stdin, registers, get_flags_func
+        )
 
         # Sets global status field to match whether execution exited successfully.
         er.all_ok = er.run_ok
