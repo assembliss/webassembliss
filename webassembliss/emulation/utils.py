@@ -81,32 +81,70 @@ Linker errors:
         self,
         left_padding: str = "\t",
         split_token: str = "\n",
-        change_token: str = " <--- changed",
+        change_token: str = "",
+        byte_split_token: str = "",
     ) -> str:
         """Pretty-print register values."""
         max_len = max([len(r) for r in self.registers])
         out = f"Register values:{split_token}"
         for r, (val, changed) in self.registers.items():
-            out += f"{left_padding}{r: >{max_len}}: {val:#0{self.reg_num_bits//4}x}{change_token if changed else ''}{split_token}"
+            # Create a string containing the register value in hex.
+            hex_reg_str = f"{val:#0{self.reg_num_bits//4}x}"
+            # Add a token between each byte in the value.
+            hex_reg_str = byte_split_token.join(
+                [
+                    f"{hex_reg_str[i]}{hex_reg_str[i+1]}"
+                    for i in range(0, len(hex_reg_str), 2)
+                ]
+            )
+            out += f"{left_padding}{r: >{max_len}}: {hex_reg_str}{change_token if changed else ''}{split_token}"
         return out
 
     def print_memory(
         self,
         left_padding: str = "\t",
         bytes_per_line: int = 16,
-        byte_sep: str = "__",
+        byte_sep: str = "  ",
         split_token: str = "\n",
-        min_size: int = 0,
         show_ascii: bool = False,
-        show_addr_in_hex: bool = True,
     ):
         """Pretty-print memory values."""
-        # TODO: improve the memory visualization.
-        out = f"Memory values ({'little' if self.little_endian else 'big'} endian):{split_token}"
+
+        def _to_ascii(_byteval: int) -> str:
+            """Returns a byte as a "'char'" or "XY" if it's printable or not."""
+            _ascii_char = chr(_byteval)
+            if _ascii_char.isprintable() and not _ascii_char.isspace():
+                return f"'{_ascii_char}'"
+            return f" {_byteval:02x}"
+
+        def _print_memory_chunk(_addr: int, mc: bytearray) -> str:
+            """Pretty-print a single memory area."""
+            # Fill memory chunk with 0s to complete last line.
+            mc += b"\x00" * (-len(mc) % bytes_per_line)
+            # Parses each line
+            _out = ""
+            for _offset in range(0, len(mc), bytes_per_line):
+                _out += f"{left_padding}{(_addr + _offset):0x}: "
+                _out += byte_sep.join(
+                    [
+                        _to_ascii(b) if show_ascii else f"{b:02x}"
+                        for b in mc[_offset : _offset + bytes_per_line]
+                    ]
+                )
+                _out += split_token
+            return _out
+
+        # Create header for output, then parses each chunk individually.
+        out = f"Memory contents ({'little' if self.little_endian else 'big'} endian):{split_token}"
+        chunks_info = []
         for addr, (fmt, values) in self.memory.items():
-            mapped_area = struct.pack(fmt, *values)
-            out += f"{left_padding}{addr}: {mapped_area}{split_token}"
-        return out
+            chunks_info.append(_print_memory_chunk(addr, struct.pack(fmt, *values)))
+        return (
+            out
+            + f"{left_padding}.{split_token}{left_padding}.{split_token}{left_padding}.{split_token}".join(
+                chunks_info
+            )
+        )
 
     def print(self) -> str:
         """Pretty-print all fields in this dataclass."""

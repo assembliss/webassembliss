@@ -23,10 +23,10 @@
     /* Style the collapsible content. Note: hidden by default */
     .collapsibleContent {
         padding: 2 10px;
-        width: 600px;
+        width: 800px;
         display: none;
         overflow: visible;
-        background-color:rgb(255, 225, 225);
+        background-color:rgb(255, 240, 240);
     } 
 
     td {
@@ -216,7 +216,7 @@
 
     <button type="button" class="collapsible">Show/hide registers</button>
     <div class="collapsibleContent">
-        <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=75 placeholder="register values will appear here after your code finishes running..."></textarea>
+        <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=100 placeholder="register values will appear here after your code finishes running..."></textarea>
     </div> 
 
     <br/>
@@ -224,23 +224,30 @@
 
     <button type="button" class="collapsible">Show/hide memory</button>
     <div class="collapsibleContent">
-        <textarea id="memValues" name="memValues" readOnly=true rows=10 cols=75 placeholder="memory values will appear here after your code finishes running..."></textarea>
-    </div> 
+        <textarea id="memValues" name="memValues" readOnly=true rows=10 cols=100 placeholder="memory values will appear here after your code finishes running..."></textarea>
+        <p>Memory visualization notes:</p>
+        <ul style="margin-top:-10px;">
+            <li>values are shown in hex (e.g., 0a instead of 15);</li>
+            <li>values that are printable by the ASCII table are shown as characters (e.g., 'A' instead of 41);</li>
+            <li>all whitespace characters are kept as hex so you can tell them apart more easily (e.g., 20  09 instead of ' '  '&#09;');</li>
+            <li>you can see *all* bytes as hex in the "show all emulation information" pane.</li>
+        </ul>
+    </div>
 
     <br/>
     <br/>
 
     <button type="button" class="collapsible">Show/hide error information</button>
     <div class="collapsibleContent">
-        <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=75 placeholder="any errors will appear here after your code finishes running..."></textarea>
-    </div> 
+        <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=100 placeholder="any errors will appear here after your code finishes running..."></textarea>
+    </div>
     
     <br/>
     <br/>
 
     <button type="button" class="collapsible">Show/hide all emulation information</button>
     <div class="collapsibleContent">
-        <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=75 placeholder="emulation info will appear here after your code finishes running..."></textarea>
+        <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=100 placeholder="emulation info will appear here after your code finishes running..."></textarea>
        <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true"/>
     </div>
 
