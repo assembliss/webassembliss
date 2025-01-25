@@ -22,7 +22,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to provide input to the code
 - [x] allow user to download code
 - [x] allow user to download emulation information
-- [ ] change the editor to hilight syntax for arm64 assembly
+- [x] change the editor to hilight syntax for arm64 assembly
 	- might be helpful:
 		- https://github.com/MKornelsen/vscode-arm64/blob/main/syntaxes/arm64.tmLanguage.json
 		- https://github.com/microsoft/monaco-editor/issues/890

@@ -8,7 +8,7 @@ len = . - msg
 .text
 
 /* Our application's entry point. */
-.globl _start
+.global _start
 _start:
     /* syscall write(int fd, const void *buf, size_t count) */
     mov     x0, #1      /* fd := STDOUT_FILENO */

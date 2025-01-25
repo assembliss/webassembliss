@@ -3,7 +3,7 @@
 .text
 
 /* Our application's entry point. */
-.globl _start
+.global _start
 _start:
     mov     x0, #1      /* move 1 into x0 */
     b       _start      /* jump back to the line above */
