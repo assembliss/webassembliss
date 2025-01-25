@@ -45,7 +45,7 @@ def arm64_linux_run():
         "ld_ok": emu_results.linked_ok,
         "ran_ok": emu_results.run_ok,
         "registers": emu_results.print_registers(
-            change_token=" <--- changed", byte_split_token="__"
+            change_token=" <--- changed", byte_split_token="_"
         ),
         "memory": emu_results.print_memory(show_ascii=True),
         "all_info": emu_results.print(),

@@ -89,7 +89,7 @@ Linker errors:
         out = f"Register values:{split_token}"
         for r, (val, changed) in self.registers.items():
             # Create a string containing the register value in hex.
-            hex_reg_str = f"{val:#0{self.reg_num_bits//4}x}"
+            hex_reg_str = f"{val:0{self.reg_num_bits//4}x}"
             # Add a token between each byte in the value.
             hex_reg_str = byte_split_token.join(
                 [

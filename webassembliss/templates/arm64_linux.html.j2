@@ -217,6 +217,13 @@
     <button type="button" class="collapsible">Show/hide registers</button>
     <div class="collapsibleContent">
         <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=100 placeholder="register values will appear here after your code finishes running..."></textarea>
+        <p>Registers visualization notes:</p>
+        <ul style="margin-top:-10px;">
+            <li>values are shown in hex (e.g., 0a instead of 15);</li>
+            <li>bytes are separated to help reading them (e.g., 01_00_20_30 instead of 01002030);</li>
+            <li>registers that were modified during execution are highlighted;</li>
+            <li>you can see all registers as hex without separation or highlighting in the "show all emulation information" pane.</li>
+        </ul>
     </div> 
 
     <br/>
