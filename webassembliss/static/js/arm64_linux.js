@@ -2,7 +2,7 @@ const WAITING_SYMBOL = "⭕";
 const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
 window.lastRunInfo = null;
-window.decorations = [];
+window.decorations = null;
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -167,6 +167,7 @@ function createEditor(default_code) {
             language: 'arm64',
             theme: 'vs-dark',
         });
+        window.decorations = editor.createDecorationsCollection([]);
     });
 }
 
@@ -232,47 +233,39 @@ function getLastRunInfo() {
     return JSON.stringify(lastRunInfo);
 }
 
-function addErrorHighlight(line) {
-    decorations = editor.deltaDecorations(decorations, [
+function addHighlight(line, options) {
+    decorations.append([
         {
             range: new monaco.Range(line, 1, line, 100),
-            options: {
-                isWholeLine: true,
-                className: 'errorLineDecoration',
-                marginClassName: 'errorLineDecoration'
-            }
+            options: options
         }
     ]);
+}
+
+function addErrorHighlight(line) {
+    // TODO: add error with the highlight; maybe using hover: https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.HoverProvider.html
+    addHighlight(line, {
+        isWholeLine: true,
+        className: 'errorLineDecoration'
+    });
 }
 
 function updateGdbLine(line) {
-    decorations = editor.deltaDecorations(decorations, [
-        {
-            range: new monaco.Range(line, 1, line, 100),
-            options: {
-                isWholeLine: true,
-                className: 'gdbLineDecoration',
-                marginClassName: 'gdbLineDecoration'
-            }
-        }
-    ]);
+    addHighlight(line, {
+        isWholeLine: true,
+        className: 'gdbLineDecoration'
+    });
 }
 
 function addBreakpointHighlight(line) {
-    decorations = editor.deltaDecorations(decorations, [
-        {
-            range: new monaco.Range(line, 1, line, 100),
-            options: {
-                isWholeLine: true,
-                className: 'breakpointLineDecoration',
-                marginClassName: 'breakpointLineDecoration'
-            }
-        }
-    ]);
+    addHighlight(line, {
+        isWholeLine: true,
+        marginClassName: 'breakpointLineDecoration'
+    });
 }
 
 function removeAllHighlight() {
-    decorations = editor.deltaDecorations(decorations, []);
+    decorations.clear();
 }
 
 function download_file(name, contents, mime_type) {
