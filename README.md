@@ -27,7 +27,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [x] show memory
 - [x] highlight modified registers
 - [x] show condition codes / status bits
-- [ ] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
+- [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [ ] allow user to debug code (continue, step, set breakpoint)
 	- first idea:
 		- create a [python generator](https://wiki.python.org/moin/Generators) that mimics [clean_emulation](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/emulation/utils.py#L399) but keeps the directory and qiling instance alive throghout debugging

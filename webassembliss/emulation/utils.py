@@ -7,6 +7,7 @@ from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
 from qiling.const import QL_ENDIAN, QL_STOP
+from qiling.exception import QlErrorCoreHook
 import struct
 
 
@@ -376,7 +377,18 @@ def _timed_emulation(
     og_reg_values = {r: ql.arch.regs.read(r) for r in registers}
 
     # Run the program with specified timeout.
-    ql.run(timeout=timeout)
+    execution_error = ""
+    try:
+        ql.run(timeout=timeout)
+    except QlErrorCoreHook as error:
+        # Catch a notimplemented interrupt error.
+        # From what I can tell, this usually happens if the user has not done sys.exit.
+        #    so the code keeps running through data and triggers some issues.
+        execution_error += "Runtime error! Emulation crashed while running your code:\n"
+        execution_error += f"\t'{type(error)}: {error}'\n"
+        execution_error += (
+            "Educated Guess: any chance you missed a sys.exit call?\n\nSTDERR output: "
+        )
 
     # Read the updated exit code.
     run_exit_code = ql.os.exit_code
@@ -398,7 +410,7 @@ def _timed_emulation(
         run_timeout,
         given_stdin,
         out.getvalue().decode(),
-        err.getvalue().decode(),
+        execution_error + err.getvalue().decode(),
         {
             r: (v, v != og_reg_values[r])
             for r, v in {r: ql.arch.regs.read(r) for r in registers}.items()
