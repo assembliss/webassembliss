@@ -35,8 +35,11 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 		- connect to the gdb server ([maybe useful?](https://python3-pwntools.readthedocs.io/en/latest/gdb.html#module-pwnlib.gdb))
 		- generator receives command (e.g., continue or step), sends it to the gdb server, and then yields the updated EmulationResullt
 - [ ] make sure app works with multiple users accessing concurrently
+- [ ] make sure debugging works with multiple users accessing concurrently
+	- might have to play around with what port the gdb-server is listening
 - [ ] allow multiple sources to work together
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
+- [ ] handle multiple architectures
 
 ### Grading Workflow
 - [ ] allow testing of code (given input, expected output)
@@ -51,6 +54,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 
 ### Project Setup
 - [x] generate object and binaries in a temp folder inside rootfs
+- [x] separated js and css from jinja template
 - [ ] add auto-format
 	- https://github.com/jpetrucciani/black-check
 - [ ] add auto-lint
@@ -70,10 +74,12 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] allow user to submit an issue through the webapp
 	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
 - [ ] highlight assembler errors in source code (mark line and popup with error)
+	- https://microsoft.github.io/monaco-editor/typedoc/functions/editor.setModelMarkers.html
+	- https://github.com/microsoft/monaco-editor/issues/269#issuecomment-272620999
+	- https://gist.github.com/zxol/9ed6d0ca8d0b5ddbcc25f0b96ef63ede
 - [ ] preserve source code between refreshes (probably in a cookie!)
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
 - [ ] improve the gui -- make everything look nicer :)
-- [ ] handle multiple architectures

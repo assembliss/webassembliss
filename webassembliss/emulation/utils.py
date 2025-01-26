@@ -442,7 +442,7 @@ def clean_emulation(
     # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
-    er = EmulationResults(rootfs=rootfs_path)
+    er = EmulationResults(rootfs=rootfs_path, flags={})
 
     # Create a temporary directory so space gets freed after we're done with user files.
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
