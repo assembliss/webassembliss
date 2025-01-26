@@ -54,11 +54,10 @@
 <body>
     <h1>WebAssembliss (arm64_linux)</h1>
     <input type="button" value="Run" onclick="runCode()" />
-    <input type="button" value="Debug" onclick="notImplemented()" />
     <input type="button" value="Clear Results" onclick="clearOutput()" />
     <input type="button" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
-    <input type="button" value="Load" onclick="notImplemented()" />
-    <input type="button" value="Report Error" onclick="notImplemented()" />
+    <input type="button" value="Load" onclick="notImplemented()" disabled="true" />
+    <input type="button" value="Report Error" onclick="notImplemented()" disabled="true" />
     <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
     <script src="/static/vs/loader.js"></script>
     <script>
@@ -196,6 +195,14 @@
                 });
             });
     </script>
+    <div>
+        <b>Debug Menu:</b>
+        <input type="button" id="debugStart" value="start" onclick="notImplemented()" disabled="true" />
+        <input type="button" d="debugContinue" value="continue" onclick="notImplemented()" disabled="true" />
+        <input type="button" d="debugStep" value="step" onclick="notImplemented()" disabled="true" />
+        <input type="button" d="debugBreakpoint" value="add breakpoint" onclick="notImplemented()" disabled="true" />
+        <input type="button" d="debugStop" value="stop" onclick="notImplemented()"disabled="true"  />
+    </div>
     <br/>
     <table>
         <tr>
@@ -264,7 +271,7 @@
     <button type="button" class="collapsible">Show/hide all emulation information</button>
     <div class="collapsibleContent">
         <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=100 placeholder="emulation info will appear here after your code finishes running..."></textarea>
-       <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true"/>
+       <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true" />
     </div>
 
     <h3>ARM64 Assembly Reference</h3>
