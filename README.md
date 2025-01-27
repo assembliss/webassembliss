@@ -73,10 +73,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] allow user to upload code
 - [ ] allow user to submit an issue through the webapp
 	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
-- [ ] highlight assembler errors in source code (mark line and popup with error)
-	- https://microsoft.github.io/monaco-editor/typedoc/functions/editor.setModelMarkers.html
-	- https://github.com/microsoft/monaco-editor/issues/269#issuecomment-272620999
-	- https://gist.github.com/zxol/9ed6d0ca8d0b5ddbcc25f0b96ef63ede
+- [ ] highlight assembler errors in source code (use `addErrorHighlight`, [example](https://github.ncsu.edu/assembliss/webassembliss/blob/392d960d8fff61facc93eb0a561149578c42a6f8/webassembliss/static/js/arm64_linux.js#L358-L362))
 - [ ] preserve source code between refreshes (probably in a cookie!)
 - [ ] allow user to change themes
 - [ ] allow user to change timeout

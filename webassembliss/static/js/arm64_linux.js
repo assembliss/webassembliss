@@ -250,7 +250,6 @@ function addHighlight(line, options) {
 }
 
 function addErrorHighlight(line, messages) {
-    // TODO: center the glyph in the margin.
     addHighlight(line, {
         isWholeLine: true,
         className: 'errorLineDecoration',
@@ -268,8 +267,6 @@ function updateGdbLine(line) {
 }
 
 function addBreakpointHighlight(line) {
-    // TODO: make the fa-circle-dot red.
-    // TODO: center the glyph in the margin.
     addHighlight(line, {
         isWholeLine: true,
         glyphMarginClassName: 'fa-regular fa-circle-pause',
