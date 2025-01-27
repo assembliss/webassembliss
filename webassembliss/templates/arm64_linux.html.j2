@@ -2,15 +2,16 @@
 <html>
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arm64_linux.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
     <script src="/static/vs/loader.js"></script>
 </head>
 <body>
     <h1>WebAssembliss (arm64_linux)</h1>
-    <input type="button" value="Run" onclick="runCode()" />
-    <input type="button" value="Reset" onclick="clearOutput()" />
-    <input type="button" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
-    <input type="button" value="Load" onclick="notImplemented()" disabled="true" />
-    <input type="button" value="Report Error" onclick="notImplemented()" disabled="true" />
+    <input type="button" id="runBtn" value="Run" onclick="runCode()" />
+    <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
+    <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
+    <input type="button" id="loadBtn" value="Load" onclick="notImplemented()" disabled="true" />
+    <input type="button" id="reportBtn" value="Report Error" onclick="notImplemented()" disabled="true" />
     <input type="button" id="showError" value="Show highlight line 15" onclick="exampleHighlight(15)" />
     <input type="button" id="hideHighlights" value="Remove all highlights" onclick="exampleHighlight(0)" disabled="true" />
     <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>

@@ -166,6 +166,9 @@ function createEditor(default_code) {
             value: default_code.join('\n'),
             language: 'arm64',
             theme: 'vs-dark',
+            glyphMargin: true,
+            lineNumbersMinChars: 2,
+            folding: false,
         });
         window.decorations = editor.createDecorationsCollection([]);
     });
@@ -191,13 +194,16 @@ function clearOutput() {
     document.getElementById("memValues").value = "";
     window.lastRunInfo = null;
     document.getElementById("downloadButton").disabled = true;
+    // TODO: make it more clear this calls stopDebugger -> does it even need to?
+    // TODO: allow different clearing options (e.g., keep highlights).
     stopDebugger();
 }
 
 function runCode() {
+    clearOutput();
+    window.editor.updateOptions({ readOnly: true });
     var source_code = getSource();
     var user_input = document.getElementById("inputBox").value;
-    clearOutput();
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/arm64_linux/run/', {
         method: 'POST',
@@ -222,6 +228,7 @@ function runCode() {
             document.getElementById("memValues").value = data.memory;
             lastRunInfo = data.info_obj;
             document.getElementById("downloadButton").disabled = false;
+            window.editor.updateOptions({ readOnly: false });
         });
 }
 
@@ -242,11 +249,14 @@ function addHighlight(line, options) {
     ]);
 }
 
-function addErrorHighlight(line) {
-    // TODO: add error with the highlight; maybe using hover: https://microsoft.github.io/monaco-editor/typedoc/interfaces/languages.HoverProvider.html
+function addErrorHighlight(line, messages) {
+    // TODO: center the glyph in the margin.
     addHighlight(line, {
         isWholeLine: true,
-        className: 'errorLineDecoration'
+        className: 'errorLineDecoration',
+        hoverMessage: messages,
+        glyphMarginClassName: 'fa-regular fa-circle-xmark',
+        glyphMarginHoverMessage: messages,
     });
 }
 
@@ -258,13 +268,17 @@ function updateGdbLine(line) {
 }
 
 function addBreakpointHighlight(line) {
+    // TODO: make the fa-circle-dot red.
+    // TODO: center the glyph in the margin.
     addHighlight(line, {
         isWholeLine: true,
-        marginClassName: 'breakpointLineDecoration'
+        glyphMarginClassName: 'fa-regular fa-circle-pause',
+        glyphMarginHoverMessage: { value: 'breakpoint' },
+        glyphMargin: { position: 2 }
     });
 }
 
-function removeAllHighlight() {
+function removeAllHighlights() {
     decorations.clear();
 }
 
@@ -288,32 +302,68 @@ function download_file(name, contents, mime_type) {
 }
 
 function startDebugger() {
+    // Clear any old information.
+    clearOutput();
+    // Enable active debugger buttons.
     document.getElementById("debugStop").disabled = false;
     document.getElementById("debugBreakpoint").disabled = false;
+    document.getElementById("debugRestart").disabled = false;
+    document.getElementById("debugContinue").disabled = false;
+    document.getElementById("debugStep").disabled = false;
+    // Disable regular buttons.
     document.getElementById("debugStart").disabled = true;
+    document.getElementById("runBtn").disabled = true;
+    document.getElementById("resetBtn").disabled = true;
+    document.getElementById("saveBtn").disabled = true;
+    document.getElementById("loadBtn").disabled = true;
+    // Make editor read-only.
     window.editor.updateOptions({ readOnly: true });
+
+    // TODO: actually start a debugging session.
+
+    // Update next line that will be executed.
+    // TODO: update with the actualy line that will be executed.
     updateGdbLine(14);
 }
 
 function addBreakpoint(line) {
+    // TODO: actually add a breakpoint in the debugging session.
     addBreakpointHighlight(line);
 }
 
 function stopDebugger() {
-    document.getElementById("debugStart").disabled = false;
-    document.getElementById("debugBreakpoint").disabled = true;
+    // Disable active debugger buttons.
     document.getElementById("debugStop").disabled = true;
+    document.getElementById("debugBreakpoint").disabled = true;
+    document.getElementById("debugRestart").disabled = true;
+    document.getElementById("debugContinue").disabled = true;
+    document.getElementById("debugStep").disabled = true;
+    // Enable regular buttons.
+    document.getElementById("debugStart").disabled = false;
+    document.getElementById("runBtn").disabled = false;
+    document.getElementById("resetBtn").disabled = false;
+    document.getElementById("saveBtn").disabled = false;
+    document.getElementById("loadBtn").disabled = false;
+    // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
-    removeAllHighlight();
+
+    // TODO: actually stop a debugging session.
+
+    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
+    removeAllHighlights();
 }
 
 function exampleHighlight(line) {
     if (line) {
-        addErrorHighlight(line);
+        addErrorHighlight(line, [{
+            value: "any error messages,"
+        }, {
+            value: "can go here..."
+        }]);
         document.getElementById("showError").disabled = true;
         document.getElementById("hideHighlights").disabled = false;
     } else {
-        removeAllHighlight();
+        removeAllHighlights();
         document.getElementById("showError").disabled = false;
         document.getElementById("hideHighlights").disabled = true;
     }

@@ -51,17 +51,12 @@ table {
     cursor: pointer;
     text-decoration: underline;
     font-weight: bold;
-    background: lightcoral;
+    background: rgba(255, 0, 0, 0.25);
+    ;
 }
 
 .gdbLineDecoration {
     text-decoration: underline;
     font-weight: bold;
-    background: lightyellow;
-}
-
-.breakpointLineDecoration {
-    background: red !important;
-    width: 3px !important;
-    margin-left: 3px;
+    background: rgba(255, 255, 70, 0.25);
 }
