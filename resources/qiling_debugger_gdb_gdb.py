@@ -679,9 +679,11 @@ class QlGdb(QlDebugger):
 
             self.gdb.resume_emu(steps=1)
 
+            # Commented out this check since it breaks stepping over the code with gdb.
+            # Reference: https://github.com/qilingframework/qiling/issues/1377
             # if emulation has been stopped, signal program termination
-            if self.ql.emu_state is QL_STATE.STOPPED:
-                return f'S{SIGTERM:02x}'
+            # if self.ql.emu_state is QL_STATE.STOPPED:
+            #    return f'S{SIGTERM:02x}'
 
             # otherwise, this is just single stepping
             return f'S{SIGTRAP:02x}'
