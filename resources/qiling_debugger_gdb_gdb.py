@@ -120,9 +120,7 @@ class QlGdb(QlDebugger):
 
         self.fake_procfs: MutableMapping[int, IO] = {}
 
-    def run(self):
-        server = GdbSerialConn(self.ip, self.port, self.ql.log)
-        killed = False
+    def run(self, run_until_killed: bool = True):
 
         def __hexstr(value: int, nibbles: int = 0) -> str:
             """Encode a value into a hex string.
@@ -287,8 +285,8 @@ class QlGdb(QlDebugger):
             return REPLY_EMPTY
 
         def handle_k(subcmd: str) -> Reply:
-            global killed
-
+            # For some reason 'global' was not changing the value of 'killed' inside 'run'.
+            nonlocal killed
             killed = True
             return REPLY_OK
 
@@ -763,26 +761,31 @@ class QlGdb(QlDebugger):
             'z': handle_z
         }
 
-        # main server loop
-        for packet in server.readpackets():
-            if server.ack_mode:
-                server.send(REPLY_ACK, raw=True)
-                server.log.debug('[sent ack]')
+        # Changes to the main server loop so that if the client disconnects without sending a kill signal, it waits for a new connection.
+        killed = False
+        while not killed:
+            server = GdbSerialConn(self.ip, self.port, self.ql.log)
+            # main server loop
+            for packet in server.readpackets():
+                if server.ack_mode:
+                    server.send(REPLY_ACK, raw=True)
+                    server.log.debug('[sent ack]')
 
-            cmd, subcmd = packet[0], packet[1:]
-            handler = handlers.get(f'{cmd:c}')
+                cmd, subcmd = packet[0], packet[1:]
+                handler = handlers.get(f'{cmd:c}')
+                if handler:
+                    reply = handler(subcmd.decode(ENCODING))
+                    server.send(reply)
 
-            if handler:
-                reply = handler(subcmd.decode(ENCODING))
-                server.send(reply)
+                    if killed:
+                        break
+                else:
+                    self.ql.log.info(f'{PROMPT} command not supported')
+                    server.send(REPLY_EMPTY)
 
-                if killed:
-                    break
-            else:
-                self.ql.log.info(f'{PROMPT} command not supported')
-                server.send(REPLY_EMPTY)
-
-        server.close()
+            server.close()
+            if not run_until_killed:
+                break
 
 
 class GdbSerialConn:
