@@ -78,7 +78,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
 - [ ] highlight assembler errors in source code (use `addErrorHighlight`, [example](https://github.ncsu.edu/assembliss/webassembliss/blob/392d960d8fff61facc93eb0a561149578c42a6f8/webassembliss/static/js/arm64_linux.js#L358-L362))
 - [ ] preserve source code between refreshes
-	- [maybe helpful?](https://stackoverflow.com/a/46664792)
+	- [maybe helpful?](https://testdriven.io/blog/flask-sessions/)
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
