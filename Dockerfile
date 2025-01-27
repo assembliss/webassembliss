@@ -29,7 +29,7 @@ RUN apt update && \
 
 # Copy a patched version of qiling's gdb server to fix a bug that prevents stepping over the code.
 # Ref: https://github.com/qilingframework/qiling/issues/1377
-COPY resources/qiling_gdb_bugfix.py ${QL_GDB_PATH}
+COPY resources/qiling_debugger_gdb_gdb ${QL_GDB_PATH}
 
 # Copy the app code into the container and set the workdirectory to point to that.
 COPY webassembliss /webassembliss
