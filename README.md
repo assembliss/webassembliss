@@ -37,6 +37,7 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] make sure app works with multiple users accessing concurrently
 - [ ] make sure debugging works with multiple users accessing concurrently
 	- might have to play around with what port the gdb-server is listening
+	- https://stackoverflow.com/a/32825482
 - [ ] allow multiple sources to work together
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] handle multiple architectures
@@ -65,6 +66,8 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] update Dockerfile to use newer python version
 - [ ] add unit tests for emulation methods
 - [ ] CI/CD to auto-run tests on open PRs
+- [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
+	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
 
 ### User Experience
 - [x] change the editor to hilight syntax for arm64 assembly
