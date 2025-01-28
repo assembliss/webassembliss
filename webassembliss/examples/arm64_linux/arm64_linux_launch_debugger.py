@@ -2,6 +2,11 @@
 # Then, in a separate terminal, you can run these two commands to connect to the server:
 #         $ gdb-multiarch /webassembliss/rootfs/arm64_linux/userprograms/hello
 #   (gdb) $ target remote :9999
+# You can also connect to the server through python like this:
+#   from gdb_remote_client import GdbRemoteClient
+#   gdb_cli = GdbRemoteClient("0.0.0.0", 9999)
+#   gdb_cli.connect()
+# Then send command with gdb_cli.cmd("command here")
 
 from qiling import Qiling
 from qiling.const import QL_VERBOSE

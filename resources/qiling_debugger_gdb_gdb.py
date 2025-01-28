@@ -35,6 +35,7 @@ from qiling.debugger import QlDebugger
 from qiling.debugger.gdb.xmlregs import QlGdbFeatures
 from qiling.debugger.gdb.utils import QlGdbUtils
 from qiling.os.linux.procfs import QlProcFS
+from qiling.exception import QlErrorCoreHook
 
 # gdb logging prompt
 PROMPT = r'gdb>'
@@ -675,7 +676,12 @@ class QlGdb(QlDebugger):
             """Perform a single step.
             """
 
-            self.gdb.resume_emu(steps=1)
+            # Since we're commenting out the check whether the program has exited below because of a bug,
+            # the user might try to step one too many times. This try-catch detects that and ends gracefully.
+            try:
+                self.gdb.resume_emu(steps=1)
+            except QlErrorCoreHook:
+                return f'S{SIGTERM:02x}'
 
             # Commented out this check since it breaks stepping over the code with gdb.
             # Reference: https://github.com/qilingframework/qiling/issues/1377
@@ -738,6 +744,55 @@ class QlGdb(QlDebugger):
 
             return REPLY_EMPTY
 
+        def handle_i(subcmd: str) -> Reply:
+            """Returns a piece of emulation information.
+            Example: you can use 'i _arch.regs.read(x0)' to receive the value of the x0 register."""
+            if not hasattr(handle_i, "verbose"):
+                # Start this function as non-verbose.
+                # You can then modify it with 'i verbose on' or 'i verbose off'
+                handle_i.verbose = False
+            
+            if handle_i.verbose:
+                print(f"[handle_i] received {subcmd=}")
+            
+            if subcmd.startswith(" verbose"):
+                new_val = subcmd.endswith("on")
+                handle_i.verbose = new_val
+                print(f"[handle_i] turned verbose {'on' if new_val else 'off'}")
+                return REPLY_OK
+                
+            steps = subcmd[1:].split(".")
+            var = self.ql
+            for s in steps:
+                if handle_i.verbose:
+                    print(f"[handle_i] {var=}")
+                    print(f"[handle_i] {s=}")
+                
+                if not s and handle_i.verbose:
+                    # Allows you to see what the current value has available.
+                    # E.g., you can use 'i _arch.' to see what's available under 'i _arch'
+                    print(f"[handle_i] fields available: {var.__dict__}")
+                    print(f"[handle_i] methods available: {dir(var)=}")
+
+                elif '(' in s:
+                    # TODO: handle nested parentheses.
+                    idx = s.index('(')
+                    f = getattr(var, s[:idx])
+                    args = s[idx+1:-1].split(",")
+                    if handle_i.verbose:
+                        print(f"[handle_i] function detected!")
+                        print(f"[handle_i]     {f=}")
+                        print(f"[handle_i]     {args=}")
+                    var = f(*args)
+                
+                else:
+                    var = var.__dict__[s]
+
+            if handle_i.verbose:
+                print(f"[handle_i] {var=}")
+            
+            return f"{var}"
+
         handlers = {
             '!': handle_exclaim,
             '?': handle_qmark,
@@ -758,7 +813,8 @@ class QlGdb(QlDebugger):
             'v': handle_v,
             'X': handle_X,
             'Z': handle_Z,
-            'z': handle_z
+            'z': handle_z,
+            'i': handle_i
         }
 
         # Changes to the main server loop so that if the client disconnects without sending a kill signal, it waits for a new connection.

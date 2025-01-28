@@ -27,9 +27,10 @@ RUN apt update && \
 RUN apt update && \
     apt install gdb-multiarch -y
 
-# Copy a patched version of qiling's gdb server to fix a bug that prevents stepping over the code.
-# Ref: https://github.com/qilingframework/qiling/issues/1377
-# It also adds the option to allow clients to detach without exiting, so the server accepts multiple clients in sequence.
+# Copy a patched version of qiling's gdb server. It has the following changes:
+#   1. fix a bug that prevents stepping over the code (ref: https://github.com/qilingframework/qiling/issues/1377);
+#   2. adds the option to allow clients to detach without exiting, so the server accepts multiple clients in sequence;
+#   3. adds a special command (i) that can return qiling's variables to the gdb client.
 COPY resources/qiling_debugger_gdb_gdb.py ${QL_GDB_PATH}
 
 # Copy the app code into the container and set the workdirectory to point to that.

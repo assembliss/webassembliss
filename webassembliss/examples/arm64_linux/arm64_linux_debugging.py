@@ -1,3 +1,10 @@
+# Add the nzcv register to the map of accessible registers (see emulation/arm64_linux.py for more details)
+import qiling.arch.arm64_const
+from unicorn.arm64_const import UC_ARM64_REG_NZCV
+
+# Update the register map with our new entry.
+qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
+
 import threading
 import os
 from qiling import Qiling
@@ -13,7 +20,7 @@ def launch_qiling_server(port, argv, rootfs, user_input: str) -> None:
     print("Server assigned to thread: {}".format(threading.current_thread().name))
     print("ID of process running server: {}".format(os.getpid()))
     # This should likely be where you create the temporary directory, so the client can connect to different servers.
-    # So this method in production should probably receive the source code, create tempdir, and assemble/link before the qiling steps below.
+    # So this method in the webapp should probably receive the source code, create tempdir, and assemble/link before the qiling steps below.
 
     # Create qiling instance.
     mydata.ql = Qiling(argv, rootfs, verbose=QL_VERBOSE.OFF)
@@ -42,12 +49,19 @@ def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
     gdb_cli = GdbRemoteClient("0.0.0.0", port)
     gdb_cli.connect()
 
-    if user_cmd != "q":
-        # Example commands:
-        resp = gdb_cli.cmd("qSupported")
-        print("The remote stub supports these features: " + resp)
-        resp = gdb_cli.cmd("g")
-        print("Values of general-purpose registers: " + resp)
+    if cmd != "q":
+        # Read some values from the execution.
+        print(f"Current values in registers x0/1/2 and nzcv:")
+        for reg in ("x0", "x1", "x2", "nzcv"):
+            get_reg_cmd = f"i _arch.regs.read({reg})"
+            print(f"{reg} -> {gdb_cli.cmd(get_reg_cmd)}")
+
+        if cmd == "s":
+            print("stepping over one line of code")
+        elif cmd == "c":
+            print("continuing execution")
+        else:
+            print(f"executing command '{cmd}'")
 
         # Send user command and save its response.
         resp = gdb_cli.cmd(cmd)
@@ -66,7 +80,7 @@ def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
 if __name__ == "__main__":
     # Qiling arguments.
     port = 9999
-    binary = "/webassembliss/rootfs/arm64_linux/userprograms/hello"  # For debugging, the binary should be inside rootfs.
+    binary = "/webassembliss/rootfs/arm64_linux/userprograms/changingFlags"  # For debugging, the binary should be inside rootfs.
     rootfs = "/webassembliss/rootfs/arm64_linux/"
     user_input = "helloHELLO"
 

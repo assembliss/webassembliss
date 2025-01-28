@@ -1,8 +1,12 @@
-all: hello infiniteLoop ioExample multiExample cExample
+all: hello changingFlags infiniteLoop ioExample multiExample cExample
 
 hello: hello.S
 	aarch64-linux-gnu-as hello.S -g --gdwarf-5 -o hello.o
 	aarch64-linux-gnu-ld hello.o -o hello.out
+
+changingFlags: changingFlags.S
+	aarch64-linux-gnu-as changingFlags.S -g --gdwarf-5 -o changingFlags.o
+	aarch64-linux-gnu-ld changingFlags.o -o changingFlags.out
 
 infiniteLoop: infiniteLoop.S
 	aarch64-linux-gnu-as infiniteLoop.S -g --gdwarf-5 -o infiniteLoop.o
