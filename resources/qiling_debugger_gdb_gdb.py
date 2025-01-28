@@ -676,12 +676,7 @@ class QlGdb(QlDebugger):
             """Perform a single step.
             """
 
-            # Since we're commenting out the check whether the program has exited below because of a bug,
-            # the user might try to step one too many times. This try-catch detects that and ends gracefully.
-            try:
-                self.gdb.resume_emu(steps=1)
-            except QlErrorCoreHook:
-                return f'S{SIGTERM:02x}'
+            self.gdb.resume_emu(steps=1)
 
             # Commented out this check since it breaks stepping over the code with gdb.
             # Reference: https://github.com/qilingframework/qiling/issues/1377
