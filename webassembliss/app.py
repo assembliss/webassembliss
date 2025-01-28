@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect
-from emulation.arm64_linux import emulate as arm64_linux_emulation  # type: ignore[import-not-found]
-
 import rocher.flask  # type: ignore[import-untyped]
+from emulation.arm64_linux import (  # type: ignore[import-not-found]
+    emulate as arm64_linux_emulation,
+)
+from flask import Flask, redirect, render_template, request
 
 app = Flask(__name__)
 

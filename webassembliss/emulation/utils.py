@@ -1,14 +1,15 @@
+import struct
 import subprocess
 import tempfile
-from qiling import Qiling  # type: ignore[import-untyped]
-from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
-from typing import List, Union, Tuple, Dict, Callable, Optional
-from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
+from os import PathLike
+from typing import Callable, Dict, List, Optional, Tuple, Union
+
+from qiling import Qiling  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_STOP
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
-import struct
 
 
 @dataclass

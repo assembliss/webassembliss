@@ -8,9 +8,10 @@
 #   gdb_cli.connect()
 # Then send command with gdb_cli.cmd("command here")
 
+from io import BytesIO
+
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
-from io import BytesIO
 
 # Qiling options.
 port = 9999
