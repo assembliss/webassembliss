@@ -6,14 +6,15 @@ from gdb_remote_client import GdbRemoteClient
 from qiling.const import QL_VERBOSE
 from io import BytesIO
 
-def launch_qiling_server(port, argv, rootfs, user_input : str) -> None:
+
+def launch_qiling_server(port, argv, rootfs, user_input: str) -> None:
     """Create a qiling instance with given arguments and start emulation with a gdb-server on."""
     mydata = threading.local()
     print("Server assigned to thread: {}".format(threading.current_thread().name))
     print("ID of process running server: {}".format(os.getpid()))
     # This should likely be where you create the temporary directory, so the client can connect to different servers.
     # So this method in production should probably receive the source code, create tempdir, and assemble/link before the qiling steps below.
-    
+
     # Create qiling instance.
     mydata.ql = Qiling(argv, rootfs, verbose=QL_VERBOSE.OFF)
     # Turn on the debugger.
@@ -28,7 +29,7 @@ def launch_qiling_server(port, argv, rootfs, user_input : str) -> None:
     mydata.ql.run()
 
 
-def debug_start(*, port: int, argv: List[str], rootfs: str, user_input:str) -> None:
+def debug_start(*, port: int, argv: List[str], rootfs: str, user_input: str) -> None:
     """Create a thread to run the gdb server via qiling."""
     server = threading.Thread(
         group=None, target=launch_qiling_server, args=(port, argv, rootfs, user_input)
@@ -64,8 +65,8 @@ def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     port = 9999
-    binary = "../../rootfs/arm64_linux/userprograms/hello"
-    rootfs = "../../rootfs/arm64_linux/"
+    binary = "/webassembliss/rootfs/arm64_linux/userprograms/hello"  # For debugging, the binary should be inside rootfs.
+    rootfs = "/webassembliss/rootfs/arm64_linux/"
     user_input = "helloHELLO"
 
     ## If you just want to try running a gdb server to see how it works, you can uncomment the two lines below:
