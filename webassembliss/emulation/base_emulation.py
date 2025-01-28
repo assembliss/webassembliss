@@ -186,18 +186,18 @@ Linker errors:
         return out
 
 
-def _create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str, str]:
+def create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
     """Create a file with the provided path and write the given code string inside of it."""
     # TODO: add tests to make sure this function works as expected.
     try:
         with open(path, "w") as file_out:
             file_out.write(code)
-        return True, code, ""
+        return True, ""
     except FileNotFoundError as e:
-        return False, code, f"{e}"
+        return False, f"{e}"
 
 
-def _assemble(
+def assemble(
     as_cmd: str,
     src_path: Union[str, PathLike],
     flags: List[str],
@@ -229,7 +229,7 @@ def _assemble(
         )
 
 
-def _link(
+def link(
     ld_cmd: str,
     obj_path: Union[str, PathLike],
     flags: List[str],
@@ -453,15 +453,14 @@ def clean_emulation(
         bin_path = f"{tmpdirname}/{bin_name}"
 
         # Create a source file in the temp dir and go through the steps to emulate it.
-        er.create_source_ok, er.source_code, er.create_source_error = _create_source(
-            src_path, code
-        )
+        er.source_code = code
+        er.create_source_ok, er.create_source_error = create_source(src_path, code)
         if not er.create_source_ok:
             return er
 
         # Try assembling the created source.
         # TODO: add the option to assemble multiple sources.
-        er.assembled_ok, er.as_args, er.as_out, er.as_err = _assemble(
+        er.assembled_ok, er.as_args, er.as_out, er.as_err = assemble(
             as_cmd, src_path, as_flags, obj_path
         )
         if not er.assembled_ok:
@@ -470,7 +469,7 @@ def clean_emulation(
         # Try linking the generated object.
         # TODO: add the option to link multiple objects.
         # TODO: add the option to receive already created objects.
-        er.linked_ok, er.ld_args, er.ld_out, er.ld_err = _link(
+        er.linked_ok, er.ld_args, er.ld_out, er.ld_err = link(
             ld_cmd, obj_path, ld_flags, bin_path
         )
         if not er.linked_ok:
