@@ -8,8 +8,8 @@
 #   gdb_cli.connect()
 # Then send command with gdb_cli.cmd("command here")
 
-from qiling import Qiling
-from qiling.const import QL_VERBOSE
+from qiling import Qiling  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 from io import BytesIO
 
 # Qiling options.

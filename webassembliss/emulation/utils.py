@@ -1,13 +1,13 @@
 import subprocess
 import tempfile
-from qiling import Qiling
-from qiling.const import QL_VERBOSE
-from typing import List, Union, Tuple, Dict, Callable
+from qiling import Qiling  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
+from typing import List, Union, Tuple, Dict, Callable, Optional
 from os import PathLike
 from dataclasses import dataclass
 from io import BytesIO
 from qiling.const import QL_ENDIAN, QL_STOP
-from qiling.exception import QlErrorCoreHook
+from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 import struct
 
 
@@ -15,32 +15,32 @@ import struct
 class EmulationResults:
     """Class to keep track of the results of a single emulation."""
 
-    rootfs: str = None
+    rootfs: str = None  # type: ignore[assignment]
     all_ok: bool = False
-    create_source_ok: bool = None
+    create_source_ok: bool = None  # type: ignore[assignment]
     source_code: str = ""
     create_source_error: str = ""
-    assembled_ok: bool = None
+    assembled_ok: bool = None  # type: ignore[assignment]
     as_args: str = ""
     as_out: str = ""
     as_err: str = ""
-    linked_ok: bool = None
+    linked_ok: bool = None  # type: ignore[assignment]
     ld_args: str = ""
     ld_out: str = ""
     ld_err: str = ""
-    run_ok: bool = None
-    run_exit_code: int = None
-    run_timeout: bool = None
+    run_ok: bool = None  # type: ignore[assignment]
+    run_exit_code: Optional[int] = None
+    run_timeout: bool = None  # type: ignore[assignment]
     run_stdin: str = ""
     run_stdout: str = ""
     run_stderr: str = ""
-    registers: Dict[str, Tuple[int, bool]] = None  # {reg1: (val1, changed), ...}
-    reg_num_bits: int = None
-    little_endian: bool = None
-    memory: Dict[int, Tuple[str, Tuple[int]]] = (
-        None  # {addr1: (struct.format, (val1, val2, ...)), ...}
+    registers: Dict[str, Tuple[int, bool]] = None  # type: ignore[assignment] # {reg1: (val1, changed), ...}
+    reg_num_bits: int = None  # type: ignore[assignment]
+    little_endian: bool = None  # type: ignore[assignment]
+    memory: Dict[int, Tuple[str, Tuple[int, ...]]] = (
+        None  # type: ignore[assignment] # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
-    flags: Dict[str, bool] = None  # {N: False, Z: True, ...}
+    flags: Dict[str, bool] = None  # type: ignore[assignment] # {N: False, Z: True, ...}
 
     def _prep_output(
         self,
@@ -122,7 +122,7 @@ Linker errors:
                 return f"'{_ascii_char}'"
             return f" {_byteval:02x}"
 
-        def _print_memory_chunk(_addr: int, mc: bytearray) -> str:
+        def _print_memory_chunk(_addr: int, mc: bytes) -> str:
             """Pretty-print a single memory area."""
             # Fill memory chunk with 0s to complete last line.
             mc += b"\x00" * (-len(mc) % bytes_per_line)
@@ -202,7 +202,7 @@ def _assemble(
     flags: List[str],
     obj_path: Union[str, PathLike],
     as_cmd_format: str = "{as_cmd} {src_path} {joined_flags} {obj_path}",
-) -> Tuple[bool, str, str]:
+) -> Tuple[bool, str, str, str]:
     """Use the given assembler command to process the source file and create an object."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions are in the source file and return that as well.
@@ -222,7 +222,7 @@ def _assemble(
         stdout, stderr = process.communicate()
         return (
             process.returncode == 0,
-            " ".join(process.args),
+            " ".join(process.args),  # type: ignore[arg-type]
             stdout.decode(),
             stderr.decode(),
         )
@@ -234,7 +234,7 @@ def _link(
     flags: List[str],
     bin_path: Union[str, PathLike],
     ld_cmd_format: str = "{ld_cmd} {obj_path} {joined_flags} {bin_path}",
-) -> Tuple[bool, str, str]:
+) -> Tuple[bool, str, str, str]:
     """Use the given linker command to process the object file and create a binary."""
     # TODO: add tests to make sure this function works as expected.
 
@@ -252,7 +252,7 @@ def _link(
         stdout, stderr = process.communicate()
         return (
             process.returncode == 0,
-            " ".join(process.args),
+            " ".join(process.args),  # type: ignore[arg-type]
             stdout.decode(),
             stderr.decode(),
         )
@@ -262,7 +262,7 @@ def _filter_memory(
     og_mem: Dict[int, bytearray],
     cur_mem: Dict[int, bytearray],
     little_endian: bool,
-) -> Dict[int, Tuple[str, Tuple[int]]]:
+) -> Dict[int, Tuple[str, Tuple[int, ...]]]:
     """Find interesting parts of memory we want to display; qiling reserves a lot of memory even for small programs."""
 
     def _find_last_nonzero_byte(ba: bytearray):
@@ -285,7 +285,7 @@ def _filter_memory(
         relevant_size = max(og_len, cur_len) + 1
 
         # Convert the relevant chunk of current memory into a sequence of ints.
-        data = []
+        data: List[int] = []
         fmt = endian_mod
         next_byte = 0
 
@@ -331,7 +331,7 @@ def _timed_emulation(
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
     bool,  # run_ok
-    int,  # exit code
+    Optional[int],  # exit code
     bool,  # timeout
     str,  # stdin
     str,  # stdout
@@ -339,7 +339,7 @@ def _timed_emulation(
     Dict[str, Tuple[int, bool]],  # registers
     int,  # num_bits
     bool,  # little_endian
-    Dict[int, Tuple[str, Tuple[int]]],  # memory
+    Dict[int, Tuple[str, Tuple[int, ...]]],  # memory
     Dict[str, bool],  # flags
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
@@ -442,7 +442,7 @@ def clean_emulation(
     # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
-    er = EmulationResults(rootfs=rootfs_path, flags={})
+    er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
     # Create a temporary directory so space gets freed after we're done with user files.
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:

@@ -1,18 +1,18 @@
+import threading
+import os
+from qiling import Qiling  # type: ignore[import-untyped]
+from typing import List, Any, Tuple
+from gdb_remote_client import GdbRemoteClient  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
+from io import BytesIO
+import subprocess
+
 # Add the nzcv register to the map of accessible registers (see emulation/arm64_linux.py for more details)
-import qiling.arch.arm64_const
-from unicorn.arm64_const import UC_ARM64_REG_NZCV
+import qiling.arch.arm64_const  # type: ignore[import-untyped]
+from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
 
 # Update the register map with our new entry.
 qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
-
-import threading
-import os
-from qiling import Qiling
-from typing import List, Any, Tuple
-from gdb_remote_client import GdbRemoteClient
-from qiling.const import QL_VERBOSE
-from io import BytesIO
-import subprocess
 
 
 def launch_qiling_server(port, argv, rootfs, user_input: str) -> None:
@@ -59,7 +59,7 @@ def adhoc_gdb_client(
     ) as process:
         # Send each command the user wants to the gdb server.
         for c in full_commands:
-            process.stdin.write(f"{c}\n".encode())
+            process.stdin.write(f"{c}\n".encode())  # type: ignore
         # Return the standard output/error streams from the gdb client.
         return process.communicate()
 
@@ -68,6 +68,7 @@ def find_line_number(gdb_stdout: bytes) -> int:
     for line in gdb_stdout.decode().split("\n"):
         if line.startswith("(gdb) Line"):
             return int(line.split()[2])
+    return -1
 
 
 def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Any:

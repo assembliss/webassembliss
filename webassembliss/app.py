@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect
-from emulation.arm64_linux import emulate as arm64_linux_emulation
+from emulation.arm64_linux import emulate as arm64_linux_emulation  # type: ignore[import-not-found]
 
-import rocher.flask
+import rocher.flask  # type: ignore[import-untyped]
 
 app = Flask(__name__)
 
@@ -18,7 +18,7 @@ def index():
 
 @app.route("/arm64_linux/")
 def arm64_linux_index():
-    # Read the source code of this file to highlight it in the editor
+    # Read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
         return render_template(
             "arm64_linux.html.j2", default_code=file_in.read().split("\n")

@@ -1,5 +1,5 @@
-from qiling import Qiling
-from qiling.const import QL_VERBOSE
+from qiling import Qiling  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 
 if __name__ == "__main__":
     # Emulates one program at a time.
