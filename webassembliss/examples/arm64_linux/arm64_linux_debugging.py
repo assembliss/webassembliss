@@ -64,20 +64,15 @@ def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
 
 
 if __name__ == "__main__":
+    # Qiling arguments.
     port = 9999
     binary = "/webassembliss/rootfs/arm64_linux/userprograms/hello"  # For debugging, the binary should be inside rootfs.
     rootfs = "/webassembliss/rootfs/arm64_linux/"
     user_input = "helloHELLO"
 
-    ## If you just want to try running a gdb server to see how it works, you can uncomment the two lines below:
-    # launch_qiling_server(port, [binary], rootfs, user_input)
-    # exit(1)
-    ## Then, you can open a 2nd terminal and run these two commands to connect to the server:
-    #   $ gdb-multiarch /webassembliss/rootfs/arm64_linux/userprograms/hello
-    #   $ target remote :9999
-
     print("Starting the debugging process")
     print(f"\tdebugging '{binary}' through port {port}")
+    # Launch a thread that runs the debugger.
     debug_start(port=port, argv=[binary], rootfs=rootfs, user_input=user_input)
 
     prompt = "What command would you like to run? ([s]tep / [c]ontinue / [q]uit)"
