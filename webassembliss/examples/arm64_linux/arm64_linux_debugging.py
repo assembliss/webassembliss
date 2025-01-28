@@ -65,8 +65,8 @@ def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
 
         # Send user command and save its response.
         resp = gdb_cli.cmd(cmd)
-        # Detach so we can connect to this server again.
-        gdb_cli.cmd("detach")
+        # Then, disconnect so another client can attach later.
+        gdb_cli.disconnect()
         # Return response
         return resp
 
