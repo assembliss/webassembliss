@@ -12,7 +12,7 @@ import qiling.arch.arm64_const  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
 
-from .utils import EmulationResults, clean_emulation
+from .base_emulation import EmulationResults, clean_emulation
 
 # Update the register map with our new entry.
 qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
