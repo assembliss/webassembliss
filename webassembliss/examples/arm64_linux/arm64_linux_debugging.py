@@ -8,10 +8,11 @@ qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
 import threading
 import os
 from qiling import Qiling
-from typing import List, Dict, Any
+from typing import List, Any, Tuple
 from gdb_remote_client import GdbRemoteClient
 from qiling.const import QL_VERBOSE
 from io import BytesIO
+import subprocess
 
 
 def launch_qiling_server(port, argv, rootfs, user_input: str) -> None:
@@ -44,7 +45,40 @@ def debug_start(*, port: int, argv: List[str], rootfs: str, user_input: str) -> 
     server.start()
 
 
-def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Dict[str, Any]:
+def adhoc_gdb_client(
+    *, port: int, bin_path: str, commands: List[str]
+) -> Tuple[bytes, bytes]:
+    # Add detach and quit in case the user didn't include them.
+    full_commands = [f"target remote :{port}"] + commands + ["detach", "quit"]
+    # Create a process that will use gdb-multiarch to talk to the server.
+    with subprocess.Popen(
+        ["gdb-multiarch", bin_path, "-quiet"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ) as process:
+        # Send each command the user wants to the gdb server.
+        for c in full_commands:
+            process.stdin.write(f"{c}\n".encode())
+        # Return the standard output/error streams from the gdb client.
+        return process.communicate()
+
+
+def find_line_number(gdb_stdout: bytes) -> int:
+    for line in gdb_stdout.decode().split("\n"):
+        if line.startswith("(gdb) Line"):
+            return int(line.split()[2])
+
+
+def debug_cmd(*, port: int, bin_path: str, cmd: str) -> Any:
+    # Read line number from gdb-multiarch:
+    gdb_out, _ = adhoc_gdb_client(
+        port=port,
+        bin_path=bin_path,
+        commands=["info line"],
+    )
+    print(f"Next line to be executed is #{find_line_number(gdb_out)}")
+
     # Connect to stub running on localhost, TCP port 3333
     gdb_cli = GdbRemoteClient("0.0.0.0", port)
     gdb_cli.connect()
