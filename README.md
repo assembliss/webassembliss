@@ -84,3 +84,4 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
 - [ ] improve the gui -- make everything look nicer :)
+	- [maybe helpful?](https://getbootstrap.com/)
