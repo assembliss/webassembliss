@@ -13,15 +13,11 @@ binary = "/webassembliss/rootfs/arm64_linux/userprograms/hello"
 rootfs = "/webassembliss/rootfs/arm64_linux/"
 user_input = "helloHELLO"
 
-# Create qiling instance.
+# Create qiling instance; keep verbosity as default so we can see what's happening server-side.
 ql = Qiling([binary], rootfs, verbose=QL_VERBOSE.DEFAULT)
 # Turn on the debugger.
 ql.debugger = f"gdb::{port}"
-# Redirect input, output, and error streams.
+# Redirect input streams; keep output/error streams unchanged so we can see what's happening server-side.
 ql.os.stdin = BytesIO(user_input.encode())
-out = BytesIO()
-ql.os.stdout = out
-err = BytesIO()
-ql.os.stderr = err
 # Start the emulation / server starts listening.
 ql.run()
