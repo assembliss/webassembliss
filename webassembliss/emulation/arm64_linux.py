@@ -6,6 +6,7 @@ from qiling import Qiling
 # Register the NZCV register into qiling's arm64 register map.
 import qiling.arch.arm64_const
 from unicorn.arm64_const import UC_ARM64_REG_NZCV
+
 qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
