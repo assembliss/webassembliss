@@ -83,5 +83,6 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
+- [ ] have a toggle for ascii vs non ascii memory view
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)
