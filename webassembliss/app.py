@@ -1,6 +1,8 @@
 import rocher.flask  # type: ignore[import-untyped]
 from emulation.arm64_linux import (  # type: ignore[import-not-found]
     emulate as arm64_linux_emulation,
+    start_debugger as arm64_linux_gdb_start,
+    send_debug_cmd as arm64_linux_gdb_cmd,
 )
 from flask import Flask, redirect, render_template, request
 
@@ -52,6 +54,52 @@ def arm64_linux_run():
         "flags": emu_results.flags,
         "all_info": emu_results.print(),
         "info_obj": emu_results,
+    }
+
+
+@app.route("/arm64_linux/debug/", methods=["POST"])
+def arm64_linux_debug():
+    if request.json is None:
+        return "No JSON data received", 400
+    if "source_code" not in request.json:
+        return "No source_code in JSON data", 400
+    if "user_input" not in request.json:
+        return "No user_input in JSON data", 400
+    if "debug" not in request.json:
+        return "No debug information in JSON data", 400
+
+    # TODO: generate a unique user signature for each connected user.
+    user_signature = "FIXME"
+    debugInfo = None
+
+    if request.json["debug"].get("start", False):
+        debugInfo = arm64_linux_gdb_start(
+            user_signature=user_signature,
+            code=request.json["source_code"],
+            user_input=request.json["user_input"],
+        )
+
+    elif request.json["debug"].get("command", False):
+        debugInfo = arm64_linux_gdb_cmd(
+            user_signature=user_signature,
+            cmd=request.json["debug"]["command"],
+            breakpoint_source=request.json["debug"].get("breakpoint_source", ""),
+            breakpoint_line=request.json["debug"].get("breakpoint_line", 0),
+        )
+
+    else:
+        return "No valid debug commands in JSON data", 400
+
+    return {
+        "debugInfo": debugInfo,
+        "registers": debugInfo.print_registers(byte_split_token="_"),
+        "flags": debugInfo.flags,
+        "all_info": debugInfo.print(),
+        "stdout": debugInfo.run_stdout,
+        "stderr": debugInfo.print_stderr(),
+        "as_ok": debugInfo.assembled_ok,
+        "ld_ok": debugInfo.linked_ok,
+        "ran_ok": debugInfo.run_ok,
     }
 
 

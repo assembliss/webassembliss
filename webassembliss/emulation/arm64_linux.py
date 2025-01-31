@@ -1,5 +1,6 @@
 from io import BytesIO
-from typing import Dict, List, Optional
+from os import PathLike
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 # Register the NZCV register into qiling's arm64 register map so we can read status bits.
 # This was tricky to find... but here are the references in case you need to do the same:
@@ -12,14 +13,23 @@ import qiling.arch.arm64_const  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
 
+from .base_debugging import (
+    DebuggingInfo,
+    DebuggingOptions,
+    DebuggingResults,
+    LineNumDebuggingInfo,
+    create_debugging_session,
+    debug_cmd,
+)
 from .base_emulation import EmulationResults, clean_emulation
-
-# Update the register map with our new entry.
-qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
 LD_CMD = "aarch64-linux-gnu-ld"
+
+# Update the register map with our new entry.
+qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
+ARM64_REGISTERS = list(qiling.arch.arm64_const.reg_map)
 
 
 def get_nzcv(ql: Qiling) -> Dict[str, bool]:
@@ -51,7 +61,7 @@ def emulate(
     if ld_flags is None:
         ld_flags = ["-o"]
     if registers is None:
-        registers = list(qiling.arch.arm64_const.reg_map)
+        registers = ARM64_REGISTERS
 
     # Run the emulation and return its status and results.
     return clean_emulation(
@@ -68,4 +78,84 @@ def emulate(
         bin_name=bin_name,
         registers=registers,
         get_flags_func=get_nzcv,
+    )
+
+
+ARM64RegistersDebuggingInfo = DebuggingInfo(
+    key="registers",
+    cli=True,
+    cmds=[f"i _arch.regs.read({r})" for r in ARM64_REGISTERS],
+    postprocess=lambda x: {
+        ARM64_REGISTERS[i]: (int(v), False) for i, v in enumerate(x)
+    },
+)
+
+
+def start_debugger(
+    *,
+    user_signature: str,
+    code: str,
+    rootfs_path: Union[str, PathLike] = ROOTFS_PATH,
+    as_cmd: str = AS_CMD,
+    ld_cmd: str = LD_CMD,
+    as_flags: Optional[List[str]] = None,
+    ld_flags: Optional[List[str]] = None,
+    user_input: str = "",
+    source_name: str = "usrCode.S",
+    obj_name: str = "usrCode.o",
+    bin_name: str = "usrCode.exe",
+    max_queue_size: int = 20,
+    extraInfo: Optional[List[DebuggingInfo]] = None,
+    workdir: Union[str, PathLike] = "userprograms",
+) -> DebuggingResults:
+    """Create a new debugging session with the given parameters."""
+
+    # Create default mutable values if needed.
+    if as_flags is None:
+        as_flags = ["-g --gdwarf-5 -o"]
+    if ld_flags is None:
+        ld_flags = ["-o"]
+    if extraInfo is None:
+        extraInfo = [LineNumDebuggingInfo, ARM64RegistersDebuggingInfo]
+
+    # Create a session and return its information.
+    return create_debugging_session(
+        user_signature=user_signature,
+        code=code,
+        rootfs_path=rootfs_path,
+        as_cmd=as_cmd,
+        as_flags=as_flags,
+        ld_cmd=ld_cmd,
+        ld_flags=ld_flags,
+        user_input=user_input,
+        source_name=source_name,
+        obj_name=obj_name,
+        bin_name=bin_name,
+        max_queue_size=max_queue_size,
+        extraInfo=extraInfo,
+        workdir=workdir,
+    )
+
+
+def send_debug_cmd(
+    *,
+    user_signature: str,
+    cmd: DebuggingOptions,
+    breakpoint_source: str = "",
+    breakpoint_line: int = 0,
+    extraInfo: Optional[List[DebuggingInfo]] = None,
+) -> DebuggingResults:
+    """Create a new debugging session with the given parameters."""
+
+    # Create default mutable values if needed.
+    if extraInfo is None:
+        extraInfo = [LineNumDebuggingInfo, ARM64RegistersDebuggingInfo]
+
+    # Send command with its arguments and return execution information.
+    return debug_cmd(
+        user_signature=user_signature,
+        cmd=cmd,
+        extraInfo=extraInfo,
+        breakpoint_source=breakpoint_source,
+        breakpoint_line=breakpoint_line,
     )

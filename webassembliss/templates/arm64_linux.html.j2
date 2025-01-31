@@ -19,8 +19,8 @@
         <b>Debug Menu:</b>
         <input type="button" id="debugStart" value="start" onclick="startDebugger()" />
         <input type="button" id="debugRestart" value="restart" onclick="notImplemented()" disabled="false" />
-        <input type="button" id="debugContinue" value="continue" onclick="notImplemented()" disabled="true" />
-        <input type="button" id="debugStep" value="step" onclick="notImplemented()" disabled="true" />
+        <input type="button" id="debugContinue" value="continue" onclick="continueDebug()" disabled="true" />
+        <input type="button" id="debugStep" value="step" onclick="stepDebug()" disabled="true" />
         <input type="button" id="debugBreakpoint" value="add breakpoint" onclick="addBreakpoint(17)" disabled="true" />
         <input type="button" id="debugStop" value="stop" onclick="stopDebugger()"disabled="true" />
     </div>
@@ -32,6 +32,7 @@
             <td>Assembled: <span id="asStatus">⭕</span></td>
             <td>Linked: <span id="ldStatus">⭕</span></td>
             <td>Exited: <span id="execStatus">⭕</span></td>
+            <td>Debugging: <span id="debugStatus">⭕</span></td>
         </tr>
         <tr>
             <th>Status Flags</th>
