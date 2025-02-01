@@ -367,7 +367,9 @@ def create_debugging_session(
     return dr
 
 
-def _toggle_breakpoint(*, port, bin_path, source_name, line_num) -> bool:
+def _toggle_breakpoint(
+    *, port: int, bin_path: Union[str, PathLike], source_name: str, line_num: int
+) -> bool:
     """Toggles a breakpoint in the source:line; if there is already a breakpoint, remove it. Otherwise, add a new one."""
     # TODO: check if there's already a breakpoint in this location; if there is, remove it instead of re-adding.
     #       Can use 'info break' to get a list of breakpoints.
