@@ -3,6 +3,7 @@ const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
 window.lastRunInfo = null;
 window.decorations = null;
+window.gdb_line_decoration = null;
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -108,7 +109,7 @@ function getLastRunInfo() {
 }
 
 function addHighlight(line, options) {
-    decorations.append([
+    return decorations.append([
         {
             range: new monaco.Range(line, 1, line, 100),
             options: options
@@ -127,7 +128,10 @@ function addErrorHighlight(line, messages) {
 }
 
 function updateGdbLine(line) {
-    addHighlight(line, {
+    if (window.gdb_line_decoration) {
+        // TODO: remove old line decoration so only the updated next one appears.
+    }
+    window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
         className: 'gdbLineDecoration'
     });
@@ -196,7 +200,11 @@ function updateDebuggingInfo(data) {
     document.getElementById("emulationInfo").value = data.all_info;
     lastRunInfo = data.debugInfo;
     document.getElementById("downloadButton").disabled = false;
-    updateGdbLine(data.debugInfo.next_line);
+    if (data.debugInfo.active) {
+        updateGdbLine(data.debugInfo.next_line);
+    } else {
+        stopDebugger();
+    }
 }
 
 function startDebugger() {

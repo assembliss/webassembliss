@@ -8,7 +8,6 @@ from os import PathLike
 from queue import Queue
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-from gdb_remote_client import GdbRemoteClient  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_VERBOSE  # type: ignore[import-untyped]
 
@@ -48,20 +47,16 @@ class DebuggingInfo:
     """Class to keep track of how to get and process extra information from a debugging session."""
 
     key: str
-    cli: bool
     cmds: List[str]
-    postprocess: Callable[[Tuple[bytes, ...]], Any]
+    postprocess: Callable[[Tuple[bytes, bytes]], Any]
 
     def execute(self, *, port: Optional[int], bin_path: Union[str, PathLike]) -> Any:
         out: Tuple[bytes, ...] = None  # type: ignore[assignment]
         if port is None:
             return None
-        if self.cli:
-            out = _send_cmds_via_cli(port=port, cmd=self.cmds)
-        else:
-            out = _send_cmds_via_gdbmultiarch(
-                port=port, bin_path=bin_path, commands=self.cmds
-            )
+        out = _send_cmds_via_gdbmultiarch(
+            port=port, bin_path=bin_path, commands=self.cmds
+        )
         return self.postprocess(out)
 
 
@@ -199,20 +194,6 @@ def _send_cmds_via_gdbmultiarch(
         return process.communicate()
 
 
-def _send_cmds_via_cli(*, port: int, cmd: List[str]) -> Tuple[bytes]:
-    """Connect to gdb server on given port using the python client, run given commands, and return their outputs."""
-
-    # Create a client and connect to the given port.
-    gdb_cli = GdbRemoteClient("0.0.0.0", port)
-    gdb_cli.connect()
-    # Run all commands provided and save their responses.
-    out = [gdb_cli.cmd_bin_reply(c) for c in cmd]
-    # Disconnect from server so we can reconnect later on.
-    gdb_cli.disconnect()
-    # Return responses.
-    return tuple(out)
-
-
 def find_line_number(stdout_stderr: Tuple[bytes, ...]) -> int:
     """Example function to process gdb's results.
     It receives gdb's stdout/err and parses stdout to find the line number."""
@@ -225,8 +206,8 @@ def find_line_number(stdout_stderr: Tuple[bytes, ...]) -> int:
 
 
 # Example DebuggingInfo object that can be used to set next_line.
-LineNumDebuggingInfo = DebuggingInfo(
-    key="next_line", cli=False, cmds=["info line"], postprocess=find_line_number
+LineNum_DI = DebuggingInfo(
+    key="next_line", cmds=["info line"], postprocess=find_line_number
 )
 
 
@@ -261,7 +242,9 @@ def _find_available_port(user_signature: str) -> int:
     global NEXT_PORT
 
     # Ensure this user doesn't have an active session already.
-    assert user_signature not in USER_MAP
+    assert (
+        user_signature not in USER_MAP
+    ), "User already has an active debugging session."
 
     # Claim the next available port.
     port = NEXT_PORT
@@ -300,7 +283,7 @@ def create_debugging_session(
     obj_name: str,
     bin_name: str,
     max_queue_size: int,
-    extraInfo: List[DebuggingInfo] = [LineNumDebuggingInfo],
+    extraInfo: List[DebuggingInfo] = [LineNum_DI],
     workdir: Union[str, PathLike] = "userprograms",
 ) -> DebuggingResults:
     """Launch a new thread to run a debugging session with the given parameters."""
@@ -384,13 +367,16 @@ def create_debugging_session(
     return dr
 
 
-def _toggle_breakpoint(*, port, source_name, line_num) -> bool:
+def _toggle_breakpoint(*, port, bin_path, source_name, line_num) -> bool:
     """Toggles a breakpoint in the source:line; if there is already a breakpoint, remove it. Otherwise, add a new one."""
     # TODO: check if there's already a breakpoint in this location; if there is, remove it instead of re-adding.
     #       Can use 'info break' to get a list of breakpoints.
 
     param = f"{source_name}:{line_num}" if source_name else f"{line_num}"
-    _send_cmds_via_cli(port=port, cmd=[f"break {param}"])
+    _send_cmds_via_gdbmultiarch(
+        port=port, bin_path=bin_path, commands=[f"break {param}"]
+    )
+
     return True
 
 
@@ -400,7 +386,7 @@ def debug_cmd(
     cmd: DebuggingOptions,
     breakpoint_source: str = "",
     breakpoint_line: int = 0,
-    extraInfo: List[DebuggingInfo] = [LineNumDebuggingInfo],
+    extraInfo: List[DebuggingInfo] = [LineNum_DI],
 ) -> DebuggingResults:
     """Interact with an active debugging session."""
 
@@ -408,21 +394,34 @@ def debug_cmd(
     dr.gdb_port, dr.bin_path, dr.reg_num_bits, dr.little_endian = (
         find_user_port_bin_arch(user_signature)
     )
+    dr.active = True
 
     if cmd == DebuggingOptions.CONTINUE:
-        _send_cmds_via_cli(port=dr.gdb_port, cmd=["continue"])
+        _send_cmds_via_gdbmultiarch(
+            port=dr.gdb_port, bin_path=dr.bin_path, commands=["continue"]
+        )
 
     elif cmd == DebuggingOptions.STEP:
-        _send_cmds_via_cli(port=dr.gdb_port, cmd=["step"])
+        _send_cmds_via_gdbmultiarch(
+            port=dr.gdb_port, bin_path=dr.bin_path, commands=["step"]
+        )
 
     elif cmd == DebuggingOptions.BREAKPOINT:
-        assert breakpoint_line
+        assert breakpoint_line, "Line number needs to be provided to add a breakpoint."
         _toggle_breakpoint(
-            port=dr.gdb_port, source_name=breakpoint_source, line_num=breakpoint_line
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            source_name=breakpoint_source,
+            line_num=breakpoint_line,
         )
 
     elif cmd == DebuggingOptions.QUIT:
-        _send_cmds_via_cli(port=dr.gdb_port, cmd=["kill"])
+        _send_cmds_via_gdbmultiarch(
+            port=dr.gdb_port, bin_path=dr.bin_path, commands=["kill"]
+        )
+        dr.active = False
+
+    # TODO: detect server has exited and update dr.active.
 
     # Find all the extra information the caller wants and return.
     _process_extra_info(dr=dr, extraInfo=extraInfo)
