@@ -1,16 +1,34 @@
 import rocher.flask  # type: ignore[import-untyped]
-from emulation.arm64_linux import (  # type: ignore[import-not-found]
-    emulate as arm64_linux_emulation,
-    start_debugger as arm64_linux_gdb_start,
-    send_debug_cmd as arm64_linux_gdb_cmd,
-)
-from flask import Flask, redirect, render_template, request
+from emulation.arm64_linux import emulate as arm64_linux_emulation
+from emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
+from emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
+from emulation.debugger_db import DebuggerDB
+from flask import Flask, redirect, render_template, request, session
+from flask_session import Session  # type: ignore[import-untyped]
+from redis import Redis
 
 app = Flask(__name__)
+
+# Setup user sessions.
+SESSION_TYPE = "redis"
+SESSION_REDIS = Redis(host="redis", port=6379)
+app.config.from_object(__name__)
+Session(app)
+
+# Creates an instance of the debugger db so we can get the user IDs.
+ddb = DebuggerDB()
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
 rocher.flask.editor_register(app)
+
+
+def get_user_signature() -> str:
+    """Find user ID from session; if not set, assigns a new one and return."""
+    # TODO: validate cookie signature, i.e., make sure it was created during this execution of the server.
+    if not "user_num" in session:
+        session["user_num"] = ddb.get_next_user_id()
+    return f"ID-{session['user_num']:>03}"
 
 
 @app.route("/")
@@ -68,8 +86,7 @@ def arm64_linux_debug():
     if "debug" not in request.json:
         return "No debug information in JSON data", 400
 
-    # TODO: generate a unique user signature for each connected user.
-    user_signature = "FIXME"
+    user_signature = get_user_signature()
     debugInfo = None
 
     if request.json["debug"].get("start", False):

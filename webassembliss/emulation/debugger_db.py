@@ -15,7 +15,8 @@ class DebuggerDB:
         max_port: int = 10_999,
         user_prefix: str = "USER_",
         port_prefix: str = "PORT_",
-        init_count: int = 0,
+        init_session_count: int = 0,
+        init_user_count: int = 0,
         port_active_token: str = "ACTIVE",
         port_available_token: str = "free",
     ):
@@ -36,11 +37,16 @@ class DebuggerDB:
         self._range: int = self._max_port - self._min_port + 1
         self._port_active_token = port_active_token
         self._port_available_token = port_available_token
-        # If received a non-zero count, initialize it if it's not set yet.
-        if init_count:
+        # If received a non-zero session count, initialize it if it's not set yet.
+        if init_session_count:
             # This is mostly here for webapp-debugging purposes.
             # This value is volatile, so we should not have a copy away from the db.
-            self._db.setnx("COUNT", init_count)
+            self._db.setnx("SESSION_COUNT", init_session_count)
+        # If received a non-zero user count, initialize it if it's not set yet.
+        if init_session_count:
+            # This is mostly here for webapp-debugging purposes.
+            # This value is volatile, so we should not have a copy away from the db.
+            self._db.setnx("USER_COUNT", init_user_count)
 
     def _user_key(self, user_signature: str) -> str:
         """Create a db-key for user data in a standard manner."""
@@ -49,6 +55,10 @@ class DebuggerDB:
     def _port_key(self, port: int) -> str:
         """Create a port-key for port data in a standard manner."""
         return f"{self._port_prefix}{port:_}"
+
+    def get_next_user_id(self) -> int:
+        """Return the next available user id."""
+        return self._db.incr("USER_COUNT")
 
     def find_available_port(self, *, user_signature: str) -> int:
         """Return the port this user request should use."""
@@ -63,7 +73,7 @@ class DebuggerDB:
         # Loops once for each port we have available.
         for _ in range(self._range):
             # Lets db increment and return a value; this is multi-process-safe.
-            offset = self._db.incr("COUNT")
+            offset = self._db.incr("SESSION_COUNT")
             # Adjusts the offset to be within the range we have available.
             # For example, if the range is 10 and offset is 32, the check below should get the offset to be 2.
             if offset >= self._range:
