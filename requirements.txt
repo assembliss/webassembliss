@@ -1,0 +1,4 @@
+rocher==0.52.2
+Flask==3.0.3
+qiling==1.4.6
+redis==5.2.1

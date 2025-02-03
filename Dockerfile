@@ -17,7 +17,8 @@ RUN apt update && \
     -p https://github.com/zsh-users/zsh-syntax-highlighting
 
 # Install required python packages
-RUN pip install rocher Flask PyGdbRemoteClient --break-system-packages
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt --break-system-packages
 
 # Install arm toolchain
 RUN apt update && \

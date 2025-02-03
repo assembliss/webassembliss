@@ -6,6 +6,9 @@ from typing import Any, List, Tuple
 
 # Add the nzcv register to the map of accessible registers (see emulation/arm64_linux.py for more details)
 import qiling.arch.arm64_const  # type: ignore[import-untyped]
+
+# For this 'gdb_remote_client' you need to install the module 'PyGdbRemoteClient';
+# However, after implementing debugging into the app, this client does not always detach cleanly, so it is better to not use it.
 from gdb_remote_client import GdbRemoteClient  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
