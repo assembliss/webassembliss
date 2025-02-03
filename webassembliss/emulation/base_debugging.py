@@ -12,12 +12,10 @@ from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_VERBOSE  # type: ignore[import-untyped]
 
 from .base_emulation import EmulationResults, assemble, create_source, link
+from .debugger_db import DebuggerDB
 
-# TODO: replace these with an actual db.
-USER_MAP: Dict[str, Tuple[int, Union[str, PathLike], int, bool]] = {}
-NEXT_PORT: int = 9_999
-MAX_PORT: int = 10_002
-MIN_PORT: int = 9_999
+# Database to keep track of active sessions and available ports.
+db: DebuggerDB = DebuggerDB()
 
 
 @dataclass
@@ -229,46 +227,6 @@ def _process_extra_info(
             dr.extra_values[ei.key] = result
 
 
-def _find_available_port(user_signature: str) -> int:
-    """This method returns an available port for a new debugging session."""
-
-    # TODO: add a port manager here:
-    #           - could write to a sqlite file and contain port-signature;
-    #           - each port can only have one user_signature active;
-    #           - each user_signature can only have one port open.
-    # TODO: raise an exception if there's already an active session.
-    # TODO: raise an exception if there's no available port.
-    global USER_MAP
-    global NEXT_PORT
-
-    # Ensure this user doesn't have an active session already.
-    assert (
-        user_signature not in USER_MAP
-    ), "User already has an active debugging session."
-
-    # Claim the next available port.
-    port = NEXT_PORT
-
-    # Advance the next port and check if it should loop back to its initial value.
-    NEXT_PORT += 1
-    if NEXT_PORT > MAX_PORT:
-        NEXT_PORT = MIN_PORT
-
-    # Return the reserved port for this user.
-    return port
-
-
-def find_user_port_bin_arch(
-    user_signature: str,
-) -> Tuple[int, Union[str, PathLike], int, bool]:
-    """This port returns (port, bin_path) for the active session of the given user."""
-
-    # TODO: connect and read this information from a db.
-    # TODO: raise an exception if there's no active session.
-    global USER_MAP
-    return USER_MAP.get(user_signature, (-1, "", 0, False))
-
-
 def create_debugging_session(
     *,  # force naming arguments
     user_signature: str,
@@ -288,10 +246,8 @@ def create_debugging_session(
 ) -> DebuggingResults:
     """Launch a new thread to run a debugging session with the given parameters."""
 
-    global USER_MAP
-
     # Find a port to use for this user's debugging session.
-    port = _find_available_port(user_signature)
+    port = db.find_available_port(user_signature=user_signature)
     # Create a result object that will return the status of each step of the run process.
     dr = DebuggingResults(rootfs=rootfs_path, flags={}, gdb_port=port, extra_values={})  # type: ignore[arg-type]
 
@@ -359,8 +315,14 @@ def create_debugging_session(
     # If no errors, debugging session is active.
     dr.active = True
     dr.all_ok = True
-    # TODO: write this tuple to a db and remove USER_MAP
-    USER_MAP[user_signature] = port, dr.bin_path, dr.reg_num_bits, dr.little_endian
+    # Store session info in the db.
+    db.store_user_info(
+        user_signature=user_signature,
+        port=port,
+        bin_path=dr.bin_path,
+        reg_num_bits=dr.reg_num_bits,
+        little_endian="yes" if dr.little_endian else "no",
+    )
 
     # Find all the extra information the caller wants.
     _process_extra_info(dr=dr, extraInfo=extraInfo)
@@ -393,9 +355,13 @@ def debug_cmd(
     """Interact with an active debugging session."""
 
     dr = DebuggingResults()
-    dr.gdb_port, dr.bin_path, dr.reg_num_bits, dr.little_endian = (
-        find_user_port_bin_arch(user_signature)
-    )
+    data = db.get_user_info(user_signature=user_signature)
+    dr.gdb_port = data.get("port", 0)
+    if not dr.gdb_port:
+        return dr
+    dr.bin_path = data.get("bin_path", "")
+    dr.reg_num_bits = data.get("reg_num_bits", 0)
+    dr.little_endian = data.get("little_endian", "no") == "yes"
     dr.active = True
 
     if cmd == DebuggingOptions.CONTINUE:
@@ -424,6 +390,8 @@ def debug_cmd(
         dr.active = False
 
     # TODO: detect server has exited and update dr.active.
+    if not dr.active:
+        db.delete_session(user_signature=user_signature)
 
     # Find all the extra information the caller wants and return.
     _process_extra_info(dr=dr, extraInfo=extraInfo)

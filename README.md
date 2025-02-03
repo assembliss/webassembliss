@@ -5,17 +5,9 @@ Work in progress...
 The goal is to have a webapp that allows users to edit, run, and debug ARM64 assembly code.
 
 ## Get started
-1. install [docker](https://www.docker.com/get-started/)
-2. run `buildAndServe.sh`
-	- it will create an image from the `Dockerfile`
-	- it will then serve `app.py` in port 5000
-	- you can then access it through http://localhost:5000/
-3. alternatively, you can run `buildAndBash.sh`
-	- it will create an image from the `Dockerfile`
-	- it will then open a zsh terminal inside the container in the mounted directory
-4. lastly, you can also use a [dev-container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) to develop on vs-code within the docker environment
-
-Note that if you use `buildAndServe`, changes to the code will not automatically reflect on the server, you will have to rebuild it. If you're actively working on the code, I suggest using `buildAndBash` and then running `python app.py` which will hot-reload code and templates as you modify them.
+1. install [docker](https://www.docker.com/get-started/);
+2. cd into the folder for this repo;
+3. run `docker compose up --build`
 
 ## Roadmap
 
@@ -36,8 +28,6 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 		- generator receives command (e.g., continue or step), sends it to the gdb server, and then yields the updated EmulationResullt
 - [ ] make sure app works with multiple users accessing concurrently
 - [ ] make sure debugging works with multiple users accessing concurrently
-	- might have to play around with what port the gdb-server is listening
-	- https://stackoverflow.com/a/32825482
 - [ ] allow multiple sources to work together
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] handle multiple architectures
@@ -64,7 +54,8 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 	- https://github.com/python/mypy
 - [ ] add a production deployment server (e.g., [gunicorn](https://rest-apis-flask.teclado.com/docs/deploy_to_render/docker_with_gunicorn/))
 - [ ] update Dockerfile to use newer python version
-- [ ] add unit tests for emulation methods
+- [ ] add unit tests for all methods
+	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
 - [ ] CI/CD to auto-run tests on open PRs
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)

@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+  redis:
+    image: "redis:alpine"
+    command: sh -c "rm -f /data/dump.rdb && exec redis-server" # Delete any data from previous run.
