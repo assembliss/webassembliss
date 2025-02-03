@@ -42,13 +42,19 @@ class DebuggerDB:
             # This value is volatile, so we should not have a copy away from the db.
             self._db.setnx("COUNT", init_count)
 
+    def _user_key(self, user_signature: str) -> str:
+        """Create a db-key for user data in a standard manner."""
+        return f"{self._user_prefix}{user_signature}"
+
+    def _port_key(self, port: int) -> str:
+        """Create a port-key for port data in a standard manner."""
+        return f"{self._port_prefix}{port:_}"
+
     def find_available_port(self, *, user_signature: str) -> int:
         """Return the port this user request should use."""
 
-        # Check if the user doesn't have an active session already.
-        user_key = f"{self._user_prefix}{user_signature}"
         # Retrieve data from db.
-        data = self._db.get(user_key)
+        data = self._db.get(self._user_key(user_signature))
         # Convert the json string into a dict if found.
         user_data = loads(data) if data else {}
         if user_data:
@@ -67,7 +73,7 @@ class DebuggerDB:
             port = offset + self._min_port
             # Check if the port is not marked as being active in the db.
             # If it is, return it. If it's not, loop to try a new port.
-            port_key = f"{self._port_prefix}{port}"
+            port_key = self._port_key(port)
             if self._db.get(port_key) != self._port_active_token:
                 return port
 
@@ -78,7 +84,7 @@ class DebuggerDB:
         """Store session information for the given user and mark port as used."""
         assert "port" in kwargs, "You must store the active port for the user."
         # Create a db-key for the user.
-        user_key = f"{self._user_prefix}{user_signature}"
+        user_key = self._user_key(user_signature)
         # Check if this user already has an active session.
         # Retrieve data from db.
         data = self._db.get(user_key)
@@ -94,7 +100,7 @@ class DebuggerDB:
         self._db.set(user_key, dumps(kwargs))
 
         # Create a port-key for this session.
-        port_key = f"{self._port_prefix}{kwargs['port']}"
+        port_key = self._port_key(kwargs["port"])
         # Check if the port is already in use.
         if self._db.get(port_key) == self._port_active_token:
             raise DDBError(
@@ -107,9 +113,8 @@ class DebuggerDB:
 
     def get_user_info(self, *, user_signature: str) -> Dict:
         """Return session information for the given user."""
-        user_key = f"{self._user_prefix}{user_signature}"
         # Retrieve data from db.
-        data = self._db.get(user_key)
+        data = self._db.get(self._user_key(user_signature))
         # Convert the json string into a dict if found.
         user_data = loads(data) if data else {}
         if user_data:
@@ -120,14 +125,14 @@ class DebuggerDB:
 
     def delete_session(self, *, user_signature: str) -> bool:
         """Delete session information for the given user and mark port as available. Return True if an entry was found and removed."""
-        user_key = f"{self._user_prefix}{user_signature}"
+        user_key = self._user_key(user_signature)
         # Retrieve data from db.
         data = self._db.get(user_key)
         # Convert the json string into a dict if found.
         user_data = loads(data) if data else {}
         if user_data:
             port = user_data["port"]
-            port_key = f"{self._port_prefix}{port}"
+            port_key = self._port_key(port)
             self._db.set(port_key, self._port_available_token)
             self._db.delete(user_key)
             return True

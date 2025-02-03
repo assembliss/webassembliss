@@ -213,7 +213,6 @@ function startDebugger() {
     // Enable active debugger buttons.
     document.getElementById("debugStop").disabled = false;
     document.getElementById("debugBreakpoint").disabled = false;
-    document.getElementById("debugRestart").disabled = false;
     document.getElementById("debugContinue").disabled = false;
     document.getElementById("debugStep").disabled = false;
     // Disable regular buttons.
@@ -278,7 +277,6 @@ function stopDebugger() {
     // Disable active debugger buttons.
     document.getElementById("debugStop").disabled = true;
     document.getElementById("debugBreakpoint").disabled = true;
-    document.getElementById("debugRestart").disabled = true;
     document.getElementById("debugContinue").disabled = true;
     document.getElementById("debugStep").disabled = true;
     // Enable regular buttons.
