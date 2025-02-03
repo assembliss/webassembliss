@@ -65,10 +65,9 @@ class DebuggerDB:
             # Lets db increment and return a value; this is multi-process-safe.
             offset = self._db.incr("COUNT")
             # Adjusts the offset to be within the range we have available.
-            # For example, if the range is 10 and offset is 32,
-            #   the loop below should do -10 3 times to get offset to be 2.
-            while offset >= self._range:
-                offset -= self._range
+            # For example, if the range is 10 and offset is 32, the check below should get the offset to be 2.
+            if offset >= self._range:
+                offset %= self._range
             # Use the offset and min_port to find the port we should use.
             port = offset + self._min_port
             # Check if the port is not marked as being active in the db.
