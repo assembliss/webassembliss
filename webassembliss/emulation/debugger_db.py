@@ -1,6 +1,8 @@
-import redis
+from json import dumps, loads
+from os import environ
 from typing import Dict
-from json import loads, dumps
+
+import redis
 
 
 class DebuggerDB:
@@ -9,8 +11,9 @@ class DebuggerDB:
     def __init__(
         self,
         *,
-        host: str = "redis",
-        port: int = 6379,
+        host: str = environ.get("REDIS_HOST", "localhost"),
+        port: int = int(environ.get("REDIS_PORT", "6379")),
+        password: str = environ.get("REDIS_PASSWORD", ""),
         min_port: int = 9_999,
         max_port: int = 10_999,
         user_prefix: str = "USER_",
@@ -20,7 +23,9 @@ class DebuggerDB:
         port_available_token: str = "free",
     ):
         # Create a connection with the db that decodes responses automatically.
-        self._db = redis.Redis(host=host, port=port, decode_responses=True)
+        self._db = redis.Redis(
+            host=host, port=port, password=password, decode_responses=True
+        )
         # Initialize the required values in the database if they're not there.
         self._db.setnx("MIN_PORT", min_port)
         self._db.setnx("MAX_PORT", max_port)

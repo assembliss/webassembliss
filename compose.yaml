@@ -3,6 +3,9 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
   redis:
     image: "redis:alpine"
     command: sh -c "rm -f /data/dump.rdb && exec redis-server" # Delete any data from previous run.

@@ -1,3 +1,5 @@
+from os import environ
+
 import rocher.flask  # type: ignore[import-untyped]
 from emulation.arm64_linux import emulate as arm64_linux_emulation
 from emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
@@ -11,7 +13,11 @@ app = Flask(__name__)
 
 # Setup user sessions.
 SESSION_TYPE = "redis"
-SESSION_REDIS = Redis(host="redis", port=6379)
+SESSION_REDIS = Redis(
+    host=environ.get("REDIS_HOST", "localhost"),
+    port=int(environ.get("REDIS_PORT", "6379")),
+    password=environ.get("REDIS_PASSWORD", ""),
+)
 app.config.from_object(__name__)
 Session(app)
 
