@@ -21,7 +21,13 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [ ] allow user to debug code (continue, step, set breakpoint)
-	- mostly working, need to set breakpoints and improve editor highlights
+	- [x] create thread with tempdir
+	- [x] continue and step
+	- [ ] highlight only next line on editor
+	- [ ] set breakpoints
+	- [ ] remove breakpoints
+	- [ ] detect exit gracefully
+	- [ ] show stdout/stderr from program
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
