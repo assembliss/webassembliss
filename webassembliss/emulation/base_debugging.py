@@ -1,7 +1,7 @@
 import subprocess
 import tempfile
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from io import BytesIO
 from os import PathLike
@@ -26,6 +26,7 @@ class DebuggingResults(EmulationResults):
     bin_path: Union[str, PathLike] = None  # type: ignore[assignment]
     gdb_port: Optional[int] = None
     next_line: Optional[int] = None
+    breakpoints: List[str] = field(default_factory=list)
     extra_values: Dict[str, Any] = None  # type: ignore[assignment]
 
     def print(self) -> str:
@@ -35,6 +36,7 @@ class DebuggingResults(EmulationResults):
         else:
             out += f"Active session: no\n"
         out += f"Next line to be executed: {self.next_line}\n"
+        out += f"Breakpoints: {', '.join(self.breakpoints)}\n"
         out += f"Extra values: {self.extra_values}\n"
         out += super().print()
         return out
@@ -53,7 +55,7 @@ class DebuggingInfo:
         if port is None:
             return None
         out = _send_cmds_via_gdbmultiarch(
-            port=port, bin_path=bin_path, commands=self.cmds
+            port=port, bin_path=bin_path, commands=self.cmds, breakpoints=[]
         )
         return self.postprocess(out)
 
@@ -172,7 +174,11 @@ def _setup_gdb_server(
 
 
 def _send_cmds_via_gdbmultiarch(
-    *, port: int, bin_path: Union[str, PathLike], commands: List[str]
+    *,
+    port: int,
+    bin_path: Union[str, PathLike],
+    commands: List[str],
+    breakpoints: List[str],
 ) -> Tuple[bytes, bytes]:
     """Create a subprocess that launches runs gdb-multiarch, sends the commands given, and returns stdout/stderr."""
 
@@ -185,6 +191,13 @@ def _send_cmds_via_gdbmultiarch(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as process:
+        # Add breakpoints if any.
+        # Breakpoints are local to the gdb client and not stored server-side,
+        # since we're creating a new client for each call of this method,
+        # we need to (re-)add the breakpoints for each run.
+        for point in breakpoints:
+            process.stdin.write(f"break {point}\n".encode())  # type: ignore
+
         # Send each command the user wants to the gdb server.
         for c in full_commands:
             process.stdin.write(f"{c}\n".encode())  # type: ignore
@@ -316,32 +329,18 @@ def create_debugging_session(
     dr.active = True
     dr.all_ok = True
     # Store session info in the db.
-    db.store_user_info(
+    db.store_new_session_info(
         user_signature=user_signature,
         port=port,
         bin_path=dr.bin_path,
         reg_num_bits=dr.reg_num_bits,
         little_endian="yes" if dr.little_endian else "no",
+        breakpoints=[],
     )
 
     # Find all the extra information the caller wants.
     _process_extra_info(dr=dr, extraInfo=extraInfo)
     return dr
-
-
-def _toggle_breakpoint(
-    *, port: int, bin_path: Union[str, PathLike], source_name: str, line_num: int
-) -> bool:
-    """Toggles a breakpoint in the source:line; if there is already a breakpoint, remove it. Otherwise, add a new one."""
-    # TODO: check if there's already a breakpoint in this location; if there is, remove it instead of re-adding.
-    #       Can use 'info break' to get a list of breakpoints.
-
-    param = f"{source_name}:{line_num}" if source_name else f"{line_num}"
-    _send_cmds_via_gdbmultiarch(
-        port=port, bin_path=bin_path, commands=[f"break {param}"]
-    )
-
-    return True
 
 
 def debug_cmd(
@@ -362,30 +361,57 @@ def debug_cmd(
     dr.bin_path = data.get("bin_path", "")
     dr.reg_num_bits = data.get("reg_num_bits", 0)
     dr.little_endian = data.get("little_endian", "no") == "yes"
+    dr.breakpoints = data.get("breakpoints", [])
     dr.active = True
 
     if cmd == DebuggingOptions.CONTINUE:
         _send_cmds_via_gdbmultiarch(
-            port=dr.gdb_port, bin_path=dr.bin_path, commands=["continue"]
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            commands=["continue"],
+            breakpoints=dr.breakpoints,
         )
 
     elif cmd == DebuggingOptions.STEP:
         _send_cmds_via_gdbmultiarch(
-            port=dr.gdb_port, bin_path=dr.bin_path, commands=["step"]
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            commands=["step"],
+            breakpoints=dr.breakpoints,
         )
 
     elif cmd == DebuggingOptions.BREAKPOINT:
         assert breakpoint_line, "Line number needs to be provided to add a breakpoint."
-        _toggle_breakpoint(
+
+        new_breakpoint = (
+            f"{breakpoint_source}:{breakpoint_line}"
+            if breakpoint_source
+            else f"{breakpoint_line}"
+        )
+        # Check if the breakpoint already exists.
+        if new_breakpoint in dr.breakpoints:
+            # If it does, remove it.
+            dr.breakpoints.remove(new_breakpoint)
+        else:
+            # If it doesn't, add it.
+            dr.breakpoints.append(new_breakpoint)
+
+        # Update the list of breakpoints for this session.
+        db.update_session_info(
+            user_signature=user_signature,
             port=dr.gdb_port,
             bin_path=dr.bin_path,
-            source_name=breakpoint_source,
-            line_num=breakpoint_line,
+            reg_num_bits=dr.reg_num_bits,
+            little_endian="yes" if dr.little_endian else "no",
+            breakpoints=dr.breakpoints,
         )
 
     elif cmd == DebuggingOptions.QUIT:
         _send_cmds_via_gdbmultiarch(
-            port=dr.gdb_port, bin_path=dr.bin_path, commands=["kill"]
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            commands=["kill"],
+            breakpoints=dr.breakpoints,
         )
         dr.active = False
 

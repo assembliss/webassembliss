@@ -263,10 +263,15 @@ function stepDebug() {
     debuggerCommand({ "command": 2 });
 }
 
-function addBreakpoint(line) {
+function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
-    debuggerCommand({ "command": 3, "breakpoint_line": line });
-    addBreakpointHighlight(line);
+    var lineNum = prompt("Line number to toggle breakpoint:", "");
+    if (lineNum) {
+        lineNum = parseInt(lineNum);
+        debuggerCommand({ "command": 3, "breakpoint_line": lineNum });
+        // TODO: move this highlight to updateDebuggingInfo function.
+        addBreakpointHighlight(lineNum);
+    }
 }
 
 function stopDebugger() {

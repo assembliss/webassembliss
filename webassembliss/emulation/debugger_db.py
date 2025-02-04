@@ -84,8 +84,8 @@ class DebuggerDB:
         # If the code gets here, none of the ports we tried was available per the db.
         raise DDBError("Could not find an available port")
 
-    def store_user_info(self, *, user_signature: str, **kwargs) -> None:
-        """Store session information for the given user and mark port as used."""
+    def store_new_session_info(self, *, user_signature: str, **kwargs) -> None:
+        """Store new session information for the given user and mark port as used."""
         assert "port" in kwargs, "You must store the active port for the user."
         # Create a db-key for the user.
         user_key = self._user_key(user_signature)
@@ -114,6 +114,25 @@ class DebuggerDB:
             )
         # If available, mark port as active.
         self._db.set(port_key, self._port_active_token)
+
+    def update_session_info(self, *, user_signature: str, **kwargs) -> None:
+        """Update existing session information for the given user."""
+        # Create a db-key for the user.
+        user_key = self._user_key(user_signature)
+        # Check if this user already has an active session.
+        # Retrieve data from db.
+        data = self._db.get(user_key)
+        # Convert the json string into a dict if found.
+        user_data = loads(data) if data else {}
+        # If no session for the user, raise an error.
+        if not user_data:
+            raise DDBError(
+                "User has no active session.",
+                user_signature=user_signature,
+                **kwargs,
+            )
+        # Update user information as a json string.
+        self._db.set(user_key, dumps(kwargs))
 
     def get_user_info(self, *, user_signature: str) -> Dict:
         """Return session information for the given user."""

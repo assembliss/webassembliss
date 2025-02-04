@@ -24,8 +24,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- [x] create thread with tempdir
 	- [x] continue and step
 	- [ ] highlight only next line on editor
-	- [ ] set breakpoints
-	- [ ] remove breakpoints
+	- [x] set breakpoints
+	- [x] remove breakpoints
+	- [ ] update breakpoint highlights after removal
 	- [ ] detect exit gracefully
 	- [ ] show stdout/stderr from program
 - [x] make sure app works with multiple users accessing concurrently
