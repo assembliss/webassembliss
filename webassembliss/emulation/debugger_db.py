@@ -180,6 +180,8 @@ class DebuggerDB:
             port_key = self._port_key(port)
             self._db.set(port_key, self._port_available_token)  # type: ignore[arg-type]
             self._db.delete(user_key)
+            self._db.delete(self._output_key(port=port, output_type="stdout"))
+            self._db.delete(self._output_key(port=port, output_type="stderr"))
             return True
         # Did not find an entry for given user.
         return False
