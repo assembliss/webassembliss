@@ -33,6 +33,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
+	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] handle multiple architectures
 
