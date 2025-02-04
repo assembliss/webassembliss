@@ -27,8 +27,8 @@ RUN apt update && \
     make gcc-aarch64-linux-gnu\
     # gdb-multiarch (for user debugging sessions)
     gdb-multiarch\
-    # screen (for dev debugging in container)
-    screen
+    # tmux (for dev debugging in container)
+    tmux
 
 # Copy a patched version of qiling's gdb server. It has the following changes:
 #   1. fix a bug that prevents stepping over the code (ref: https://github.com/qilingframework/qiling/issues/1377);
