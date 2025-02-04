@@ -21,26 +21,34 @@ class DebuggerDB:
         init_session_count: int = 0,
         port_active_token: str = "ACTIVE",
         port_available_token: str = "free",
+        stdout_prefix: str = "STDOUT_",
+        stderr_prefix: str = "STDERR_",
     ):
         # Create a connection with the db that decodes responses automatically.
         self._db = redis.Redis(
             host=host, port=port, password=password, decode_responses=True
         )
         # Initialize the required values in the database if they're not there.
-        self._db.setnx("MIN_PORT", min_port)
-        self._db.setnx("MAX_PORT", max_port)
-        self._db.setnx("USER_PREFIX", user_prefix)
-        self._db.setnx("PORT_PREFIX", port_prefix)
+        self._db.setnx("VAR_MIN_PORT", min_port)
+        self._db.setnx("VAR_MAX_PORT", max_port)
+        self._db.setnx("VAR_USER_PREFIX", user_prefix)
+        self._db.setnx("VAR_PORT_PREFIX", port_prefix)
+        self._db.setnx("VAR_PORT_ACTIVE_TOKEN", port_active_token)
+        self._db.setnx("VAR_PORT_AVAILABLE_TOKEN", port_available_token)
+        self._db.setnx("VAR_STDOUT_PREFIX", stdout_prefix)
+        self._db.setnx("VAR_STDERR_PREFIX", stderr_prefix)
         # Load the required values from the db, in case another client had overwritten them.
         # These values should not change during execution, so it's fine to have a local copy.
-        self._min_port: int = int(self._db.get("MIN_PORT"))  # type: ignore[arg-type]
-        self._max_port: int = int(self._db.get("MAX_PORT"))  # type: ignore[arg-type]
-        self._user_prefix: str = self._db.get("USER_PREFIX")  # type: ignore[assignment]
-        self._port_prefix: str = self._db.get("PORT_PREFIX")  # type: ignore[assignment]
+        self._min_port: int = int(self._db.get("VAR_MIN_PORT"))  # type: ignore[arg-type]
+        self._max_port: int = int(self._db.get("VAR_MAX_PORT"))  # type: ignore[arg-type]
+        self._user_prefix: str = self._db.get("VAR_USER_PREFIX")  # type: ignore[assignment]
+        self._port_prefix: str = self._db.get("VAR_PORT_PREFIX")  # type: ignore[assignment]
+        self._port_active_token = self._db.get("VAR_PORT_ACTIVE_TOKEN")  # type: ignore[assignment]
+        self._port_available_token = self._db.get("VAR_PORT_AVAILABLE_TOKEN")  # type: ignore[assignment]
+        self._stdout_prefix: str = self._db.get("VAR_STDOUT_PREFIX")  # type: ignore[assignment]
+        self._stderr_prefix: str = self._db.get("VAR_STDERR_PREFIX")  # type: ignore[assignment]
         # Store the number of ports that we can use.
         self._range: int = self._max_port - self._min_port + 1
-        self._port_active_token = port_active_token
-        self._port_available_token = port_available_token
         # If received a non-zero session count, initialize it if it's not set yet.
         if init_session_count:
             # This is mostly here for webapp-debugging purposes.
@@ -54,6 +62,18 @@ class DebuggerDB:
     def _port_key(self, port: int) -> str:
         """Create a port-key for port data in a standard manner."""
         return f"{self._port_prefix}{port:_}"
+
+    def _output_key(self, port: int, output_type: str) -> str:
+        """Create an output-key for output information in a standard manner."""
+        if output_type == "stdout":
+            return f"{self._stdout_prefix}{port:_}"
+        elif output_type == "stderr":
+            return f"{self._stderr_prefix}{port:_}"
+        raise DDBError(
+            f"Unknown output type '{output_type}'; expected 'stdout' or 'stderr'.",
+            port=port,
+            output_type=output_type,
+        )
 
     def find_available_port(self, *, user_signature: str) -> int:
         """Return the port this user request should use."""
@@ -113,7 +133,7 @@ class DebuggerDB:
                 **kwargs,
             )
         # If available, mark port as active.
-        self._db.set(port_key, self._port_active_token)
+        self._db.set(port_key, self._port_active_token)  # type: ignore[arg-type]
 
     def update_session_info(self, *, user_signature: str, **kwargs) -> None:
         """Update existing session information for the given user."""
@@ -156,11 +176,25 @@ class DebuggerDB:
         if user_data:
             port = user_data["port"]
             port_key = self._port_key(port)
-            self._db.set(port_key, self._port_available_token)
+            self._db.set(port_key, self._port_available_token)  # type: ignore[arg-type]
             self._db.delete(user_key)
             return True
         # Did not find an entry for given user.
         return False
+
+    def write_output(self, *, port: int, output_type: str, content: str) -> int:
+        """Store given output into the db."""
+        out_key = self._output_key(port, output_type)
+        value = self._db.get(out_key)
+        value = (value + content) if value else content
+        self._db.set(out_key, value)
+        return len(value)
+
+    def get_output(self, *, port: int, output_type: str) -> str:
+        """Retrieve program output from the db."""
+        out_key = self._output_key(port, output_type)
+        value = self._db.get(out_key)
+        return value if value else ""
 
 
 class DDBError(Exception):

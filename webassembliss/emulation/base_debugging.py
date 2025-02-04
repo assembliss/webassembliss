@@ -10,6 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_VERBOSE  # type: ignore[import-untyped]
+from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 
 from .base_emulation import EmulationResults, assemble, create_source, link
 from .debugger_db import DebuggerDB
@@ -60,6 +61,20 @@ class DebuggingInfo:
         return self.postprocess(out)
 
 
+class GDBPipe(SimpleOutStream):
+    """Class to get output/errors from gdb server and into DebuggerDB."""
+
+    def __init__(self, port: int, output_type: str):
+        super().__init__(fd=-1)
+        self._port = port
+        self._output_type = output_type
+
+    def write(self, buf: bytes) -> int:
+        return db.write_output(
+            port=self._port, output_type=self._output_type, content=buf.decode()
+        )
+
+
 class DebuggingOptions(Enum):
     """Available user commands in the debugger."""
 
@@ -90,9 +105,9 @@ def _run_gdb_server(
     mydata.ql.debugger = f"gdb::{port}"
     # Redirect input, output, and error streams.
     mydata.ql.os.stdin = BytesIO(user_input.encode())
-    mydata.out = BytesIO()
+    mydata.out = GDBPipe(port=port, output_type="stdout")
     mydata.ql.os.stdout = mydata.out
-    mydata.err = BytesIO()
+    mydata.err = GDBPipe(port=port, output_type="stderr")
     mydata.ql.os.stderr = mydata.err
     # Start the emulation / server starts listening.
     mydata.ql.run()
@@ -414,6 +429,9 @@ def debug_cmd(
             breakpoints=dr.breakpoints,
         )
         dr.active = False
+
+    dr.run_stdout = db.get_output(port=dr.gdb_port, output_type="stdout")
+    dr.run_stderr = db.get_output(port=dr.gdb_port, output_type="stderr")
 
     # TODO: detect server has exited and update dr.active.
     if not dr.active:
