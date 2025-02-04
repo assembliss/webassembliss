@@ -20,13 +20,15 @@ RUN apt update && \
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt --break-system-packages
 
-# Install arm toolchain
+# Install required tooling.
 RUN apt update && \
-    apt install make gcc-aarch64-linux-gnu -y
-
-# Install gdb-multi arch so we can debug the generated binaries.
-RUN apt update && \
-    apt install gdb-multiarch -y
+    apt install -y \
+    # arm64 toolchain (assemble/link arm64 assembly code)
+    make gcc-aarch64-linux-gnu\
+    # gdb-multiarch (for user debugging sessions)
+    gdb-multiarch\
+    # screen (for dev debugging in container)
+    screen
 
 # Copy a patched version of qiling's gdb server. It has the following changes:
 #   1. fix a bug that prevents stepping over the code (ref: https://github.com/qilingframework/qiling/issues/1377);
