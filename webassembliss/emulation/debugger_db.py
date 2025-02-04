@@ -151,7 +151,9 @@ class DebuggerDB:
                 user_signature=user_signature,
                 **kwargs,
             )
-        # Update user information as a json string.
+        # Updates the new values given.
+        user_data.update(kwargs)
+        # Store updated user information into the db.
         self._db.set(user_key, dumps(kwargs))
 
     def get_user_info(self, *, user_signature: str) -> Dict:
