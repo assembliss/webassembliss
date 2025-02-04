@@ -87,6 +87,7 @@ def arm64_linux_debug():
 
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
+    # Note that we need to have *something* stored in the session so the sid persists with the same user.
     user_signature = session.sid
     debugInfo = None
 
