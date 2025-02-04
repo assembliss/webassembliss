@@ -201,7 +201,12 @@ function updateDebuggingInfo(data) {
     lastRunInfo = data.debugInfo;
     document.getElementById("downloadButton").disabled = false;
     if (data.debugInfo.active) {
+        removeAllHighlights();
         updateGdbLine(data.debugInfo.next_line);
+        for (const line of data.debugInfo.breakpoints) {
+            // TODO: handle multiple sources here, would be in format 'source:line'.
+            addBreakpointHighlight(parseInt(line));
+        }
     } else {
         stopDebugger();
     }
@@ -269,8 +274,6 @@ function toggleBreakpoint() {
     if (lineNum) {
         lineNum = parseInt(lineNum);
         debuggerCommand({ "command": 3, "breakpoint_line": lineNum });
-        // TODO: move this highlight to updateDebuggingInfo function.
-        addBreakpointHighlight(lineNum);
     }
 }
 
