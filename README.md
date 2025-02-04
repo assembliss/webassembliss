@@ -21,13 +21,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [ ] allow user to debug code (continue, step, set breakpoint)
-	- first idea:
-		- create a [python generator](https://wiki.python.org/moin/Generators) that mimics [clean_emulation](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/emulation/utils.py#L399) but keeps the directory and qiling instance alive throghout debugging
-		- [turn on gdb](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/examples/arm64_linux/arm64_linux_emulation.py#L32-L34) through qiling
-		- connect to the gdb server ([maybe useful?](https://python3-pwntools.readthedocs.io/en/latest/gdb.html#module-pwnlib.gdb))
-		- generator receives command (e.g., continue or step), sends it to the gdb server, and then yields the updated EmulationResullt
-- [ ] make sure app works with multiple users accessing concurrently
-- [ ] make sure debugging works with multiple users accessing concurrently
+	- mostly working, need to set breakpoints and improve editor highlights
+- [x] make sure app works with multiple users accessing concurrently
+- [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] handle multiple architectures
@@ -68,8 +64,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to submit an issue through the webapp
 	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
 - [ ] highlight assembler errors in source code (use `addErrorHighlight`, [example](https://github.ncsu.edu/assembliss/webassembliss/blob/392d960d8fff61facc93eb0a561149578c42a6f8/webassembliss/static/js/arm64_linux.js#L358-L362))
-- [ ] preserve source code between refreshes
-	- [maybe helpful?](https://testdriven.io/blog/flask-sessions/)
+- [x] preserve source code between refreshes
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown

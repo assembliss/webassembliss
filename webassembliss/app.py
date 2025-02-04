@@ -23,14 +23,6 @@ ddb = DebuggerDB()
 rocher.flask.editor_register(app)
 
 
-def get_user_signature() -> str:
-    """Find user ID from session; if not set, assigns a new one and return."""
-    # TODO: validate cookie signature, i.e., make sure it was created during this execution of the server.
-    if not "user_num" in session:
-        session["user_num"] = ddb.get_next_user_id()
-    return f"ID-{session['user_num']:>03}"
-
-
 @app.route("/")
 def index():
     # TODO: add a landing page whenever we have more architectures available.
@@ -39,7 +31,12 @@ def index():
 
 @app.route("/arm64_linux/")
 def arm64_linux_index():
-    # Read the hello world example to use it as the default code in the editor.
+    # If the user has run or debugged code, we have it saved in their session; reload it.
+    if "source_code" in session:
+        return render_template(
+            "arm64_linux.html.j2", default_code=session["source_code"].split("\n")
+        )
+    # If no code for this user, read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
         return render_template(
             "arm64_linux.html.j2", default_code=file_in.read().split("\n")
@@ -54,9 +51,11 @@ def arm64_linux_run():
         return "No source_code in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
-    user_code = request.json["source_code"]
-    user_input = request.json["user_input"]
-    emu_results = arm64_linux_emulation(user_code, stdin=user_input)
+    session["source_code"] = request.json["source_code"]
+    session["user_input"] = request.json["user_input"]
+    emu_results = arm64_linux_emulation(
+        session["source_code"], stdin=session["user_input"]
+    )
     # TODO: return simply emu_results and do parsing of results on javascript side;
     #        would make it easier/cleaner to add new archs later on in the app.py.
     return {
@@ -86,14 +85,16 @@ def arm64_linux_debug():
     if "debug" not in request.json:
         return "No debug information in JSON data", 400
 
-    user_signature = get_user_signature()
+    session["source_code"] = request.json["source_code"]
+    session["user_input"] = request.json["user_input"]
+    user_signature = session.sid
     debugInfo = None
 
     if request.json["debug"].get("start", False):
         debugInfo = arm64_linux_gdb_start(
             user_signature=user_signature,
-            code=request.json["source_code"],
-            user_input=request.json["user_input"],
+            code=session["source_code"],
+            user_input=session["user_input"],
         )
 
     elif request.json["debug"].get("command", False):

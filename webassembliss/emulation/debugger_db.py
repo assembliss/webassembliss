@@ -16,7 +16,6 @@ class DebuggerDB:
         user_prefix: str = "USER_",
         port_prefix: str = "PORT_",
         init_session_count: int = 0,
-        init_user_count: int = 0,
         port_active_token: str = "ACTIVE",
         port_available_token: str = "free",
     ):
@@ -42,11 +41,6 @@ class DebuggerDB:
             # This is mostly here for webapp-debugging purposes.
             # This value is volatile, so we should not have a copy away from the db.
             self._db.setnx("SESSION_COUNT", init_session_count)
-        # If received a non-zero user count, initialize it if it's not set yet.
-        if init_session_count:
-            # This is mostly here for webapp-debugging purposes.
-            # This value is volatile, so we should not have a copy away from the db.
-            self._db.setnx("USER_COUNT", init_user_count)
 
     def _user_key(self, user_signature: str) -> str:
         """Create a db-key for user data in a standard manner."""
@@ -55,10 +49,6 @@ class DebuggerDB:
     def _port_key(self, port: int) -> str:
         """Create a port-key for port data in a standard manner."""
         return f"{self._port_prefix}{port:_}"
-
-    def get_next_user_id(self) -> int:
-        """Return the next available user id."""
-        return self._db.incr("USER_COUNT")
 
     def find_available_port(self, *, user_signature: str) -> int:
         """Return the port this user request should use."""
