@@ -26,6 +26,65 @@ document.addEventListener('keydown', e => {
     }
 });
 
+
+/* Adds toggle functionality to issue label buttons */
+document.querySelector(".feedbackCollapsible").addEventListener("click", function(event) {
+    if (event.target.classList.contains("issueLabelButton")) {
+        event.target.classList.toggle("issueLabelActive");
+    }
+});
+
+/* Submit issue button functionality 
+ * TODO:
+ * - Fetch title
+ * - Fetch body
+ * - Fetch which Labels are active
+ * - Parse data
+ * - Format URL and send user
+ */
+function submitIssue() {
+    let title = document.getElementById("issueTitle").value;
+    let body = document.getElementById("issueBody").value;
+
+    /* Replace spaces with "+" and "+" with "%2B" */
+    let fbody = body.replace(/\+/g, "%2B").replace(/ /g, "+");
+
+    /* Start of Label URL query formatting */
+    let bugLabelString = "";
+    let helpWantedLabelString = "";
+    let enhancementLabelString = "";
+    let questionLabelString = "";
+    let invalidLabelString = "";
+
+    if (document.getElementById("issueBugLabel").classList.contains("issueLabelActive")) {
+        bugLabelString = "bug,";
+    }
+    if (document.getElementById("issueHelpWantedLabel").classList.contains("issueLabelActive")) {
+        helpWantedLabelString = "help+wanted,";
+    }
+    if (document.getElementById("issueEnhancementLabel").classList.contains("issueLabelActive")) {
+        enhancementLabelString = "enhancement,";
+    }
+    if (document.getElementById("issueQuestionLabel").classList.contains("issueLabelActive")) {
+        questionLabelString = "question,";
+    }
+    if (document.getElementById("issueInvalidLabel").classList.contains("issueLabelActive")) {
+        invalidLabelString = "invalid,";
+    }
+
+    let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
+    fLabelString = fLabelString.substring(0, fLabelString.length - 1);
+    /* End of Label URL query formatting */
+    /* SURELY THERE'S A BETTER WAY TO DO THIS ^^^^^ */
+
+    if (title=="" || body=="") {
+        alert("Issue title or body is required.");
+    } else {
+        /* Generate a URL query */
+        window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${title}&body=${fbody}&labels=${fLabelString}`, "_blank");
+    }
+}
+
 function createEditor(default_code) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {

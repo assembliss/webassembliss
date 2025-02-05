@@ -51,6 +51,28 @@
     <br/>
     <br/>
 
+    <button type="button" class="collapsible">Feedback/Issue</button>
+    <div class="feedbackCollapsible">
+        <div>
+            <textarea id="issueTitle" name="issueTitle" rows=1 cols=120 placeholder="Title (Required*)"></textarea>
+            <textarea id="issueBody" name="issueBody" rows=10 cols=120 placeholder="Describe your feedback/issue... (Required*)"></textarea>
+
+            <h3 style="margin: 0px">Add Labels:</h3>
+            <input type="button" id="issueBugLabel" class="issueLabelButton" value="Bug" />
+            <input type="button" id="issueHelpWantedLabel" class="issueLabelButton" value="Help Wanted" />
+            <input type="button" id="issueEnhancementLabel" class="issueLabelButton" value="Enhancement" />
+            <input type="button" id="issueQuestionLabel" class="issueLabelButton" value="Question" />
+            <input type="button" id="issueInvalidLabel" class="issueLabelButton" value="Invalid" />
+        </div>
+        <div>
+            <input type="button" id="issueSubmit" value="Submit" style="background-color: rgb(255,100,255)" onclick="submitIssue()" />
+
+        </div>
+    </div> 
+
+    <br/>
+    <br/>
+
     <button type="button" class="collapsible">Show/hide registers</button>
     <div class="collapsibleContent">
         <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=100 placeholder="register values will appear here after your code finishes running..."></textarea>
