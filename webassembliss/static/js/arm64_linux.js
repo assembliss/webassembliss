@@ -76,7 +76,6 @@ function submitIssue() {
     let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
     fLabelString = fLabelString.substring(0, fLabelString.length - 1);
     /* End of Label URL query formatting */
-    /* SURELY THERE'S A BETTER WAY TO DO THIS ^^^^^ */
 
     if (title=="" || body=="") {
         alert("Issue title or body is required.");
