@@ -3,6 +3,7 @@ const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
 window.lastRunInfo = null;
 window.decorations = null;
+window.gdb_line_decoration = null;
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -75,7 +76,6 @@ function submitIssue() {
     let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
     fLabelString = fLabelString.substring(0, fLabelString.length - 1);
     /* End of Label URL query formatting */
-    /* SURELY THERE'S A BETTER WAY TO DO THIS ^^^^^ */
 
     if (title=="" || body=="") {
         alert("Issue title or body is required.");
@@ -122,9 +122,6 @@ function clearOutput() {
     document.getElementById("memValues").value = "";
     window.lastRunInfo = null;
     document.getElementById("downloadButton").disabled = true;
-    // TODO: make it more clear this calls stopDebugger -> does it even need to?
-    // TODO: allow different clearing options (e.g., keep highlights).
-    stopDebugger();
 }
 
 function runCode() {
@@ -142,6 +139,7 @@ function runCode() {
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+            document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("execStatus").innerHTML = data.ran_ok === null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
@@ -169,7 +167,7 @@ function getLastRunInfo() {
 }
 
 function addHighlight(line, options) {
-    decorations.append([
+    return decorations.append([
         {
             range: new monaco.Range(line, 1, line, 100),
             options: options
@@ -188,7 +186,10 @@ function addErrorHighlight(line, messages) {
 }
 
 function updateGdbLine(line) {
-    addHighlight(line, {
+    if (window.gdb_line_decoration) {
+        // TODO: remove old line decoration so only the updated next one appears.
+    }
+    window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
         className: 'gdbLineDecoration'
     });
@@ -226,13 +227,55 @@ function download_file(name, contents, mime_type) {
     dlink.remove();
 }
 
+function updateDebuggingInfo(data) {
+    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+
+    if (data.debugInfo.as_ok !== null) {
+        document.getElementById("asStatus").innerHTML = data.debugInfo.assembled_ok ? OK_SYMBOL : ERROR_SYMBOL;
+    }
+
+    if (data.debugInfo.ld_ok !== null) {
+        document.getElementById("ldStatus").innerHTML = data.debugInfo.linked_ok ? OK_SYMBOL : ERROR_SYMBOL;
+    }
+
+    if (data.debugInfo.ran_ok !== null) {
+        document.getElementById("execStatus").innerHTML = data.debugInfo.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+    }
+
+    if (data.debugInfo.active !== null) {
+        document.getElementById("debugStatus").innerHTML = data.debugInfo.active ? OK_SYMBOL : ERROR_SYMBOL;
+    }
+
+    document.getElementById("nFlag").innerHTML = "N" in data.debugInfo.flags ? data.debugInfo.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
+    document.getElementById("zFlag").innerHTML = "Z" in data.debugInfo.flags ? data.debugInfo.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
+    document.getElementById("cFlag").innerHTML = "C" in data.debugInfo.flags ? data.debugInfo.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
+    document.getElementById("vFlag").innerHTML = "V" in data.debugInfo.flags ? data.debugInfo.flags.V ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
+
+    document.getElementById("outputBox").value = data.stdout;
+    document.getElementById("errorBox").value = data.stderr;
+    document.getElementById("regValues").value = data.registers;
+    document.getElementById("memValues").value = data.memory;
+    document.getElementById("emulationInfo").value = data.all_info;
+    lastRunInfo = data.debugInfo;
+    document.getElementById("downloadButton").disabled = false;
+    if (data.debugInfo.active) {
+        removeAllHighlights();
+        updateGdbLine(data.debugInfo.next_line);
+        for (const line of data.debugInfo.breakpoints) {
+            // TODO: handle multiple sources here, would be in format 'source:line'.
+            addBreakpointHighlight(parseInt(line));
+        }
+    } else {
+        stopDebugger();
+    }
+}
+
 function startDebugger() {
     // Clear any old information.
     clearOutput();
     // Enable active debugger buttons.
     document.getElementById("debugStop").disabled = false;
     document.getElementById("debugBreakpoint").disabled = false;
-    document.getElementById("debugRestart").disabled = false;
     document.getElementById("debugContinue").disabled = false;
     document.getElementById("debugStep").disabled = false;
     // Disable regular buttons.
@@ -245,22 +288,61 @@ function startDebugger() {
     window.editor.updateOptions({ readOnly: true });
 
     // TODO: actually start a debugging session.
-
-    // Update next line that will be executed.
-    // TODO: update with the actualy line that will be executed.
-    updateGdbLine(14);
+    var source_code = getSource();
+    var user_input = document.getElementById("inputBox").value;
+    document.getElementById("runStatus").innerHTML = "⏳";
+    fetch('/arm64_linux/debug/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": { "start": true } }),
+    }).then(response => response.json())
+        .then(data => {
+            updateDebuggingInfo(data);
+        });
 }
 
-function addBreakpoint(line) {
-    // TODO: actually add a breakpoint in the debugging session.
-    addBreakpointHighlight(line);
+function debuggerCommand(commands) {
+    var source_code = getSource();
+    var user_input = document.getElementById("inputBox").value;
+    fetch('/arm64_linux/debug/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands }),
+    }).then(response => response.json())
+        .then(data => {
+            updateDebuggingInfo(data);
+        });
+}
+
+function continueDebug() {
+    debuggerCommand({ "command": 1 });
+}
+
+function stepDebug() {
+    debuggerCommand({ "command": 2 });
+}
+
+function toggleBreakpoint() {
+    // TODO: handle multiple source files eventually.
+    var lineNum = prompt("Line number to toggle breakpoint:", "");
+    if (lineNum) {
+        lineNum = parseInt(lineNum);
+        debuggerCommand({ "command": 3, "breakpoint_line": lineNum });
+    }
 }
 
 function stopDebugger() {
+    // Stop debugging session.
+    debuggerCommand({ "command": 4 });
+    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
+    removeAllHighlights();
     // Disable active debugger buttons.
     document.getElementById("debugStop").disabled = true;
     document.getElementById("debugBreakpoint").disabled = true;
-    document.getElementById("debugRestart").disabled = true;
     document.getElementById("debugContinue").disabled = true;
     document.getElementById("debugStep").disabled = true;
     // Enable regular buttons.
@@ -271,11 +353,6 @@ function stopDebugger() {
     document.getElementById("loadBtn").disabled = false;
     // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
-
-    // TODO: actually stop a debugging session.
-
-    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
-    removeAllHighlights();
 }
 
 function exampleHighlight(line) {

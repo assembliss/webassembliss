@@ -1,5 +1,24 @@
 from io import BytesIO
-from typing import Dict, List, Optional
+from os import PathLike
+from typing import Dict, List, Optional, Tuple, Union
+
+import qiling.arch.arm64_const  # type: ignore[import-untyped]
+from qiling import Qiling  # type: ignore[import-untyped]
+from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
+
+from .base_debugging import (
+    DebuggingInfo,
+    DebuggingOptions,
+    DebuggingResults,
+    LineNum_DI,
+    create_debugging_session,
+    debug_cmd,
+)
+from .base_emulation import EmulationResults, clean_emulation
+
+ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
+AS_CMD = "aarch64-linux-gnu-as"
+LD_CMD = "aarch64-linux-gnu-ld"
 
 # Register the NZCV register into qiling's arm64 register map so we can read status bits.
 # This was tricky to find... but here are the references in case you need to do the same:
@@ -8,30 +27,25 @@ from typing import Dict, List, Optional
 # It creates a RegManager with the registers above but also links the an unicorn object: https://github.com/qilingframework/qiling/blob/9a78d186c97d6ff42d7df31155dda2cd9e1a7fe3/qiling/arch/arm64.py#L42
 # The unicorn object points to the UC_ARCH_ARM64: https://github.com/qilingframework/qiling/blob/9a78d186c97d6ff42d7df31155dda2cd9e1a7fe3/qiling/arch/arm64.py#L23-L24
 # From the unicorn project, we can see nzcv in the register list: https://github.com/unicorn-engine/unicorn/blob/d568885d64c89db5b9a722f0c1bef05aa92f84ca/bindings/python/unicorn/arm64_const.py#L16
-import qiling.arch.arm64_const  # type: ignore[import-untyped]
-from qiling import Qiling  # type: ignore[import-untyped]
-from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
+# Registered it as cpsr so gdb clients can have access to it.
+qiling.arch.arm64_const.reg_map.update({"cpsr": UC_ARM64_REG_NZCV})
+ARM64_REGISTERS = list(qiling.arch.arm64_const.reg_map)
 
-from .base_emulation import EmulationResults, clean_emulation
 
-# Update the register map with our new entry.
-qiling.arch.arm64_const.reg_map.update({"nzcv": UC_ARM64_REG_NZCV})
-
-ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
-AS_CMD = "aarch64-linux-gnu-as"
-LD_CMD = "aarch64-linux-gnu-ld"
+def _parse_nzcv_from_cpsr(cpsr: int) -> Dict[str, bool]:
+    """Parse the NZCV values from the CPSR register."""
+    # Ref: https://developer.arm.com/documentation/ddi0601/2024-12/AArch64-Registers/NZCV--Condition-Flags
+    return {
+        "N": bool(cpsr & (1 << 31)),
+        "Z": bool(cpsr & (1 << 30)),
+        "C": bool(cpsr & (1 << 29)),
+        "V": bool(cpsr & (1 << 28)),
+    }
 
 
 def get_nzcv(ql: Qiling) -> Dict[str, bool]:
     """Parses the NZCV condition codes from the given qiling instance."""
-    # Ref: https://developer.arm.com/documentation/ddi0601/2024-12/AArch64-Registers/NZCV--Condition-Flags
-    nzcv = ql.arch.regs.read("nzcv")
-    return {
-        "N": bool(nzcv & (1 << 31)),
-        "Z": bool(nzcv & (1 << 30)),
-        "C": bool(nzcv & (1 << 29)),
-        "V": bool(nzcv & (1 << 28)),
-    }
+    return _parse_nzcv_from_cpsr(ql.arch.regs.read("cpsr"))
 
 
 def emulate(
@@ -51,7 +65,7 @@ def emulate(
     if ld_flags is None:
         ld_flags = ["-o"]
     if registers is None:
-        registers = list(qiling.arch.arm64_const.reg_map)
+        registers = ARM64_REGISTERS
 
     # Run the emulation and return its status and results.
     return clean_emulation(
@@ -68,4 +82,119 @@ def emulate(
         bin_name=bin_name,
         registers=registers,
         get_flags_func=get_nzcv,
+    )
+
+
+def _parse_gdb_registers(
+    raw_text: str,
+    full_lines_to_ignore_beginning: int = 5,
+    gdb_prompt_shown: bool = True,
+    full_lines_to_ignore_end: int = 6,
+) -> Dict[str, Tuple[int, bool]]:
+    """Parses the result of an 'info regiters' command sent to an arm64 gdb session."""
+
+    out = {}
+
+    # Split text by lines and ignores the first N and last M lines.
+    lines = raw_text.split("\n")[
+        full_lines_to_ignore_beginning:-full_lines_to_ignore_end
+    ]
+
+    # If first line has a gdb prompt, skip it manually.
+    if gdb_prompt_shown:
+        first_line_tokens = lines.pop(0).split()
+        reg, value = first_line_tokens[1], first_line_tokens[2]
+        out[reg.strip()] = int(value.strip(), 16), False
+
+    # Process next lines similarly without having to worry about the gdb prompt.
+    for l in lines:
+        reg, value, *_ = l.split()
+        out[reg.strip()] = int(value.strip(), 16), False
+
+    return out
+
+
+ARM64Registers_DI = DebuggingInfo(
+    key="registers",
+    cmds=["info registers"],
+    postprocess=lambda x: _parse_gdb_registers(x[0].decode()),
+)
+
+ARM64Flags_DI = DebuggingInfo(
+    key="flags",
+    cmds=["info register cpsr"],
+    postprocess=lambda x: _parse_nzcv_from_cpsr(
+        # Parsing the output of 'info register cpsr' from gdb to get only the value of the register.
+        int(x[0].decode().split("\n")[5].split()[2], 16)
+    ),
+)
+
+
+def start_debugger(
+    *,
+    user_signature: str,
+    code: str,
+    rootfs_path: Union[str, PathLike] = ROOTFS_PATH,
+    as_cmd: str = AS_CMD,
+    ld_cmd: str = LD_CMD,
+    as_flags: Optional[List[str]] = None,
+    ld_flags: Optional[List[str]] = None,
+    user_input: str = "",
+    source_name: str = "usrCode.S",
+    obj_name: str = "usrCode.o",
+    bin_name: str = "usrCode.exe",
+    max_queue_size: int = 20,
+    extraInfo: Optional[List[DebuggingInfo]] = None,
+    workdir: Union[str, PathLike] = "userprograms",
+) -> DebuggingResults:
+    """Create a new debugging session with the given parameters."""
+
+    # Create default mutable values if needed.
+    if as_flags is None:
+        as_flags = ["-g --gdwarf-5 -o"]
+    if ld_flags is None:
+        ld_flags = ["-o"]
+    if extraInfo is None:
+        extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
+
+    # Create a session and return its information.
+    return create_debugging_session(
+        user_signature=user_signature,
+        code=code,
+        rootfs_path=rootfs_path,
+        as_cmd=as_cmd,
+        as_flags=as_flags,
+        ld_cmd=ld_cmd,
+        ld_flags=ld_flags,
+        user_input=user_input,
+        source_name=source_name,
+        obj_name=obj_name,
+        bin_name=bin_name,
+        max_queue_size=max_queue_size,
+        extraInfo=extraInfo,
+        workdir=workdir,
+    )
+
+
+def send_debug_cmd(
+    *,
+    user_signature: str,
+    cmd: int,
+    breakpoint_source: str = "",
+    breakpoint_line: int = 0,
+    extraInfo: Optional[List[DebuggingInfo]] = None,
+) -> DebuggingResults:
+    """Create a new debugging session with the given parameters."""
+
+    # Create default mutable values if needed.
+    if extraInfo is None:
+        extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
+
+    # Send command with its arguments and return execution information.
+    return debug_cmd(
+        user_signature=user_signature,
+        cmd=DebuggingOptions(cmd),
+        extraInfo=extraInfo,
+        breakpoint_source=breakpoint_source,
+        breakpoint_line=breakpoint_line,
     )

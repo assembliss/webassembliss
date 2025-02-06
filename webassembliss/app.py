@@ -1,10 +1,28 @@
+from os import environ
+
 import rocher.flask  # type: ignore[import-untyped]
-from emulation.arm64_linux import (  # type: ignore[import-not-found]
-    emulate as arm64_linux_emulation,
-)
-from flask import Flask, redirect, render_template, request
+from emulation.arm64_linux import emulate as arm64_linux_emulation
+from emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
+from emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
+from emulation.debugger_db import DebuggerDB
+from flask import Flask, redirect, render_template, request, session
+from flask_session import Session  # type: ignore[import-untyped]
+from redis import Redis
 
 app = Flask(__name__)
+
+# Setup user sessions.
+SESSION_TYPE = "redis"
+SESSION_REDIS = Redis(
+    host=environ.get("REDIS_HOST", "localhost"),
+    port=int(environ.get("REDIS_PORT", "6379")),
+    password=environ.get("REDIS_PASSWORD", ""),
+)
+app.config.from_object(__name__)
+Session(app)
+
+# Creates an instance of the debugger db so we can get the user IDs.
+ddb = DebuggerDB()
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
@@ -19,7 +37,12 @@ def index():
 
 @app.route("/arm64_linux/")
 def arm64_linux_index():
-    # Read the hello world example to use it as the default code in the editor.
+    # If the user has run or debugged code, we have it saved in their session; reload it.
+    if "source_code" in session:
+        return render_template(
+            "arm64_linux.html.j2", default_code=session["source_code"].split("\n")
+        )
+    # If no code for this user, read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
         return render_template(
             "arm64_linux.html.j2", default_code=file_in.read().split("\n")
@@ -34,9 +57,13 @@ def arm64_linux_run():
         return "No source_code in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
-    user_code = request.json["source_code"]
-    user_input = request.json["user_input"]
-    emu_results = arm64_linux_emulation(user_code, stdin=user_input)
+
+    session["source_code"] = request.json["source_code"]
+    session["user_input"] = request.json["user_input"]
+    emu_results = arm64_linux_emulation(
+        session["source_code"], stdin=session["user_input"]
+    )
+
     # TODO: return simply emu_results and do parsing of results on javascript side;
     #        would make it easier/cleaner to add new archs later on in the app.py.
     return {
@@ -52,6 +79,54 @@ def arm64_linux_run():
         "flags": emu_results.flags,
         "all_info": emu_results.print(),
         "info_obj": emu_results,
+    }
+
+
+@app.route("/arm64_linux/debug/", methods=["POST"])
+def arm64_linux_debug():
+    if request.json is None:
+        return "No JSON data received", 400
+    if "source_code" not in request.json:
+        return "No source_code in JSON data", 400
+    if "user_input" not in request.json:
+        return "No user_input in JSON data", 400
+    if "debug" not in request.json:
+        return "No debug information in JSON data", 400
+
+    session["source_code"] = request.json["source_code"]
+    session["user_input"] = request.json["user_input"]
+    # Note that we need to have *something* stored in the session so the sid persists with the same user.
+    user_signature = session.sid
+    debugInfo = None
+
+    if request.json["debug"].get("start", False):
+        debugInfo = arm64_linux_gdb_start(
+            user_signature=user_signature,
+            code=session["source_code"],
+            user_input=session["user_input"],
+        )
+
+    elif request.json["debug"].get("command", False):
+        debugInfo = arm64_linux_gdb_cmd(
+            user_signature=user_signature,
+            cmd=request.json["debug"]["command"],
+            breakpoint_source=request.json["debug"].get("breakpoint_source", ""),
+            breakpoint_line=request.json["debug"].get("breakpoint_line", 0),
+        )
+
+    else:
+        return "No valid debug commands in JSON data", 400
+
+    return {
+        "debugInfo": debugInfo,
+        "registers": debugInfo.print_registers(byte_split_token="_"),
+        "flags": debugInfo.flags,
+        "all_info": debugInfo.print(),
+        "stdout": debugInfo.run_stdout,
+        "stderr": debugInfo.print_stderr(),
+        "as_ok": debugInfo.assembled_ok,
+        "ld_ok": debugInfo.linked_ok,
+        "ran_ok": debugInfo.run_ok,
     }
 
 

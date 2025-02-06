@@ -5,17 +5,9 @@ Work in progress...
 The goal is to have a webapp that allows users to edit, run, and debug ARM64 assembly code.
 
 ## Get started
-1. install [docker](https://www.docker.com/get-started/)
-2. run `buildAndServe.sh`
-	- it will create an image from the `Dockerfile`
-	- it will then serve `app.py` in port 5000
-	- you can then access it through http://localhost:5000/
-3. alternatively, you can run `buildAndBash.sh`
-	- it will create an image from the `Dockerfile`
-	- it will then open a zsh terminal inside the container in the mounted directory
-4. lastly, you can also use a [dev-container](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) to develop on vs-code within the docker environment
-
-Note that if you use `buildAndServe`, changes to the code will not automatically reflect on the server, you will have to rebuild it. If you're actively working on the code, I suggest using `buildAndBash` and then running `python app.py` which will hot-reload code and templates as you modify them.
+1. install [docker](https://www.docker.com/get-started/);
+2. cd into the folder for this repo;
+3. run `docker compose up --build`
 
 ## Roadmap
 
@@ -29,16 +21,19 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [ ] allow user to debug code (continue, step, set breakpoint)
-	- first idea:
-		- create a [python generator](https://wiki.python.org/moin/Generators) that mimics [clean_emulation](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/emulation/utils.py#L399) but keeps the directory and qiling instance alive throghout debugging
-		- [turn on gdb](https://github.ncsu.edu/assembliss/webassembliss/blob/229e172c4e7ad71c09e9c97c452063d1250a1d3b/webassembliss/examples/arm64_linux/arm64_linux_emulation.py#L32-L34) through qiling
-		- connect to the gdb server ([maybe useful?](https://python3-pwntools.readthedocs.io/en/latest/gdb.html#module-pwnlib.gdb))
-		- generator receives command (e.g., continue or step), sends it to the gdb server, and then yields the updated EmulationResullt
-- [ ] make sure app works with multiple users accessing concurrently
-- [ ] make sure debugging works with multiple users accessing concurrently
-	- might have to play around with what port the gdb-server is listening
-	- https://stackoverflow.com/a/32825482
+	- [x] create thread with tempdir
+	- [x] continue and step
+	- [x] highlight only next line on editor
+	- [x] set breakpoints
+	- [x] remove breakpoints
+	- [x] update breakpoint highlights after removal
+	- [ ] detect exit gracefully
+	- [x] show stdout/stderr from program
+	- [ ] show memory values
+- [x] make sure app works with multiple users accessing concurrently
+- [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
+	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] handle multiple architectures
 
@@ -64,7 +59,8 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 	- https://github.com/python/mypy
 - [ ] add a production deployment server (e.g., [gunicorn](https://rest-apis-flask.teclado.com/docs/deploy_to_render/docker_with_gunicorn/))
 - [ ] update Dockerfile to use newer python version
-- [ ] add unit tests for emulation methods
+- [ ] add unit tests for all methods
+	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
 - [ ] CI/CD to auto-run tests on open PRs
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
@@ -74,15 +70,19 @@ Note that if you use `buildAndServe`, changes to the code will not automatically
 - [x] allow user to download emulation information
 - [x] allow user to download code
 - [ ] allow user to upload code
+- [ ] allow user to upload other files to be processed
 - [ ] allow user to submit an issue through the webapp
 	- https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue#creating-an-issue-from-a-url-query
 - [ ] highlight assembler errors in source code (use `addErrorHighlight`, [example](https://github.ncsu.edu/assembliss/webassembliss/blob/392d960d8fff61facc93eb0a561149578c42a6f8/webassembliss/static/js/arm64_linux.js#L358-L362))
-- [ ] preserve source code between refreshes
-	- [maybe helpful?](https://testdriven.io/blog/flask-sessions/)
+- [x] preserve source code between refreshes
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
+- [ ] handle no available ports for a new debugger session
+	- maybe a timer and try again in a minute?
+- [ ] handle already active session for user
+	- maybe a popup and ask if they want to quit the old one?
 - [ ] have a toggle for ascii vs non ascii memory view
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)
