@@ -35,33 +35,21 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
+/* Parses through the emulation information JSON and returns the string within quotes following the target.
+*/
+function parseEmulationJSON(target) {
+    
+    let json = JSON.parse(getLastRunInfo());
+
+    return json[target] !== undefined ? json[target] : null;
+
+}
+
 /* Submit issue button functionality 
  * TODO:
- * - Parse through stringified JSON
- * - Get the following out of the parsed JSON:
- *      - rootfs
- *      - source code
- *      - as_args
- *      - as_err
- *      - ld_args
- *      - ld_err
- * - Append these to the body
- * 
- * Example JSON:
- * {"all_ok":true,"as_args":"aarch64-linux-gnu-as /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.S -o /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.o","as_err":"","as_out":"","assembled_ok":true,"create_source_error":"","create_source_ok":true,"flags":{"C":false,"N":false,"V":false,"Z":true},"ld_args":"aarch64-linux-gnu-ld /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.o -o /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.exe","ld_err":"","ld_out":"","linked_ok":true,"little_endian":true,"memory":{"4194304":["
- * 
- * Example Output:
- * Body (typed from user)
- * 
- * 
- * rootfs: // rootfs here
- * source code: sourcecode here
- * 
- * as_args: aarch64-linux-gnu-as /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.S -o /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.o
- * as_err: 
- * ld_args: aarch64-linux-gnu-ld /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.o -o /webassembliss/rootfs/arm64_linux/userprograms/tmp1qckxa62/usrCode.exe
- * ld_err: 
- * 
+ * Append the following: 
+ * - rootfs
+ * - source code
  */
 function submitIssue() {
     let title = document.getElementById("issueTitle").value;
@@ -69,10 +57,10 @@ function submitIssue() {
 
     let rootfs = "";
     let source_code = "";
-    let as_args = getLastRunInfo.substring(getLastRunInfo().indexOf('"as_args":') + 10).trim().match(/"([^"]*)"/)?.[1] || "";
-    let as_err = getLastRunInfo.substring(getLastRunInfo().indexOf('"as_err":') + 9).trim().match(/"([^"]*)"/)?.[1] || "";
-    let ld_args = getLastRunInfo.substring(getLastRunInfo().indexOf('"ld_args":') + 10).trim().match(/"([^"]*)"/)?.[1] || "";
-    let ld_err = getLastRunInfo.substring(getLastRunInfo().indexOf('"ld_err":') + 9).trim().match(/"([^"]*)"/)?.[1] || "";
+    let as_args = parseEmulationJSON("as_args");
+    let as_err = parseEmulationJSON("as_err");
+    let ld_args = parseEmulationJSON("ld_args");
+    let ld_err = parseEmulationJSON("ld_err");
 
 
     body += `\n\n\nrootfs: ${rootfs}\nsource_code: ${source_code}\n\nas_args: ${as_args}\nas_err: ${as_err}\nld_args: ${ld_args}\nld_err: ${ld_err}`;
@@ -84,8 +72,6 @@ function submitIssue() {
      * "/" -> "%2F"
     */
     let fbody = body.replace(/\+/g, "%2B").replace(/ /g, "+").replace(/\n/g, "%0A").replace(/\//g, "%2F");
-
-    document.write(fbody);
 
     let bugLabelString = "";
     let helpWantedLabelString = "";
@@ -111,8 +97,6 @@ function submitIssue() {
 
     let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
     fLabelString = fLabelString.substring(0, fLabelString.length - 1);
-
-    alert(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${title}&body=${fbody}`);
 
     if (title=="" || body=="") {
         alert("Issue title or body is required.");
