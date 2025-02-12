@@ -70,7 +70,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to download emulation information
 - [x] allow user to download code
 - [ ] allow user to upload code
-- [ ] allow user to upload other files to be processed
+- [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] allow user to submit an issue through the webapp
 - [ ] highlight assembler errors in source code (use `addErrorHighlight`, [example](https://github.ncsu.edu/assembliss/webassembliss/blob/392d960d8fff61facc93eb0a561149578c42a6f8/webassembliss/static/js/arm64_linux.js#L358-L362))
 - [x] preserve source code between refreshes
