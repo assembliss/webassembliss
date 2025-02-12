@@ -27,7 +27,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- [x] set breakpoints
 	- [x] remove breakpoints
 	- [x] update breakpoint highlights after removal
-	- [ ] detect exit gracefully
+	- [x] detect exit gracefully
 	- [x] show stdout/stderr from program
 	- [ ] show memory values
 - [x] make sure app works with multiple users accessing concurrently

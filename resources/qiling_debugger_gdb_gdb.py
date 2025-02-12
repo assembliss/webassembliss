@@ -251,6 +251,11 @@ class QlGdb(QlDebugger):
                     # emulation has completed successfully
                     reply = f'W{self.ql.os.exit_code:02x}'
 
+            # Update instruction count and exit code after step.
+            if hasattr(self.ql, "_debugger_db"):
+                self.ql._debugger_db.set_exit_code(port=self.port, exit_code=self.ql.os.exit_code)
+                self.ql._debugger_db.incr_instr_count(port=self.port)
+
             return reply
 
         def handle_g(subcmd: str) -> Reply:
@@ -677,6 +682,11 @@ class QlGdb(QlDebugger):
             """
 
             self.gdb.resume_emu(steps=1)
+
+            # Update instruction count and exit code after step.
+            if hasattr(self.ql, "_debugger_db"):
+                self.ql._debugger_db.set_exit_code(port=self.port, exit_code=self.ql.os.exit_code)
+                self.ql._debugger_db.incr_instr_count(port=self.port)
 
             # Commented out this check since it breaks stepping over the code with gdb.
             # Reference: https://github.com/qilingframework/qiling/issues/1377
