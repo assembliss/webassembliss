@@ -52,26 +52,31 @@ function parseEmulationJSON(target) {
  * - source code
  */
 function submitIssue() {
-    let title = document.getElementById("issueTitle").value;
-    let body = document.getElementById("issueBody").value;
+    let title = document.getElementById("issueTitle").value.trim();
+    let body = document.getElementById("issueBody").value.trim();
 
     let rootfs = "";
-    let source_code = "";
+    let source_code = parseEmulationJSON("source_code");
     let as_args = parseEmulationJSON("as_args");
     let as_err = parseEmulationJSON("as_err");
     let ld_args = parseEmulationJSON("ld_args");
     let ld_err = parseEmulationJSON("ld_err");
 
 
-    body += `\n\n\nrootfs: ${rootfs}\nsource_code: ${source_code}\n\nas_args: ${as_args}\nas_err: ${as_err}\nld_args: ${ld_args}\nld_err: ${ld_err}`;
+/* Template Literal for body appending */
+body += `
 
-    /* URL Encoding: 
-     * "+" -> "%2B"
-     * " " -> "+"
-     * "\n" -> "%0A"
-     * "/" -> "%2F"
-    */
-    let fbody = body.replace(/\+/g, "%2B").replace(/ /g, "+").replace(/\n/g, "%0A").replace(/\//g, "%2F");
+
+rootfs: ${rootfs}
+----------------------------------------------------------
+source_code:
+${source_code}
+----------------------------------------------------------
+as_args: ${as_args}
+as_err: ${as_err}
+ld_args: ${ld_args}
+ld_err: ${ld_err}`;
+/* End of template literal */
 
     let bugLabelString = "";
     let helpWantedLabelString = "";
@@ -98,14 +103,18 @@ function submitIssue() {
     let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
     fLabelString = fLabelString.substring(0, fLabelString.length - 1);
 
+    let encodedBody = encodeURIComponent(body);
+    let encodedTitle = encodeURIComponent(title);
+    let encodedLabels = encodeURIComponent(fLabelString);
+
     if (title=="" || body=="") {
         alert("Issue title or body is required.");
     } else {
         /* Generate a URL query */
         if (bugLabelString=="" && helpWantedLabelString=="" && enhancementLabelString=="" && questionLabelString=="" && invalidLabelString=="") {
-            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${title}&body=${fbody}`, "_blank");
+            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
-            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${title}&body=${fbody}&labels=${fLabelString}`, "_blank");
+            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
         }
     }
 }
