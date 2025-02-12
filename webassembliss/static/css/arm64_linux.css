@@ -8,7 +8,7 @@
     border: none;
     text-align: left;
     outline: none;
-    font-size: 15px;
+    font-size: 18px;
 }
 
 /* Add a background color to the button if it is clicked on (add the .active class with JS), and when you move the mouse over it (hover) */
@@ -24,6 +24,29 @@
     display: none;
     overflow: visible;
     background-color: rgb(255, 240, 240);
+}
+
+/* Style the collapsible content. Note: hidden by default */
+.feedbackCollapsible {
+    padding: 2 10px;
+    width: 1080px;
+    display: none;
+    overflow: visible;
+    background-color: rgb(255, 240, 240);
+}
+
+/* Disable resizing element of textarea elements by default */
+textarea {
+    resize: none;
+}
+
+.issueLabelButton {
+    background-color: rgb(189, 189, 189);
+}
+
+.issueLabelButton.issueLabelActive {
+    background-color: rgb(21, 0, 255);
+    color: white;
 }
 
 td {

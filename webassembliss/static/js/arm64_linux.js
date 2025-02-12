@@ -27,12 +27,102 @@ document.addEventListener('keydown', e => {
     }
 });
 
+
+/* Adds toggle functionality to issue label buttons */
+document.querySelector(".feedbackCollapsible").addEventListener("click", function(event) {
+    if (event.target.classList.contains("issueLabelButton")) {
+        event.target.classList.toggle("issueLabelActive");
+    }
+});
+
+/* Parses through the emulation information JSON and returns the string within quotes following the target.
+*/
+function parseEmulationJSON(target) {
+    
+    let json = JSON.parse(getLastRunInfo());
+
+    return json[target] !== undefined ? json[target] : null;
+
+}
+
+/* Submit issue button functionality 
+ * TODO:
+ * Append the following: 
+ * - rootfs
+ */
+function submitIssue() {
+    let title = document.getElementById("issueTitle").value.trim();
+    let body = document.getElementById("issueBody").value.trim();
+
+    let source_code = parseEmulationJSON("source_code");
+    let as_args = parseEmulationJSON("as_args");
+    let as_err = parseEmulationJSON("as_err");
+    let ld_args = parseEmulationJSON("ld_args");
+    let ld_err = parseEmulationJSON("ld_err");
+
+
+/* Template literal for body appending */
+body += `
+
+
+----------------------------------------------------------
+source_code:
+${source_code}
+----------------------------------------------------------
+as_args: ${as_args}
+as_err: ${as_err}
+ld_args: ${ld_args}
+ld_err: ${ld_err}`;
+/* End of template literal */
+
+    let bugLabelString = "";
+    let helpWantedLabelString = "";
+    let enhancementLabelString = "";
+    let questionLabelString = "";
+    let invalidLabelString = "";
+
+    if (document.getElementById("issueBugLabel").classList.contains("issueLabelActive")) {
+        bugLabelString = "bug,";
+    }
+    if (document.getElementById("issueHelpWantedLabel").classList.contains("issueLabelActive")) {
+        helpWantedLabelString = "help+wanted,";
+    }
+    if (document.getElementById("issueEnhancementLabel").classList.contains("issueLabelActive")) {
+        enhancementLabelString = "enhancement,";
+    }
+    if (document.getElementById("issueQuestionLabel").classList.contains("issueLabelActive")) {
+        questionLabelString = "question,";
+    }
+    if (document.getElementById("issueInvalidLabel").classList.contains("issueLabelActive")) {
+        invalidLabelString = "invalid,";
+    }
+
+    let fLabelString = `${bugLabelString}${helpWantedLabelString}${enhancementLabelString}${questionLabelString}${invalidLabelString}`;
+    fLabelString = fLabelString.substring(0, fLabelString.length - 1);
+
+    let encodedBody = encodeURIComponent(body);
+    let encodedTitle = encodeURIComponent(title);
+    let encodedLabels = encodeURIComponent(fLabelString);
+
+    if (title=="" || body=="") {
+        alert("Issue title or body is required.");
+    } else {
+        /* Generate a URL query */
+        if (bugLabelString=="" && helpWantedLabelString=="" && enhancementLabelString=="" && questionLabelString=="" && invalidLabelString=="") {
+            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
+        } else {
+            window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
+        }
+    }
+}
+
 function createEditor(default_code) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
         monaco.languages.register({ id: 'arm64' });
         monaco.languages.setMonarchTokensProvider('arm64', getSyntaxHighlighting());
         window.editor = monaco.editor.create(document.getElementById('container'), {
+            // Change "value" to upload files
             value: default_code.join('\n'),
             language: 'arm64',
             theme: 'vs-dark',
@@ -94,6 +184,8 @@ function runCode() {
             document.getElementById("emulationInfo").value = data.all_info;
             document.getElementById("regValues").value = data.registers;
             document.getElementById("memValues").value = data.memory;
+            // Make a function that is called here that parses through emulationJSON to find as_err, then furthur parses through that string to find errors.
+            // Call error highlight on the error lines.
             lastRunInfo = data.info_obj;
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
