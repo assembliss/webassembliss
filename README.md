@@ -64,6 +64,10 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] CI/CD to auto-run tests on open PRs
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
+	- might need to adapt [rocher](https://github.com/julien-duponchelle/rocher/blob/main/rocher/flask.py)?
+- [ ] make debugging route and methods async
+	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
+	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
 
 ### User Experience
 - [x] change the editor to hilight syntax for arm64 assembly
