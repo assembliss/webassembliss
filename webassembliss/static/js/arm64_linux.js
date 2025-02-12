@@ -49,13 +49,11 @@ function parseEmulationJSON(target) {
  * TODO:
  * Append the following: 
  * - rootfs
- * - source code
  */
 function submitIssue() {
     let title = document.getElementById("issueTitle").value.trim();
     let body = document.getElementById("issueBody").value.trim();
 
-    let rootfs = "";
     let source_code = parseEmulationJSON("source_code");
     let as_args = parseEmulationJSON("as_args");
     let as_err = parseEmulationJSON("as_err");
@@ -63,11 +61,10 @@ function submitIssue() {
     let ld_err = parseEmulationJSON("ld_err");
 
 
-/* Template Literal for body appending */
+/* Template literal for body appending */
 body += `
 
 
-rootfs: ${rootfs}
 ----------------------------------------------------------
 source_code:
 ${source_code}
@@ -125,6 +122,7 @@ function createEditor(default_code) {
         monaco.languages.register({ id: 'arm64' });
         monaco.languages.setMonarchTokensProvider('arm64', getSyntaxHighlighting());
         window.editor = monaco.editor.create(document.getElementById('container'), {
+            // Change "value" to upload files
             value: default_code.join('\n'),
             language: 'arm64',
             theme: 'vs-dark',
@@ -186,6 +184,8 @@ function runCode() {
             document.getElementById("emulationInfo").value = data.all_info;
             document.getElementById("regValues").value = data.registers;
             document.getElementById("memValues").value = data.memory;
+            // Make a function that is called here that parses through emulationJSON to find as_err, then furthur parses through that string to find errors.
+            // Call error highlight on the error lines.
             lastRunInfo = data.info_obj;
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
