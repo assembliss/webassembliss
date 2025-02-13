@@ -306,22 +306,31 @@ def parse_memory_area(
         lines = lines[LINES_TO_IGNORE_TOP:-LINES_TO_IGNORE_BOTTOM]
         out = bytearray()
         for line in lines:
+            # Ignore the address on the line and get the values.
             addr, *values = line.split("\t")
             for v in values:
+                # Convert each value from a string into an integer.
                 out.append(int(v, 16))
         return out
 
     mem_values: Dict[int, bytearray] = {}
+    # Parse one mapped area at a time.
     for start_addr, end_addr in mapped_areas:
+        # Split the area into chunks so each command only requests an appropriate number of bytes.
         num_chunks = (end_addr - start_addr) // chunk_size
+        # Generate one command for each chunk we need.
         commands = []
         for i in range(num_chunks):
             chunk_start = start_addr + i * chunk_size
+            # TODO: Could reduce the number of commands we generate here by asking for more bytes on each address;
+            #           would need to adapt the _parse method to handle those though.
             commands.append(f"x/{chunk_size}xb 0x{chunk_start:0x}")
 
+        # Get memory chunks from with gdb-client.
         stdout, _ = _send_cmds_via_gdbmultiarch(
             port=port, bin_path=bin_path, commands=commands, breakpoints=[]
         )
+        # Parse gdb-output and store the actual byte values.
         mem_values[start_addr] = _parse_memory_from_gdb_output(stdout)
 
     # Optimize the amount of values we need to store.
