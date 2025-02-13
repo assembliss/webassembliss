@@ -38,18 +38,11 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
 /* Parses through the emulation information JSON and returns the string within quotes following the target.
 */
 function parseEmulationJSON(target) {
-    
     let json = JSON.parse(getLastRunInfo());
 
     return json[target] !== undefined ? json[target] : null;
-
 }
 
-/* Submit issue button functionality 
- * TODO:
- * Append the following: 
- * - rootfs
- */
 function submitIssue() {
     let title = document.getElementById("issueTitle").value.trim();
     let body = document.getElementById("issueBody").value.trim();
@@ -61,7 +54,7 @@ function submitIssue() {
     let ld_err = parseEmulationJSON("ld_err");
 
 
-/* Template literal for body appending */
+// Template literal for body appending
 body += `
 
 
@@ -73,7 +66,7 @@ as_args: ${as_args}
 as_err: ${as_err}
 ld_args: ${ld_args}
 ld_err: ${ld_err}`;
-/* End of template literal */
+// End of template literal
 
     let bugLabelString = "";
     let helpWantedLabelString = "";
@@ -107,7 +100,7 @@ ld_err: ${ld_err}`;
     if (title=="" || body=="") {
         alert("Issue title or body is required.");
     } else {
-        /* Generate a URL query */
+        // Generate a URL query
         if (bugLabelString=="" && helpWantedLabelString=="" && enhancementLabelString=="" && questionLabelString=="" && invalidLabelString=="") {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
@@ -156,8 +149,30 @@ function clearOutput() {
     document.getElementById("downloadButton").disabled = true;
 }
 
+function detectAndHighlightErrors() {
+    // Find errors, parse through
+    let as_err = parseEmulationJSON("as_err");
+    let lines = as_err.split("\n").map(line => {
+
+        let match = line.match(/usrCode\.S:(\d+): Error: (.+)/);
+        if (match) {
+            return { lineNumber: match[1], message: match[2] };
+        }
+        return null;
+
+    }).filter(error => error !== null); // Remove non-error lines
+
+    // Highlight lines for each error
+    lines.forEach(line => {
+        line.message = line.message.replace(/`/g, '\\`');
+        addErrorHighlight(parseInt(line.lineNumber,10), [{value: line.message}]);
+    });
+}
+
 function runCode() {
     clearOutput();
+    // Why not remove highlights at the start of runCode()?
+    removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     var source_code = getSource();
     var user_input = document.getElementById("inputBox").value;
@@ -184,9 +199,9 @@ function runCode() {
             document.getElementById("emulationInfo").value = data.all_info;
             document.getElementById("regValues").value = data.registers;
             document.getElementById("memValues").value = data.memory;
-            // Make a function that is called here that parses through emulationJSON to find as_err, then furthur parses through that string to find errors.
-            // Call error highlight on the error lines.
             lastRunInfo = data.info_obj;
+            // Make sure to highlight detection AFTER lastRunInfo is updated!
+            detectAndHighlightErrors();
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         });
