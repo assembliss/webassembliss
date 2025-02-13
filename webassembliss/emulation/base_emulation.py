@@ -1,7 +1,7 @@
 import struct
 import subprocess
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
 from typing import Callable, Dict, List, Optional, Tuple, Union
@@ -41,7 +41,7 @@ class EmulationResults:
     memory: Dict[int, Tuple[str, Tuple[int, ...]]] = (
         None  # type: ignore[assignment] # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
-    flags: Dict[str, bool] = None  # type: ignore[assignment] # {N: False, Z: True, ...}
+    flags: Dict[str, bool] = field(default_factory=dict)  # {N: False, Z: True, ...}
 
     def _prep_output(
         self,
@@ -259,7 +259,7 @@ def link(
         )
 
 
-def _filter_memory(
+def filter_memory(
     og_mem: Dict[int, bytearray],
     cur_mem: Dict[int, bytearray],
     little_endian: bool,
@@ -418,7 +418,7 @@ def _timed_emulation(
         },
         ql.arch.bits,
         little_endian,
-        _filter_memory(og_mem_values, cur_mem_values, little_endian),
+        filter_memory(og_mem_values, cur_mem_values, little_endian),
         get_flags_func(ql),
     )
 

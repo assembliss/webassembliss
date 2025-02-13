@@ -142,6 +142,7 @@ def arm64_linux_debug():
         "as_ok": debugInfo.assembled_ok,
         "ld_ok": debugInfo.linked_ok,
         "ran_ok": debugInfo.run_ok,
+        "memory": debugInfo.print_memory(show_ascii=True),
     }
 
 

@@ -20,16 +20,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] highlight modified registers
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
-- [ ] allow user to debug code (continue, step, set breakpoint)
-	- [x] create thread with tempdir
-	- [x] continue and step
-	- [x] highlight only next line on editor
-	- [x] set breakpoints
-	- [x] remove breakpoints
-	- [x] update breakpoint highlights after removal
-	- [x] detect exit gracefully
-	- [x] show stdout/stderr from program
-	- [ ] show memory values
+- [x] allow user to debug code (continue, step, set breakpoint, see memory)
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
@@ -87,5 +78,6 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] handle already active session for user
 	- maybe a popup and ask if they want to quit the old one?
 - [ ] have a toggle for ascii vs non ascii memory view
+- [ ] speedup/optimize steps in debug-mode
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)

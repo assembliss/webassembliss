@@ -14,7 +14,13 @@ from qiling.const import QL_ENDIAN, QL_VERBOSE  # type: ignore[import-untyped]
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 
-from .base_emulation import EmulationResults, assemble, create_source, link
+from .base_emulation import (
+    EmulationResults,
+    assemble,
+    create_source,
+    filter_memory,
+    link,
+)
 from .debugger_db import DebuggerDB
 
 # Database to keep track of active sessions and available ports.
@@ -30,7 +36,7 @@ class DebuggingResults(EmulationResults):
     gdb_port: Optional[int] = None
     next_line: Optional[int] = None
     breakpoints: List[str] = field(default_factory=list)
-    extra_values: Dict[str, Any] = None  # type: ignore[assignment]
+    extra_values: Dict[str, Any] = field(default_factory=dict)
 
     def print(self) -> str:
         out = "-- DEBUG MODE --\n"
@@ -93,6 +99,7 @@ def _run_gdb_server(
     rootfs: Union[str, PathLike],
     user_input: str,
     q: Queue,
+    bin_name: str,
 ) -> None:
     """Create a qiling instance with given arguments and start emulation with a gdb-server on."""
 
@@ -113,6 +120,14 @@ def _run_gdb_server(
     mydata.ql.os.stdout = mydata.out
     mydata.err = GDBPipe(port=port, output_type="stderr")
     mydata.ql.os.stderr = mydata.err
+    # Find mapped memory areas and pass them through the queue.
+    q.put(
+        [
+            (start_addr, end_addr)
+            for (start_addr, end_addr, _, label, _) in mydata.ql.mem.get_mapinfo()
+            if label == bin_name
+        ]
+    )
     # Start the emulation / server starts listening.
     try:
         mydata.ql.os.exit_code = None
@@ -201,6 +216,7 @@ def _setup_gdb_server(
             rootfs=rootfs_path,
             user_input=user_input,
             q=q,
+            bin_name=bin_name,
         )
 
 
@@ -269,6 +285,49 @@ def _process_extra_info(
         else:
             # If the key does not match any of the fields, stores value in the extra_values field.
             dr.extra_values[ei.key] = result
+
+
+def parse_memory_area(
+    *,
+    port: int,
+    bin_path: Union[str, PathLike],
+    mapped_areas: List[Tuple[int, int]],
+    little_endian: bool,
+    chunk_size: int = 128,  # how many bytes are read in a single request
+) -> Dict[int, Tuple[str, Tuple[int, ...]]]:
+    """Retrieve memory values from gdb-server and parse them into a structured dict."""
+
+    def _parse_memory_from_gdb_output(stdout: bytes) -> bytearray:
+        LINES_TO_IGNORE_TOP: int = 5
+        LINES_TO_IGNORE_BOTTOM: int = 5
+        # Split the output into lines
+        lines = stdout.decode().split("\n")
+        # Ignore the extra lines from gdb communication.
+        lines = lines[LINES_TO_IGNORE_TOP:-LINES_TO_IGNORE_BOTTOM]
+        out = bytearray()
+        for line in lines:
+            addr, *values = line.split("\t")
+            for v in values:
+                out.append(int(v, 16))
+        return out
+
+    mem_values: Dict[int, bytearray] = {}
+    for start_addr, end_addr in mapped_areas:
+        num_chunks = (end_addr - start_addr) // chunk_size
+        commands = []
+        for i in range(num_chunks):
+            chunk_start = start_addr + i * chunk_size
+            commands.append(f"x/{chunk_size}xb 0x{chunk_start:0x}")
+
+        stdout, _ = _send_cmds_via_gdbmultiarch(
+            port=port, bin_path=bin_path, commands=commands, breakpoints=[]
+        )
+        mem_values[start_addr] = _parse_memory_from_gdb_output(stdout)
+
+    # Optimize the amount of values we need to store.
+    return filter_memory(
+        og_mem=mem_values, cur_mem=mem_values, little_endian=little_endian
+    )
 
 
 def create_debugging_session(
@@ -356,6 +415,9 @@ def create_debugging_session(
     dr.reg_num_bits = new_queue.get()
     dr.little_endian = new_queue.get()
 
+    # Get mapped memory information.
+    mapped_memory = new_queue.get()
+
     # If no errors, debugging session is active.
     dr.active = True
     dr.all_ok = True
@@ -367,6 +429,15 @@ def create_debugging_session(
         reg_num_bits=dr.reg_num_bits,
         little_endian="yes" if dr.little_endian else "no",
         breakpoints=[],
+        mapped_memory=mapped_memory,
+    )
+
+    # Parse the memory values in the mapped area.
+    dr.memory = parse_memory_area(
+        port=port,
+        bin_path=dr.bin_path,
+        mapped_areas=mapped_memory,
+        little_endian=dr.little_endian,
     )
 
     # Find all the extra information the caller wants.
@@ -471,6 +542,13 @@ def debug_cmd(
         db.delete_session(user_signature=user_signature)
 
     else:
+        # Parse the memory values from all mapped areas in the program.
+        dr.memory = parse_memory_area(
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            mapped_areas=data.get("mapped_memory", []),
+            little_endian=dr.little_endian,
+        )
         # If it hasn't, find all the extra information the caller wants.
         _process_extra_info(dr=dr, extraInfo=extraInfo)
 
