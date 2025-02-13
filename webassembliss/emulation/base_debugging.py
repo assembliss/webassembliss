@@ -6,10 +6,12 @@ from enum import Enum
 from io import BytesIO
 from os import PathLike
 from queue import Queue
+from time import sleep
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_VERBOSE  # type: ignore[import-untyped]
+from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 
 from .base_emulation import EmulationResults, assemble, create_source, link
@@ -37,7 +39,7 @@ class DebuggingResults(EmulationResults):
         else:
             out += f"Active session: no\n"
         out += f"Next line to be executed: {self.next_line}\n"
-        out += f"Breakpoints: {', '.join(self.breakpoints)}\n"
+        out += f"Breakpoints: {self.breakpoints}\n"
         out += f"Extra values: {self.extra_values}\n"
         out += super().print()
         return out
@@ -101,6 +103,8 @@ def _run_gdb_server(
     # Passes architecture information via the queue.
     q.put(mydata.ql.arch.bits)
     q.put(mydata.ql.arch.endian == QL_ENDIAN.EL)
+    # Attach the debugger db to our qiling object.
+    setattr(mydata.ql, "_debugger_db", db)
     # Turn on the debugger.
     mydata.ql.debugger = f"gdb::{port}"
     # Redirect input, output, and error streams.
@@ -110,7 +114,19 @@ def _run_gdb_server(
     mydata.err = GDBPipe(port=port, output_type="stderr")
     mydata.ql.os.stderr = mydata.err
     # Start the emulation / server starts listening.
-    mydata.ql.run()
+    try:
+        mydata.ql.os.exit_code = None
+        mydata.ql.run()
+    except QlErrorCoreHook as _:
+        # TODO: make sure this error is happening because of our gdb changes (handle_s bug) and not another reason.
+        pass
+    finally:
+        # Save exit code in the db so user can see it.
+        exit_code = (
+            mydata.ql.os.exit_code if mydata.ql.os.exit_code is not None else "gdb-stop"
+        )
+        db.set_exit_code(port=port, exit_code=f"{exit_code}")
+        db.incr_instr_count(port=port)
 
 
 def _setup_gdb_server(
@@ -368,7 +384,7 @@ def debug_cmd(
 ) -> DebuggingResults:
     """Interact with an active debugging session."""
 
-    dr = DebuggingResults()
+    dr = DebuggingResults(flags={})
     data = db.get_user_info(user_signature=user_signature)
     dr.gdb_port = data.get("port", 0)
     if not dr.gdb_port:
@@ -377,23 +393,31 @@ def debug_cmd(
     dr.reg_num_bits = data.get("reg_num_bits", 0)
     dr.little_endian = data.get("little_endian", "no") == "yes"
     dr.breakpoints = data.get("breakpoints", [])
-    dr.active = True
+    dr.active = dr.linked_ok = dr.assembled_ok = True
 
     if cmd == DebuggingOptions.CONTINUE:
+        old_intr_count = db.get_instr_count(port=dr.gdb_port)
         _send_cmds_via_gdbmultiarch(
             port=dr.gdb_port,
             bin_path=dr.bin_path,
             commands=["continue"],
             breakpoints=dr.breakpoints,
         )
+        # Wait for the gdb-server to finish executing the code.
+        while db.get_instr_count(port=dr.gdb_port) == old_intr_count:
+            sleep(0.01)
 
     elif cmd == DebuggingOptions.STEP:
+        old_intr_count = db.get_instr_count(port=dr.gdb_port)
         _send_cmds_via_gdbmultiarch(
             port=dr.gdb_port,
             bin_path=dr.bin_path,
             commands=["step"],
             breakpoints=dr.breakpoints,
         )
+        # Wait for the gdb-server to finish executing the code.
+        while db.get_instr_count(port=dr.gdb_port) == old_intr_count:
+            sleep(0.01)
 
     elif cmd == DebuggingOptions.BREAKPOINT:
         assert breakpoint_line, "Line number needs to be provided to add a breakpoint."
@@ -433,10 +457,22 @@ def debug_cmd(
     dr.run_stdout = db.get_output(port=dr.gdb_port, output_type="stdout")
     dr.run_stderr = db.get_output(port=dr.gdb_port, output_type="stderr")
 
-    # TODO: detect server has exited and update dr.active.
+    # Check if the exit code has been set for this port.
+    exit_code = db.get_exit_code(port=dr.gdb_port)
+    if exit_code not in ("", None, "None"):
+        # If it has, store it in the return object and mark session as inactive.
+        dr.run_exit_code = exit_code
+        dr.run_ok = True
+        dr.active = False
+
+    # Check if the debugging session has ended.
     if not dr.active:
+        # It it has, delete session info from db.
         db.delete_session(user_signature=user_signature)
 
-    # Find all the extra information the caller wants and return.
-    _process_extra_info(dr=dr, extraInfo=extraInfo)
+    else:
+        # If it hasn't, find all the extra information the caller wants.
+        _process_extra_info(dr=dr, extraInfo=extraInfo)
+
+    # Return debugging session results.
     return dr

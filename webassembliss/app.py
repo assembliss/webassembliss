@@ -4,8 +4,7 @@ import rocher.flask  # type: ignore[import-untyped]
 from emulation.arm64_linux import emulate as arm64_linux_emulation
 from emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
 from emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
-from emulation.debugger_db import DebuggerDB
-from flask import Flask, redirect, render_template, request, session
+from flask import Flask, abort, current_app, redirect, render_template, request, session
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
 
@@ -21,9 +20,6 @@ SESSION_REDIS = Redis(
 app.config.from_object(__name__)
 Session(app)
 
-# Creates an instance of the debugger db so we can get the user IDs.
-ddb = DebuggerDB()
-
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
 rocher.flask.editor_register(app)
@@ -33,6 +29,25 @@ rocher.flask.editor_register(app)
 def index():
     # TODO: add a landing page whenever we have more architectures available.
     return redirect("/arm64_linux/")
+
+
+@app.route("/debugdb/<keys>/")
+def debugdbvalues(keys):
+    """This is a debug route to help see the contents of the debugger_db."""
+    # Example route: http://127.0.0.1:5000/debugdb/EXIT*|USER*|PORT*
+    # Make sure we're in a debug server.
+    if not current_app.debug:
+        # If not, abort the request.
+        abort(404)
+    # Connect to the redis db.
+    _db = Redis(
+        host=environ.get("REDIS_HOST", "localhost"),
+        port=int(environ.get("REDIS_PORT", "6379")),
+        password=environ.get("REDIS_PASSWORD", ""),
+        decode_responses=True,
+    )
+    # Parse the values for all the given keys.
+    return {k: _db.get(k) for key in keys.split("|") for k in _db.keys(key)}
 
 
 @app.route("/arm64_linux/")

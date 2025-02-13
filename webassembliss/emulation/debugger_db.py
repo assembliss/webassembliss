@@ -1,8 +1,8 @@
 from json import dumps, loads
 from os import environ
-from typing import Dict
+from typing import Dict, Optional, Union
 
-import redis
+from redis import Redis
 
 
 class DebuggerDB:
@@ -23,11 +23,11 @@ class DebuggerDB:
         port_available_token: str = "free",
         stdout_prefix: str = "STDOUT_",
         stderr_prefix: str = "STDERR_",
+        exit_code_prefix: str = "EXIT_",
+        insr_count_prefix: str = "INSTR_COUNT_",
     ):
         # Create a connection with the db that decodes responses automatically.
-        self._db = redis.Redis(
-            host=host, port=port, password=password, decode_responses=True
-        )
+        self._db = Redis(host=host, port=port, password=password, decode_responses=True)
         # Initialize the required values in the database if they're not there.
         self._db.setnx("VAR_MIN_PORT", min_port)
         self._db.setnx("VAR_MAX_PORT", max_port)
@@ -37,6 +37,8 @@ class DebuggerDB:
         self._db.setnx("VAR_PORT_AVAILABLE_TOKEN", port_available_token)
         self._db.setnx("VAR_STDOUT_PREFIX", stdout_prefix)
         self._db.setnx("VAR_STDERR_PREFIX", stderr_prefix)
+        self._db.setnx("VAR_EXITCODE_PREFIX", exit_code_prefix)
+        self._db.setnx("VAR_INSTRCOUNT_PREFIX", insr_count_prefix)
         # Load the required values from the db, in case another client had overwritten them.
         # These values should not change during execution, so it's fine to have a local copy.
         self._min_port: int = int(self._db.get("VAR_MIN_PORT"))  # type: ignore[arg-type]
@@ -47,6 +49,8 @@ class DebuggerDB:
         self._port_available_token = self._db.get("VAR_PORT_AVAILABLE_TOKEN")  # type: ignore[assignment]
         self._stdout_prefix: str = self._db.get("VAR_STDOUT_PREFIX")  # type: ignore[assignment]
         self._stderr_prefix: str = self._db.get("VAR_STDERR_PREFIX")  # type: ignore[assignment]
+        self._exitcode_prefix: str = self._db.get("VAR_EXITCODE_PREFIX")  # type: ignore[assignment]
+        self._insr_count_prefix: str = self._db.get("VAR_INSTRCOUNT_PREFIX")  # type: ignore[assignment]
         # Store the number of ports that we can use.
         self._range: int = self._max_port - self._min_port + 1
         # If received a non-zero session count, initialize it if it's not set yet.
@@ -74,6 +78,14 @@ class DebuggerDB:
             port=port,
             output_type=output_type,
         )
+
+    def _exit_code_key(self, port: int) -> str:
+        """Create an exitcode-key for sysexit information in a standard manner."""
+        return f"{self._exitcode_prefix}{port:_}"
+
+    def _instr_count_key(self, port: int) -> str:
+        """Create an instrcount-key for gdb command information in a standard manner."""
+        return f"{self._insr_count_prefix}{port:_}"
 
     def find_available_port(self, *, user_signature: str) -> int:
         """Return the port this user request should use."""
@@ -178,8 +190,15 @@ class DebuggerDB:
         if user_data:
             port = user_data["port"]
             port_key = self._port_key(port)
-            self._db.set(port_key, self._port_available_token)  # type: ignore[arg-type]
+            if self._port_available_token:
+                self._db.set(port_key, self._port_available_token)
+            else:
+                self._db.delete(port_key)
             self._db.delete(user_key)
+            self._db.delete(self._output_key(port=port, output_type="stdout"))
+            self._db.delete(self._output_key(port=port, output_type="stderr"))
+            self._db.delete(self._exit_code_key(port))
+            self._db.delete(self._instr_count_key(port))
             return True
         # Did not find an entry for given user.
         return False
@@ -197,6 +216,26 @@ class DebuggerDB:
         out_key = self._output_key(port, output_type)
         value = self._db.get(out_key)
         return value if value else ""
+
+    def set_exit_code(self, *, port: int, exit_code: Optional[Union[str, int]]) -> None:
+        """Store program exit code into the db."""
+        if exit_code is None:
+            exit_code = ""
+        self._db.set(self._exit_code_key(port), exit_code)
+
+    def get_exit_code(self, *, port: int) -> str:
+        """Retrieve program exit code from the db."""
+        value = self._db.get(self._exit_code_key(port))
+        return value if value is not None else ""
+
+    def incr_instr_count(self, *, port: int) -> None:
+        """Increase the number of executed qiling-gdb-instructions in the db."""
+        self._db.incr(self._instr_count_key(port))
+
+    def get_instr_count(self, *, port: int) -> int:
+        """Retrieve the count of qiling-gdb-instructions executed from the db."""
+        value = self._db.get(self._instr_count_key(port))
+        return int(value) if value else 0
 
 
 class DDBError(Exception):

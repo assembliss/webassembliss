@@ -30,7 +30,7 @@ class EmulationResults:
     ld_out: str = ""
     ld_err: str = ""
     run_ok: bool = None  # type: ignore[assignment]
-    run_exit_code: Optional[int] = None
+    run_exit_code: Optional[Union[int, str]] = None
     run_timeout: bool = None  # type: ignore[assignment]
     run_stdin: str = ""
     run_stdout: str = ""

@@ -6,6 +6,8 @@ services:
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+    depends_on:
+      - redis
   redis:
     image: "redis:alpine"
     command: sh -c "rm -f /data/dump.rdb && exec redis-server" # Delete any data from previous run.

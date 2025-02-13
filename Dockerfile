@@ -40,5 +40,8 @@ COPY resources/qiling_debugger_gdb_gdb.py ${QL_GDB_PATH}
 COPY webassembliss /webassembliss
 WORKDIR /webassembliss
 
+# You can uncomment the line below to set the backend to run in debug mode.
+# ENV FLASK_DEBUG=1
+
 # Container command to serve flask app
 CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]

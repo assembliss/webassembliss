@@ -287,8 +287,8 @@ function updateDebuggingInfo(data) {
         document.getElementById("ldStatus").innerHTML = data.debugInfo.linked_ok ? OK_SYMBOL : ERROR_SYMBOL;
     }
 
-    if (data.debugInfo.ran_ok !== null) {
-        document.getElementById("execStatus").innerHTML = data.debugInfo.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+    if (data.ran_ok !== null) {
+        document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
     }
 
     if (data.debugInfo.active !== null) {

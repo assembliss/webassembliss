@@ -27,7 +27,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- [x] set breakpoints
 	- [x] remove breakpoints
 	- [x] update breakpoint highlights after removal
-	- [ ] detect exit gracefully
+	- [x] detect exit gracefully
 	- [x] show stdout/stderr from program
 	- [ ] show memory values
 - [x] make sure app works with multiple users accessing concurrently
@@ -64,13 +64,17 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] CI/CD to auto-run tests on open PRs
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
+	- might need to adapt [rocher](https://github.com/julien-duponchelle/rocher/blob/main/rocher/flask.py)?
+- [ ] make debugging route and methods async
+	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
+	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
 
 ### User Experience
 - [x] change the editor to hilight syntax for arm64 assembly
 - [x] allow user to download emulation information
 - [x] allow user to download code
 - [ ] allow user to upload code
-- [ ] allow user to upload other files to be processed
+- [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] allow user to submit an issue through the webapp
 - [x] highlight assembler errors in source code
 - [x] preserve source code between refreshes
