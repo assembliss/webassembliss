@@ -209,7 +209,10 @@ function runCode() {
 }
 
 function setCLArgs() {
-    window.cl_args = prompt("Set command line arguments:", window.cl_args);
+    new_val = prompt("Set command line arguments:", window.cl_args);
+    if (new_val !== null) {
+        window.cl_args = new_val;
+    }
 }
 
 function getSource() {
@@ -282,6 +285,9 @@ function download_file(name, contents, mime_type) {
 }
 
 function updateDebuggingInfo(data) {
+    // TODO: only update values if they're not null, e.g., after program quits we probably want to display last memory values read.
+    //          - this could also be done python-side.
+
     document.getElementById("runStatus").innerHTML = OK_SYMBOL;
 
     if (data.debugInfo.as_ok !== null) {

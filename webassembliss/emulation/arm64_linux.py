@@ -11,6 +11,7 @@ from .base_debugging import (
     DebuggingOptions,
     DebuggingResults,
     LineNum_DI,
+    clean_gdb_output,
     create_debugging_session,
     debug_cmd,
 )
@@ -64,7 +65,8 @@ def emulate(
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
-        ld_flags = ["-lc -o"]
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
+        ld_flags = ["-o"]
     if registers is None:
         registers = ARM64_REGISTERS
 
@@ -88,26 +90,19 @@ def emulate(
 
 
 def _parse_gdb_registers(
-    raw_text: str,
-    full_lines_to_ignore_beginning: int = 5,
-    gdb_prompt_shown: bool = True,
-    full_lines_to_ignore_end: int = 6,
+    gdb_output: bytes, *, cpsr_only: bool = False
 ) -> Dict[str, Tuple[int, bool]]:
     """Parses the result of an 'info regiters' command sent to an arm64 gdb session."""
-
+    # Clean the gdb interaction and only keep the register values.
+    lines = clean_gdb_output(
+        gdb_output=gdb_output,
+        first_line_token=f"(gdb) {'cpsr' if cpsr_only else 'x0'}",
+        last_line_token="(gdb) Detaching" if cpsr_only else "fpsr",
+    )
+    # Remove the '(gdb) ' prompt from the first relevant output line.
+    lines[0] = lines[0][len("(gdb) ") :]
+    # return {r.strip(): (int(v.strip(), 16), False) for r, v in }
     out = {}
-
-    # Split text by lines and ignores the first N and last M lines.
-    lines = raw_text.split("\n")[
-        full_lines_to_ignore_beginning:-full_lines_to_ignore_end
-    ]
-
-    # If first line has a gdb prompt, skip it manually.
-    if gdb_prompt_shown:
-        first_line_tokens = lines.pop(0).split()
-        reg, value = first_line_tokens[1], first_line_tokens[2]
-        out[reg.strip()] = int(value.strip(), 16), False
-
     # Process next lines similarly without having to worry about the gdb prompt.
     for l in lines:
         reg, value, *_ = l.split()
@@ -119,7 +114,7 @@ def _parse_gdb_registers(
 ARM64Registers_DI = DebuggingInfo(
     key="registers",
     cmds=["info registers"],
-    postprocess=lambda x: _parse_gdb_registers(x[0].decode()),
+    postprocess=lambda x: _parse_gdb_registers(x[0]),
 )
 
 ARM64Flags_DI = DebuggingInfo(
@@ -127,7 +122,7 @@ ARM64Flags_DI = DebuggingInfo(
     cmds=["info register cpsr"],
     postprocess=lambda x: _parse_nzcv_from_cpsr(
         # Parsing the output of 'info register cpsr' from gdb to get only the value of the register.
-        int(x[0].decode().split("\n")[5].split()[2], 16)
+        _parse_gdb_registers(x[0], cpsr_only=True)["cpsr"][0]
     ),
 )
 
@@ -156,7 +151,8 @@ def start_debugger(
     if as_flags is None:
         as_flags = ["-g --gdwarf-5 -o"]
     if ld_flags is None:
-        ld_flags = ["-lc -o"]
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
+        ld_flags = ["-o"]
     if extraInfo is None:
         extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
 

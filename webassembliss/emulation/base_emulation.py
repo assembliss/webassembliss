@@ -8,8 +8,9 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
-from qiling.const import QL_ENDIAN, QL_STOP
+from qiling.const import QL_ENDIAN
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
+from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 
@@ -359,7 +360,6 @@ def _timed_emulation(
         rootfs_path,
         verbose=verbose,
         console=False,
-        stop=QL_STOP.EXIT_TRAP,
     )
     given_stdin = stdin.getvalue().decode()
 
@@ -374,8 +374,11 @@ def _timed_emulation(
     og_mem_values = {s: ql.mem.read(s, e - s) for s, e in relevant_mem_area}
 
     # Redirect input, output, and error streams.
-    out = BytesIO()
-    err = BytesIO()
+    # SimpleOutSteams capture the output of printf while BytesIOs do not.
+    # TODO: printf output only gets captured if serving webapp manually;
+    #       i.e., it does not show when serving via docker(-compose) command.
+    out = SimpleOutStream(fd=1)
+    err = SimpleOutStream(fd=2)
     # TODO: make emulation crash if code asks for user input but stdin is exhausted.
     ql.os.stdin = stdin
     ql.os.stdout = out

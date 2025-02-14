@@ -72,8 +72,8 @@ class DebuggingInfo:
 class GDBPipe(SimpleOutStream):
     """Class to get output/errors from gdb server and into DebuggerDB."""
 
-    def __init__(self, port: int, output_type: str):
-        super().__init__(fd=-1)
+    def __init__(self, *, port: int, output_type: str, fd: int):
+        super().__init__(fd=fd)
         self._port = port
         self._output_type = output_type
 
@@ -116,9 +116,9 @@ def _run_gdb_server(
     mydata.ql.debugger = f"gdb::{port}"
     # Redirect input, output, and error streams.
     mydata.ql.os.stdin = BytesIO(user_input.encode())
-    mydata.out = GDBPipe(port=port, output_type="stdout")
+    mydata.out = GDBPipe(port=port, output_type="stdout", fd=1)
     mydata.ql.os.stdout = mydata.out
-    mydata.err = GDBPipe(port=port, output_type="stderr")
+    mydata.err = GDBPipe(port=port, output_type="stderr", fd=2)
     mydata.ql.os.stderr = mydata.err
     # Find mapped memory areas and pass them through the queue.
     q.put(
@@ -230,6 +230,8 @@ def _send_cmds_via_gdbmultiarch(
 ) -> Tuple[bytes, bytes]:
     """Create a subprocess that launches runs gdb-multiarch, sends the commands given, and returns stdout/stderr."""
 
+    # TODO: make this an async call so the webserver can wait while the communication with the gdb-server happens.
+
     # Add detach and quit in case the user didn't include them.
     full_commands = [f"target remote :{port}"] + commands + ["detach", "quit"]
     # Create a process that will use gdb-multiarch to talk to the server.
@@ -288,6 +290,29 @@ def _process_extra_info(
             dr.extra_values[ei.key] = result
 
 
+def clean_gdb_output(
+    *,
+    gdb_output: bytes,
+    first_line_token: str,
+    last_line_token: str = "(gdb) Detaching",
+) -> List[str]:
+    """Parse gdb output to find only lines that are of interest."""
+    lines = gdb_output.decode().split("\n")
+
+    # Find the index of the first line to keep.
+    LINES_TO_IGNORE_TOP = 0
+    while not lines[LINES_TO_IGNORE_TOP].startswith(first_line_token):
+        LINES_TO_IGNORE_TOP += 1
+
+    # Find the index of the last line to keep.
+    LINES_TO_IGNORE_BOTTOM = -1
+    while not lines[LINES_TO_IGNORE_BOTTOM].startswith(last_line_token):
+        LINES_TO_IGNORE_BOTTOM -= 1
+
+    # Return the slice between the first and last lines.
+    return lines[LINES_TO_IGNORE_TOP:LINES_TO_IGNORE_BOTTOM]
+
+
 def parse_memory_area(
     *,
     port: int,
@@ -299,12 +324,7 @@ def parse_memory_area(
     """Retrieve memory values from gdb-server and parse them into a structured dict."""
 
     def _parse_memory_from_gdb_output(stdout: bytes) -> bytearray:
-        LINES_TO_IGNORE_TOP: int = 5
-        LINES_TO_IGNORE_BOTTOM: int = 5
-        # Split the output into lines
-        lines = stdout.decode().split("\n")
-        # Ignore the extra lines from gdb communication.
-        lines = lines[LINES_TO_IGNORE_TOP:-LINES_TO_IGNORE_BOTTOM]
+        lines = clean_gdb_output(gdb_output=stdout, first_line_token="(gdb) 0x")
         out = bytearray()
         for line in lines:
             # Ignore the address on the line and get the values.
@@ -467,6 +487,14 @@ def debug_cmd(
 ) -> DebuggingResults:
     """Interact with an active debugging session."""
 
+    # TODO: Speed up steps and continues; is it slow because:
+    #       1. we have to communicate with the gdb-server?
+    #       2. we open/close too many channels with the server?
+    #       3. we request too much data (e.g., all mapped memory)?
+    #       4. we have to post-process too much data before populating dr?
+    #       5. all of the above? (likely)
+    #       Should probably profile and optimize the slowest one.
+
     dr = DebuggingResults(flags={})
     data = db.get_user_info(user_signature=user_signature)
     dr.gdb_port = data.get("port", 0)
@@ -477,6 +505,7 @@ def debug_cmd(
     dr.little_endian = data.get("little_endian", "no") == "yes"
     dr.breakpoints = data.get("breakpoints", [])
     dr.active = dr.linked_ok = dr.assembled_ok = True
+    mapped_memory = data.get("mapped_memory", [])
 
     if cmd == DebuggingOptions.CONTINUE:
         old_intr_count = db.get_instr_count(port=dr.gdb_port)
@@ -526,6 +555,7 @@ def debug_cmd(
             reg_num_bits=dr.reg_num_bits,
             little_endian="yes" if dr.little_endian else "no",
             breakpoints=dr.breakpoints,
+            mapped_memory=mapped_memory,
         )
 
     elif cmd == DebuggingOptions.QUIT:
@@ -558,7 +588,7 @@ def debug_cmd(
         dr.memory = parse_memory_area(
             port=dr.gdb_port,
             bin_path=dr.bin_path,
-            mapped_areas=data.get("mapped_memory", []),
+            mapped_areas=mapped_memory,
             little_endian=dr.little_endian,
         )
         # If it hasn't, find all the extra information the caller wants.
