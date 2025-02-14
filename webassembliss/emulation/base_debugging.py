@@ -157,6 +157,7 @@ def _setup_gdb_server(
     source_name: str,
     obj_name: str,
     bin_name: str,
+    cl_args: List[str],
     user_input: str,
     workdir: Union[str, PathLike],
 ) -> None:
@@ -212,7 +213,7 @@ def _setup_gdb_server(
         # If able to create, assemble, and link the source code, run the server.
         _run_gdb_server(
             port=port,
-            argv=[mydata.bin_path],
+            argv=[mydata.bin_path] + cl_args,
             rootfs=rootfs_path,
             user_input=user_input,
             q=q,
@@ -352,6 +353,7 @@ def create_debugging_session(
     source_name: str,
     obj_name: str,
     bin_name: str,
+    cl_args: List[str],
     max_queue_size: int,
     extraInfo: List[DebuggingInfo] = [LineNum_DI],
     workdir: Union[str, PathLike] = "userprograms",
@@ -384,6 +386,7 @@ def create_debugging_session(
             "bin_name": bin_name,
             "user_input": user_input,
             "workdir": workdir,
+            "cl_args": cl_args,
         },
     )
     server_thread.start()

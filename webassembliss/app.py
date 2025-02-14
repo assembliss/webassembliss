@@ -75,8 +75,9 @@ def arm64_linux_run():
 
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json["cl_args"]
     emu_results = arm64_linux_emulation(
-        session["source_code"], stdin=session["user_input"]
+        session["source_code"], stdin=session["user_input"], cl_args=session["cl_args"]
     )
 
     # TODO: return simply emu_results and do parsing of results on javascript side;
@@ -110,6 +111,7 @@ def arm64_linux_debug():
 
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json["cl_args"]
     # Note that we need to have *something* stored in the session so the sid persists with the same user.
     user_signature = session.sid
     debugInfo = None
@@ -119,6 +121,7 @@ def arm64_linux_debug():
             user_signature=user_signature,
             code=session["source_code"],
             user_input=session["user_input"],
+            cl_args=session["cl_args"],
         )
 
     elif request.json["debug"].get("command", False):

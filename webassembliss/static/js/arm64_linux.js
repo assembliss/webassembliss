@@ -4,6 +4,7 @@ const ERROR_SYMBOL = "❌";
 window.lastRunInfo = null;
 window.decorations = null;
 window.gdb_line_decoration = null;
+window.cl_args = "";
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -29,7 +30,7 @@ document.addEventListener('keydown', e => {
 
 
 /* Adds toggle functionality to issue label buttons */
-document.querySelector(".feedbackCollapsible").addEventListener("click", function(event) {
+document.querySelector(".feedbackCollapsible").addEventListener("click", function (event) {
     if (event.target.classList.contains("issueLabelButton")) {
         event.target.classList.toggle("issueLabelActive");
     }
@@ -54,8 +55,8 @@ function submitIssue() {
     let ld_err = parseEmulationJSON("ld_err");
 
 
-// Template literal for body appending
-body += `
+    // Template literal for body appending
+    body += `
 
 
 ----------------------------------------------------------
@@ -66,7 +67,7 @@ as_args: ${as_args}
 as_err: ${as_err}
 ld_args: ${ld_args}
 ld_err: ${ld_err}`;
-// End of template literal
+    // End of template literal
 
     let bugLabelString = "";
     let helpWantedLabelString = "";
@@ -97,11 +98,11 @@ ld_err: ${ld_err}`;
     let encodedTitle = encodeURIComponent(title);
     let encodedLabels = encodeURIComponent(fLabelString);
 
-    if (title=="" || body=="") {
+    if (title == "" || body == "") {
         alert("Issue title or body is required.");
     } else {
         // Generate a URL query
-        if (bugLabelString=="" && helpWantedLabelString=="" && enhancementLabelString=="" && questionLabelString=="" && invalidLabelString=="") {
+        if (bugLabelString == "" && helpWantedLabelString == "" && enhancementLabelString == "" && questionLabelString == "" && invalidLabelString == "") {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
@@ -165,7 +166,7 @@ function detectAndHighlightErrors() {
     // Highlight lines for each error
     lines.forEach(line => {
         line.message = line.message.replace(/`/g, '\\`');
-        addErrorHighlight(parseInt(line.lineNumber,10), [{value: line.message}]);
+        addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
     });
 }
 
@@ -182,7 +183,7 @@ function runCode() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
@@ -205,6 +206,10 @@ function runCode() {
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         });
+}
+
+function setCLArgs() {
+    window.cl_args = prompt("Set command line arguments:", window.cl_args);
 }
 
 function getSource() {
@@ -345,7 +350,7 @@ function startDebugger() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": { "start": true } }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true } }),
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);

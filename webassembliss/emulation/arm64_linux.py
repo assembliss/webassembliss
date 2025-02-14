@@ -57,13 +57,14 @@ def emulate(
     source_name: str = "usrCode.S",
     obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
+    cl_args: str = "",
     registers: Optional[List[str]] = None,
 ) -> EmulationResults:
     # Create default mutable values if needed.
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
-        ld_flags = ["-o"]
+        ld_flags = ["-lc -o"]
     if registers is None:
         registers = ARM64_REGISTERS
 
@@ -81,6 +82,7 @@ def emulate(
         obj_name=obj_name,
         bin_name=bin_name,
         registers=registers,
+        cl_args=cl_args.split(),
         get_flags_func=get_nzcv,
     )
 
@@ -143,6 +145,7 @@ def start_debugger(
     source_name: str = "usrCode.S",
     obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
+    cl_args: str = "",
     max_queue_size: int = 20,
     extraInfo: Optional[List[DebuggingInfo]] = None,
     workdir: Union[str, PathLike] = "userprograms",
@@ -153,7 +156,7 @@ def start_debugger(
     if as_flags is None:
         as_flags = ["-g --gdwarf-5 -o"]
     if ld_flags is None:
-        ld_flags = ["-o"]
+        ld_flags = ["-lc -o"]
     if extraInfo is None:
         extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
 
@@ -173,6 +176,7 @@ def start_debugger(
         max_queue_size=max_queue_size,
         extraInfo=extraInfo,
         workdir=workdir,
+        cl_args=cl_args.split(),
     )
 
 

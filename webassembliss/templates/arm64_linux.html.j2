@@ -8,6 +8,7 @@
 <body>
     <h1>WebAssembliss (arm64_linux)</h1>
     <input type="button" id="runBtn" value="Run" onclick="runCode()" />
+    <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
     <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
     <input type="button" id="loadBtn" value="Load" onclick="notImplemented()" disabled="true" />
@@ -128,6 +129,8 @@
         <li><a target="_blank" rel="noopener noreferrer" href="https://developer.arm.com/documentation/102374/latest/">Official Documentation</a></li>
         <li><a target="_blank" rel="noopener noreferrer" href="https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf">Swarthmore College's ARM64 (AArch64) Reference Sheet</a></li>
         <li><a target="_blank" rel="noopener noreferrer" href="https://courses.cs.washington.edu/courses/cse469/19wi/arm64.pdf">University of Washington's ARMv8 A64 Quick Reference</a></li>
+        <li><a target="_blank" rel="noopener noreferrer" href="https://blog.xhyeax.com/2022/04/28/arm64-syscall-table/">ARM64 Syscalls</a></li>
+        <li><a target="_blank" rel="noopener noreferrer" href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html">Syscalls for many architectures</a></li>
     </ul>
 
     <h3>Missing elements</h3>

@@ -10,6 +10,7 @@ from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN, QL_STOP
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
+from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 
 @dataclass
@@ -42,6 +43,7 @@ class EmulationResults:
         None  # type: ignore[assignment] # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
     flags: Dict[str, bool] = field(default_factory=dict)  # {N: False, Z: True, ...}
+    argv: List[str] = field(default_factory=list)  # ['bin_path', 'arg1', 'arg2', ...]
 
     def _prep_output(
         self,
@@ -166,6 +168,7 @@ Linker errors:
         out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
         out += f"Timeout detected: {'yes' if self.run_timeout else 'no'}\n"
         out += f"rootfs: {self.rootfs}\n"
+        out += f"argv: {self.argv}\n"
         out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
         out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
         out += f"Assembler command: '{self.as_args}'\n"
@@ -324,6 +327,7 @@ def filter_memory(
 def _timed_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],
+    cl_args: List[str],
     bin_name: str,
     timeout: int,
     stdin: BytesIO,
@@ -342,14 +346,20 @@ def _timed_emulation(
     bool,  # little_endian
     Dict[int, Tuple[str, Tuple[int, ...]]],  # memory
     Dict[str, bool],  # flags
+    List[str],  # complete argv
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
     # TODO: count how many instructions were executed and return that as well.
 
     # Instantiate a qiling object with the binary and rootfs we want to use.
+    argv: List[str] = [bin_path] + cl_args  # type: ignore[assignment]
     ql = Qiling(
-        [bin_path], rootfs_path, verbose=verbose, console=False, stop=QL_STOP.EXIT_TRAP
+        argv,
+        rootfs_path,
+        verbose=verbose,
+        console=False,
+        stop=QL_STOP.EXIT_TRAP,
     )
     given_stdin = stdin.getvalue().decode()
 
@@ -381,6 +391,7 @@ def _timed_emulation(
     execution_error = ""
     try:
         ql.run(timeout=timeout)
+
     except QlErrorCoreHook as error:
         # Catch a notimplemented interrupt error.
         # From what I can tell, this usually happens if the user has not done sys.exit.
@@ -390,6 +401,11 @@ def _timed_emulation(
         execution_error += (
             "Educated Guess: any chance you missed a sys.exit call?\n\nSTDERR output: "
         )
+
+    except UcError as error:
+        execution_error += "Runtime error! Emulation crashed while running your code:\n"
+        execution_error += f"\t'{type(error)}: {error}'\n"
+        execution_error += "Educated Guess: any chance you are accessing an invalid memory location?\n\nSTDERR output: "
 
     # Read the updated exit code.
     run_exit_code = ql.os.exit_code
@@ -420,6 +436,7 @@ def _timed_emulation(
         little_endian,
         filter_memory(og_mem_values, cur_mem_values, little_endian),
         get_flags_func(ql),
+        argv,
     )
 
 
@@ -436,6 +453,7 @@ def clean_emulation(
     obj_name: str,
     bin_name: str,
     registers: List[str],
+    cl_args: List[str],
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
@@ -488,8 +506,16 @@ def clean_emulation(
             er.little_endian,
             er.memory,
             er.flags,
+            er.argv,
         ) = _timed_emulation(
-            rootfs_path, bin_path, bin_name, timeout, stdin, registers, get_flags_func
+            rootfs_path,
+            bin_path,
+            cl_args,
+            bin_name,
+            timeout,
+            stdin,
+            registers,
+            get_flags_func,
         )
 
         # Sets global status field to match whether execution exited successfully.
