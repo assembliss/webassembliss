@@ -48,7 +48,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- https://github.com/rhysd/actionlint
 - [ ] add auto-typehint-checker
 	- https://github.com/python/mypy
-- [ ] add a production deployment server (e.g., [gunicorn](https://rest-apis-flask.teclado.com/docs/deploy_to_render/docker_with_gunicorn/))
+- [x] add a production deployment server
 - [ ] update Dockerfile to use newer python version
 - [ ] add unit tests for all methods
 	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?

@@ -16,10 +16,6 @@ RUN apt update && \
     -p https://github.com/zsh-users/zsh-completions \
     -p https://github.com/zsh-users/zsh-syntax-highlighting
 
-# Install required python packages
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt --break-system-packages
-
 # Install required tooling.
 RUN apt update && \
     apt install -y \
@@ -29,6 +25,10 @@ RUN apt update && \
     gdb-multiarch\
     # tmux (for dev debugging in container)
     tmux
+
+# Install required python packages
+COPY requirements.txt requirements.txt
+RUN pip install -r requirements.txt --break-system-packages
 
 # Copy a patched version of qiling's gdb server. It has the following changes:
 #   1. fix a bug that prevents stepping over the code (ref: https://github.com/qilingframework/qiling/issues/1377);
@@ -44,4 +44,4 @@ WORKDIR /webassembliss
 # ENV FLASK_DEBUG=1
 
 # Container command to serve flask app
-CMD [ "python3", "-m" , "flask", "run", "--host=0.0.0.0"]
+CMD [ "gunicorn", "--config" , "gunicorn_config.py", "app:app"]
