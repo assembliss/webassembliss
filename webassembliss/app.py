@@ -30,6 +30,11 @@ def index():
     return render_template("index.html.j2")
 
 
+@app.route("/about/")
+def about():
+    return render_template("about.html.j2")
+
+
 @app.route("/debugdb/<keys>/")
 def debugdbvalues(keys):
     """This is a debug route to help see the contents of the debugger_db."""

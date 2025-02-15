@@ -1,9 +1,13 @@
 {% extends "base.html.j2" %}
 
-{% block title %} (arm64_linux){% endblock %}
+{% block title %} (arm64){% endblock %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arm64_linux.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+{% endblock %}
+{% block tag %}
+    &nbsp;
+    <span class="badge bg-danger-subtle border border-danger-subtle text-danger-emphasis rounded-pill">arm64</span>
 {% endblock %}
 {% block navbar %}
     <li class="nav-item dropdown">
@@ -18,9 +22,6 @@
     </li>
 {% endblock %}
 {% block content %}
-
-    <h1 style="display: inline">ARM64 - Linux</h1>
-    &nbsp;&nbsp;
     <input type="button" id="runBtn" value="Run" onclick="runCode()" />
     <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />

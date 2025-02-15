@@ -1,0 +1,28 @@
+{% extends "base.html.j2" %}
+{% block title %} (about){% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">About this project</h1>
+      <p class="text-center col-lg-11 mx-auto fs-5">
+        Assembliss aims to provide an easy way to run and debug assembly code of a specific architecture.
+        Our main goal is to make it easier to teach modern architectures to students that might not have access such chips.
+      </p>
+      <p class="text-center col-lg-10 mx-auto fs-8 text-muted">
+        This web version was inspired by the <a class="wab-link" href="https://yjdoc2.github.io/8086-emulator-web/" >8086-emulator-web</a>.
+        On the frontend, we use <a class="wab-link" href="https://microsoft.github.io/monaco-editor/">monaco</a> (via <a class="wab-link" href="https://github.com/julien-duponchelle/rocher">rocher</a>) to serve the editor.
+        Behind the scenes, we use <a class="wab-link" href="https://qiling.io/">qiling</a> to emulate the target architecture with syscalls, and provide a way to extend to different architectures later.
+      </p>
+      <p class="text-center col-lg-8 mx-auto fs-8 text-muted">
+        Many students have helped with assembliss!
+        In chronological order:
+        {# S' 24 #}
+        Ivan&nbsp;Basora, Samuel&nbsp;Burke, Alex&nbsp;Chen, Alex&nbsp;Field, Willie&nbsp;Harris,
+        {# F' 24 #}
+        Harrison&nbsp;Blough, Logan&nbsp;Crisp, Trevor&nbsp;Harless, Daniel&nbsp;Schimtzek,
+        {# S' 25 #}
+        Sam&nbsp;Smithers.
+      </p>
+    </div>
+  </div>
+{% endblock %}

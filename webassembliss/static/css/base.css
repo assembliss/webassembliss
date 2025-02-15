@@ -95,3 +95,19 @@
     color: white;
     background-color: #dc3546;
 }
+
+.wab-link {
+    color: red;
+}
+
+.wab-link:focus {
+    color: darkred;
+}
+
+.wab-link:hover {
+    color: darkred;
+}
+
+.wab-link:visited {
+    color: #dc3546;
+}

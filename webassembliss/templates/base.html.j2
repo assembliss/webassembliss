@@ -11,11 +11,12 @@
   </head>
   <body>
     <div id="page-header" class="container">
-      <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom text-danger">
-        <a href="/" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto link-body-emphasis text-decoration-none">
+      <header class="d-flex flex-wrap justify-content-center py-3 mb-4 border-bottom">
+        <div class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-decoration-none">
           <img class="bi me-2" width="32" height="32" src="{{ url_for('static', filename='img/assembliss-gear-icon-red.svg') }}">
           <span class="fs-4">WebAssembliss</span>
-        </a>
+          {% block tag %}{% endblock %}
+        </div>
         <ul class="nav nav-pills red">
           <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
           <li class="nav-item dropdown">
@@ -25,7 +26,7 @@
             </div>
           </li>
           <li class="nav-item"><a href="#" class="nav-link">Grader</a></li>
-          <li class="nav-item"><a href="#" class="nav-link">About</a></li>
+          <li class="nav-item"><a href="/about" class="nav-link">About</a></li>
           <li class="nav-item"><a target="_blank" rel="noopener noreferrer" href="https://github.ncsu.edu/assembliss/webassembliss" class="nav-link">GitHub</a></li>
           {% block navbar %}{% endblock %}
         </ul>
