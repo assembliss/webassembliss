@@ -59,6 +59,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] make debugging route and methods async
 	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
 	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
+- [ ] find best gunicorn config
+	- https://docs.gunicorn.org/en/stable/settings.html#worker-class
+	- https://docs.gunicorn.org/en/stable/design.html
 
 ### User Experience
 - [x] change the editor to hilight syntax for arm64 assembly
