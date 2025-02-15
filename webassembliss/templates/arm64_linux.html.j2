@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>WebAssembliss (arm64_linux)</title>
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/arm64_linux.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
-    <script src="/static/vs/loader.js"></script>
 </head>
 <body>
     <h1>WebAssembliss (arm64_linux)</h1>
@@ -12,7 +13,7 @@
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
     <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
     <input type="button" id="loadBtn" value="Load" onclick="notImplemented()" disabled="true" />
-    <div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
+    <div id="monaco-container" style="width:800px;height:600px;border:1px solid grey"></div>
     <div>
         <b>Debug Menu:</b>
         <input type="button" id="debugStart" value="start" onclick="startDebugger()" />
@@ -136,6 +137,7 @@
         <li>Menus so the user can customize view (e.g., which registers show, dark vs light theme)</li>
     </ul>
 
+    <script src="/static/vs/loader.js"></script>
     <script src="{{ url_for('static', filename='js/arm64_linux.js') }}"></script>
     <script>createEditor({{ default_code }})</script>
 </body>

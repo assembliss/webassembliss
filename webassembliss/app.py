@@ -27,8 +27,7 @@ rocher.flask.editor_register(app)
 
 @app.route("/")
 def index():
-    # TODO: add a landing page whenever we have more architectures available.
-    return redirect("/arm64_linux/")
+    return render_template("index.html.j2")
 
 
 @app.route("/debugdb/<keys>/")

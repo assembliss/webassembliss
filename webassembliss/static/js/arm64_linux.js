@@ -115,7 +115,7 @@ function createEditor(default_code) {
     require(['vs/editor/editor.main'], function () {
         monaco.languages.register({ id: 'arm64' });
         monaco.languages.setMonarchTokensProvider('arm64', getSyntaxHighlighting());
-        window.editor = monaco.editor.create(document.getElementById('container'), {
+        window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
             // Change "value" to upload files
             value: default_code.join('\n'),
             language: 'arm64',
