@@ -415,22 +415,6 @@ function stopDebugger() {
     window.editor.updateOptions({ readOnly: false });
 }
 
-function exampleHighlight(line) {
-    if (line) {
-        addErrorHighlight(line, [{
-            value: "any error messages,"
-        }, {
-            value: "can go here..."
-        }]);
-        document.getElementById("showError").disabled = true;
-        document.getElementById("hideHighlights").disabled = false;
-    } else {
-        removeAllHighlights();
-        document.getElementById("showError").disabled = false;
-        document.getElementById("hideHighlights").disabled = true;
-    }
-}
-
 function getSyntaxHighlighting() {
     return {
         // First draft of an ARM64 assembly syntax.
