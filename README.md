@@ -73,6 +73,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
+- [ ] give user option to delete old debugging session and start a new one
 - [ ] handle no available ports for a new debugger session
 	- maybe a timer and try again in a minute?
 - [ ] handle already active session for user
