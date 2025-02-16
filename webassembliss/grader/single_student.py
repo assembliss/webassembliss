@@ -64,7 +64,7 @@ def run_test_cases(
 
 
 def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) -> float:
-    """Calculate the accuracy grade based on the results of the test cases."""
+    """Calculate the accuracy score based on the results of the test cases."""
     max_possible = sum((t.points for t in config.tests))
     total = sum((t.points for (t, r) in zip(config.tests, tests) if r.passed))
     # Check if accuracy is all or nothing based on config.
@@ -99,17 +99,22 @@ def calculate_execution_eff_score(
 
 def calculate_total_score(*, config: ProjectConfig, results: GraderResults) -> float:
     """Calculate the overall project score based on the project config."""
-    # Read weights from config and make sure they are not empty
-    weights = getattr(config, "weights", {})
-    assert weights
+
+    # TODO: create custom error for grader pipeline.
+    # Make sure we have weight and scores
+    assert config.weights and results.scores
+
+    # TODO: create custom error for grader pipeline.
+    # Make sure they have the same length
+    assert len(config.weights) == len(results.scores)
 
     # Aggregate all the weights from config and the results
     weighted_sum = total_weights = 0.0
-    for cat, value in results.grades.items():
-        weight = getattr(weights, cat, 0.0)
-        weighted_sum += value * weight
-        total_weights += weight
+    for cat, value in results.scores.items():
+        weighted_sum += value * config.weights[cat]
+        total_weights += config.weights[cat]
 
+    # Calculate the weighted average
     return weighted_sum / total_weights
 
 
@@ -129,6 +134,7 @@ def grade_student(
     gr = GraderResults(project=config.name)
 
     # Check that the user provided the required file
+    # TODO: create custom error for grader pipeline.
     assert filename == config.user_filename
 
     # Find config for the project architecture
@@ -171,12 +177,12 @@ def grade_student(
         )
 
         # Calculate each category's score
-        gr.grades["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
-        gr.grades["documentation"] = calculate_docs_score(config=config, results=gr)
-        gr.grades["source_efficiency"], gr.line_count = calculate_source_eff_score(
+        gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
+        gr.scores["documentation"] = calculate_docs_score(config=config, results=gr)
+        gr.scores["source_efficiency"], gr.line_count = calculate_source_eff_score(
             config=config, results=gr
         )
-        gr.grades["exec_efficiency"] = calculate_execution_eff_score(
+        gr.scores["exec_efficiency"] = calculate_execution_eff_score(
             config=config, results=gr
         )
 

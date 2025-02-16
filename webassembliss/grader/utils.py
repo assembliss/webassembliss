@@ -35,7 +35,7 @@ class GraderResults:
     tests: List[TestCase] = field(default_factory=list)
     line_count: int = 0
     exec_count: int = 0
-    grades: Dict[str, float] = field(default_factory=dict)
+    scores: Dict[str, float] = field(default_factory=dict)
     total: float = 0.0
 
 
@@ -60,6 +60,7 @@ ROOTFS_MAP = {
 def validate_project_config(wp: WrappedProject) -> None:
     """Validates that the given project is valid and can be graded."""
     # Ensure the checksum from the wrapped project matches the project config.
+    # TODO: create custom error for grader pipeline.
     assert compare_digest(wp.checksum, sha256(wp.config.SerializeToString()).digest())
     # TODO: have a valid list of project configs we accept.
     # TODO: validate that MeasureSourceDocumentation exists iff weights.documentation != 0
