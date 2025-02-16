@@ -35,6 +35,11 @@ def about():
     return render_template("about.html.j2")
 
 
+@app.route("/grader/")
+def grader():
+    return render_template("grader.html.j2")
+
+
 @app.route("/debugdb/<keys>/")
 def debugdbvalues(keys):
     """This is a debug route to help see the contents of the debugger_db."""

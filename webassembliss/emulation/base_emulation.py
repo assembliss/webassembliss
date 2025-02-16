@@ -325,7 +325,7 @@ def filter_memory(
     return out
 
 
-def _timed_emulation(
+def timed_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],
     cl_args: List[str],
@@ -510,7 +510,7 @@ def clean_emulation(
             er.memory,
             er.flags,
             er.argv,
-        ) = _timed_emulation(
+        ) = timed_emulation(
             rootfs_path,
             bin_path,
             cl_args,

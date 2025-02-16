@@ -1,0 +1,20 @@
+{% extends "base.html.j2" %}
+{% block title %} - Grader{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">Grader</h1>
+      <form>
+        <div class="mb-3">
+          <label for="projectProto" class="form-label">Project Config File</label>
+          <input type="file" class="form-control" id="projectProto" aria-describedby="projectProto">
+        </div>
+        <div class="mb-3">
+          <label for="userCode" class="form-label">Source file</label>
+          <input type="file" class="form-control" id="userCode">
+        </div>
+        <button type="submit" class="btn btn-danger">Submit</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

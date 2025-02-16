@@ -24,7 +24,9 @@ RUN apt update && \
     # gdb-multiarch (for user debugging sessions)
     gdb-multiarch\
     # tmux (for dev debugging in container)
-    tmux
+    tmux\
+    # protobuf to handle project grading config files
+    protobuf-compiler
 
 # Install required python packages
 COPY requirements.txt requirements.txt
