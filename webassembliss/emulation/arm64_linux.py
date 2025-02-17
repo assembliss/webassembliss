@@ -1,3 +1,4 @@
+import subprocess
 from io import BytesIO
 from os import PathLike
 from typing import Dict, List, Optional, Tuple, Union
@@ -15,7 +16,7 @@ from .base_debugging import (
     create_debugging_session,
     debug_cmd,
 )
-from .base_emulation import EmulationResults, clean_emulation
+from .base_emulation import EmulationResults, assemble, clean_emulation
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
@@ -48,6 +49,54 @@ def _parse_nzcv_from_cpsr(cpsr: int) -> Dict[str, bool]:
 def get_nzcv(ql: Qiling) -> Dict[str, bool]:
     """Parses the NZCV condition codes from the given qiling instance."""
     return _parse_nzcv_from_cpsr(ql.arch.regs.read("cpsr"))
+
+
+def count_source_instructions(src_path: Union[PathLike, str]) -> int:
+    """Count the number of instructions in an arm64 assembly source file."""
+
+    # Assemble source file into an object.
+    obj_path = f"{src_path}.aux_obj"
+    assembled_ok, *_ = assemble(
+        as_cmd=AS_CMD, src_path=src_path, flags=["-o"], obj_path=obj_path
+    )
+    if not assembled_ok:
+        raise RuntimeError("Not able to assemble source into an object.")
+
+    # Run object dump to find only the instructions in the source.
+    objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
+    with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
+        stdout, _ = process.communicate()
+
+    # Parse the objdump's output to count instructions.
+    lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
+
+    # Find the first instruction in the code; it has the address of 0 in the text segment.
+    first_line = 0
+    while first_line < len(lines_as_tokens):
+        if not lines_as_tokens[first_line]:
+            first_line += 1
+        elif lines_as_tokens[first_line][0] != "0:":
+            first_line += 1
+        else:
+            break
+
+    # Count lines that have instruction information.
+    instruction_count = 0
+    for i in range(first_line, len(lines_as_tokens)):
+        # Ignore empty lines.
+        if not lines_as_tokens[i]:
+            continue
+        # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
+        if lines_as_tokens[i][0] == "...":
+            break
+        # Ignore lines that do not have enough information.
+        if len(lines_as_tokens[i]) < 3:
+            continue
+
+        # Count this line as one instruction.
+        instruction_count += 1
+
+    return instruction_count
 
 
 def emulate(
@@ -87,6 +136,7 @@ def emulate(
         registers=registers,
         cl_args=cl_args.split(),
         get_flags_func=get_nzcv,
+        count_instructions_func=count_source_instructions,
     )
 
 

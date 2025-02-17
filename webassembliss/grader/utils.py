@@ -8,9 +8,8 @@ from typing import Callable, Dict, List, Tuple, Union
 
 from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
 from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
-from ..emulation.arm64_linux import OBJDUMP_CMD as ARM64_LINUX_OBJDUMP
 from ..emulation.arm64_linux import ROOTFS_PATH as ARM64_LINUX_ROOTFS
-from ..emulation.base_emulation import assemble
+from ..emulation.arm64_linux import count_source_instructions as ARM64_LINUX_COUNT_FUN
 from .project_config_pb2 import ProjectConfig, WrappedProject
 
 
@@ -83,60 +82,12 @@ def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -
         create_bin_file(join(workspace, filename), contents)
 
 
-def arm64_count_source_instructions(src_path: Union[PathLike, str]) -> int:
-    """Count the number of instructions in an arm64 assembly source file."""
-
-    # Assemble source file into an object.
-    obj_path = f"{src_path}.aux_obj"
-    assembled_ok, *_ = assemble(
-        as_cmd=ARM64_LINUX_AS, src_path=src_path, flags=["-o"], obj_path=obj_path
-    )
-    if not assembled_ok:
-        raise RuntimeError("Not able to assemble source into an object.")
-
-    # Run object dump to find only the instructions in the source.
-    objdump_cmd = [ARM64_LINUX_OBJDUMP, "-d", obj_path]
-    with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
-        stdout, _ = process.communicate()
-
-    # Parse the objdump's output to count instructions.
-    lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
-
-    # Find the first instruction in the code; it has the address of 0 in the text segment.
-    first_line = 0
-    while first_line < len(lines_as_tokens):
-        if not lines_as_tokens[first_line]:
-            first_line += 1
-        elif lines_as_tokens[first_line][0] != "0:":
-            first_line += 1
-        else:
-            break
-
-    # Count lines that have instruction information.
-    instruction_count = 0
-    for i in range(first_line, len(lines_as_tokens)):
-        # Ignore empty lines.
-        if not lines_as_tokens[i]:
-            continue
-        # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
-        if lines_as_tokens[i][0] == "...":
-            break
-        # Ignore lines that do not have enough information.
-        if len(lines_as_tokens[i]) < 3:
-            continue
-
-        # Count this line as one instruction.
-        instruction_count += 1
-
-    return instruction_count
-
-
 ROOTFS_MAP = {
     "ARM64": ArchConfig(
         rootfs=ARM64_LINUX_ROOTFS,
         workdir="userprograms",
         as_cmd=ARM64_LINUX_AS,
         ld_cmd=ARM64_LINUX_LD,
-        line_count_fun=arm64_count_source_instructions,
+        line_count_fun=ARM64_LINUX_COUNT_FUN,
     )
 }

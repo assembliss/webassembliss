@@ -27,6 +27,7 @@ class EmulationResults:
     as_args: str = ""
     as_out: str = ""
     as_err: str = ""
+    num_instructions: Optional[int] = None
     linked_ok: bool = None  # type: ignore[assignment]
     ld_args: str = ""
     ld_out: str = ""
@@ -175,6 +176,7 @@ Linker errors:
         out += f"Assembler command: '{self.as_args}'\n"
         out += f"Assembler output:\n{self._prep_output(self.as_out, '<<< no output >>>')}\n"
         out += f"Assembler errors:\n{self._prep_output(self.as_err, '<<< no reported errors >>>')}\n"
+        out += f"Number of instructions in source: {self.num_instructions if self.num_instructions is not None else 'not measured'}\n"
         out += f"Linker command: '{self.ld_args}'\n"
         out += (
             f"Linker output:\n{self._prep_output(self.ld_out, '<<< no output >>>')}\n"
@@ -459,6 +461,7 @@ def clean_emulation(
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
+    count_instructions_func: Callable[[Union[str, PathLike]], int] = lambda _: None,
 ) -> EmulationResults:
     # TODO: add tests to make sure this function works as expected.
 
@@ -485,6 +488,9 @@ def clean_emulation(
         )
         if not er.assembled_ok:
             return er
+
+        # Count the number of instructions in the source code.
+        er.num_instructions = count_instructions_func(src_path)
 
         # Try linking the generated object.
         # TODO: add the option to link multiple objects.
