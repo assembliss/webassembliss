@@ -234,7 +234,7 @@ def grade_student(
         gr.tests, all_exec_counts = run_test_cases(
             config=config, rootfs=arch.rootfs, bin_path=bin_path
         )
-        gr.exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)
+        gr.exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
 
         # Calculate each category's score
         gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
