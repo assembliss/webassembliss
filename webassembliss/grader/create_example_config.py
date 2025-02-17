@@ -77,10 +77,9 @@ config.source_eff.points[20] = 0.8  # 10 < instr_count <= 20  would give 80%
 config.exec_eff.aggregation = (
     ExecutedInstructionsAggregation.SUM
 )  # sum all execution counts into a single value (x) to grade it
-config.exec_eff.points[15] = 1  # x <= 15 would give 100%
-config.exec_eff.points[18] = 0.95  # 15 < x <= 18  would give 95%
-config.exec_eff.points[20] = 0.8  # 18 < x <= 20  would give 80%
-# x > 20 would give exec_eff.default_points;
+config.exec_eff.points[10] = 1  # x <= 10 would give 100%
+config.exec_eff.points[15] = 0.95  # 10 < x <= 15  would give 95%
+# x > 15 would give exec_eff.default_points;
 # exec_eff.default_points is set to 0 if omitted.
 
 

@@ -2,7 +2,7 @@ import tempfile
 from io import BytesIO
 from os import PathLike
 from os.path import join
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Dict
 
 from ..emulation.base_emulation import assemble, link, timed_emulation
 from .project_config_pb2 import ProjectConfig, WrappedProject
@@ -101,6 +101,24 @@ def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) ->
     return total / max_possible
 
 
+def match_value_to_cutoff(
+    *,
+    points_cutoffs: Dict[int, float],
+    default_points: int,
+    is_higher_better: bool,
+    value: int,
+):
+    """Converts an int score into a percentage based on the points_cutoffs distribution."""
+    # Sort the cutoffs in order; is_higher_better defines if we check high-low or low-high.
+    for cutoff in sorted(points_cutoffs.keys(), reverse=is_higher_better):
+        print(f"{cutoff=}, {value=}")
+        if cutoff >= value:
+            # Return the points for the first cutoff that is fulfilled.
+            return points_cutoffs[cutoff]
+    # If did not match any cutoffs, return default points.
+    return default_points
+
+
 def calculate_docs_score(*, config: ProjectConfig, results: GraderResults) -> float:
     """Calculate the documentation score based on the project config."""
     # TODO: implement documentation grading.
@@ -111,26 +129,24 @@ def calculate_source_eff_score(
     *, config: ProjectConfig, source_instruction_count: int
 ) -> float:
     """Calculate the source efficiency score based on the project config."""
-    # Sort the cutoffs in order; a smaller count is better here.
-    for cutoff in sorted(config.source_eff.points.keys()):
-        # If the given count is below the cutoff, return the points for it.
-        if cutoff >= source_instruction_count:
-            return config.source_eff.points[cutoff]
-    # Did not meet any grading cutoff, return the default points.
-    return config.source_eff.default_points
+    return match_value_to_cutoff(
+        value=source_instruction_count,
+        points_cutoffs=config.source_eff.points,
+        default_points=config.source_eff.default_points,
+        is_higher_better=False,
+    )
 
 
 def calculate_execution_eff_score(
     *, config: ProjectConfig, instructions_executed: int
 ) -> float:
     """Calculate the execution efficiency score based on the project config."""
-    # Sort the cutoffs in order; a smaller count is better here.
-    for cutoff in sorted(config.exec_eff.points.keys()):
-        # If the given count is below the cutoff, return the points for it.
-        if cutoff >= instructions_executed:
-            return config.exec_eff.points[cutoff]
-    # Did not meet any grading cutoff, return the default points.
-    return config.exec_eff.default_points
+    return match_value_to_cutoff(
+        value=instructions_executed,
+        points_cutoffs=config.exec_eff.points,
+        default_points=config.exec_eff.default_points,
+        is_higher_better=False,
+    )
 
 
 def calculate_total_score(*, config: ProjectConfig, results: GraderResults) -> float:
