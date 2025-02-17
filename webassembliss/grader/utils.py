@@ -36,7 +36,11 @@ class TestCase:
 
 @dataclass
 class GraderResults:
-    project: str
+    project_name: str
+    project_checksum: bytes
+    student_name: str
+    student_ID: str
+    student_files: Dict[str, str]
     assembled: bool = False
     linked: bool = False
     errors: str = ""

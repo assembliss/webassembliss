@@ -194,8 +194,9 @@ def calculate_total_score(*, results: GraderResults) -> float:
 def grade_student(
     *,
     wrapped_config: WrappedProject,
-    filename: str,
-    contents: str,
+    student_name: str,
+    student_ID: str,
+    student_files: Dict[str, str],
 ) -> GraderResults:
     """Grade the student submission received based on the given project config."""
 
@@ -204,12 +205,20 @@ def grade_student(
 
     # Create result object
     gr = GraderResults(
-        project=config.name, must_pass_all_tests=config.must_pass_all_tests
+        project_checksum=wrapped_config.checksum,
+        project_name=config.name,
+        student_name=student_name,
+        student_ID=student_ID,
+        student_files=student_files,
+        must_pass_all_tests=config.must_pass_all_tests,
     )
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
-    assert filename == config.user_filename
+    # TODO: remove this block once we can assemble/link multiple files together.
+    assert len(student_files) == 1
+    # TODO: allow project to require multiple files.
+    assert config.user_filename in student_files
 
     # Find config for the project architecture
     arch = ROOTFS_MAP[config.rootfs_arch]
@@ -220,8 +229,8 @@ def grade_student(
         create_extra_files(tmpdirname, config)
 
         # Create source file in temp directory
-        src_path = join(tmpdirname, filename)
-        create_text_file(src_path, contents)
+        src_path = join(tmpdirname, config.user_filename)
+        create_text_file(src_path, student_files[config.user_filename])
 
         # Assemble source file
         obj_path = f"{src_path}.o"
@@ -281,7 +290,8 @@ if __name__ == "__main__":
         print(
             grade_student(
                 wrapped_config=config,
-                filename=source_name,
-                contents=source_fp.read(),
+                student_files={source_name: source_fp.read()},
+                student_name="Example Student",
+                student_ID="00112233",
             )
         )
