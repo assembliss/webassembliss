@@ -1,8 +1,10 @@
-import tempfile
 from io import BytesIO
+from json import loads
 from os import PathLike
 from os.path import join
-from typing import List, Tuple, Union, Dict
+from subprocess import PIPE, Popen
+from tempfile import TemporaryDirectory
+from typing import Dict, List, Tuple, Union
 
 from ..emulation.base_emulation import assemble, link, timed_emulation
 from .project_config_pb2 import ProjectConfig, WrappedProject
@@ -103,14 +105,15 @@ def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) ->
 
 def match_value_to_cutoff(
     *,
-    points_cutoffs: Dict[Union[int, float], float],
-    default_points: Union[int, float],
+    points_cutoffs: Dict[int, float],
+    default_points: float,
     is_higher_better: bool,
-    value: Union[int, float],
+    value: int,
 ):
     """Converts an int score into a percentage based on the points_cutoffs distribution."""
     # Sort the cutoffs in order; is_higher_better defines if we check high-low or low-high.
     for cutoff in sorted(points_cutoffs.keys(), reverse=is_higher_better):
+        print(f"{cutoff=}, {value=}")
         if cutoff >= value:
             # Return the points for the first cutoff that is fulfilled.
             return points_cutoffs[cutoff]
@@ -118,10 +121,26 @@ def match_value_to_cutoff(
     return default_points
 
 
-def calculate_docs_score(*, config: ProjectConfig, results: GraderResults) -> float:
+def calculate_docs_score(
+    *, config: ProjectConfig, src_path: str, instr_count: int
+) -> float:
     """Calculate the documentation score based on the project config."""
-    # TODO: implement documentation grading.
-    return 0.0
+
+    # TODO: Also measure level of in-line comments.
+
+    cloc_command = ["cloc", "--skip-uniqueness", "--quiet", "--json", src_path]
+    with Popen(cloc_command, stdout=PIPE, stderr=PIPE) as process:
+        stdout, _ = process.communicate()
+        data = loads(stdout.decode())
+        comment_count = data["SUM"]["comment"]
+        pct = 100 * comment_count / instr_count
+        return match_value_to_cutoff(
+            points_cutoffs=config.docs.comments_to_instr_pct_points,
+            default_points=config.docs.comments_to_instr_pct_default,
+            value=pct,
+            is_higher_better=True,
+        )
+    raise RuntimeError("Unable to calculate documentation score.")
 
 
 def calculate_source_eff_score(
@@ -197,7 +216,7 @@ def grade_student(
     arch = ROOTFS_MAP[config.rootfs_arch]
 
     # Create a tempdir to run the user code
-    with tempfile.TemporaryDirectory(dir=join(arch.rootfs, arch.workdir)) as tmpdirname:
+    with TemporaryDirectory(dir=join(arch.rootfs, arch.workdir)) as tmpdirname:
         # Create the extra files needed to grade
         create_extra_files(tmpdirname, config)
 
@@ -235,8 +254,10 @@ def grade_student(
 
         # Calculate each category's score
         gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
-        gr.scores["documentation"] = calculate_docs_score(config=config, results=gr)
         gr.line_count = arch.line_count_fun(src_path)
+        gr.scores["documentation"] = calculate_docs_score(
+            config=config, src_path=src_path, instr_count=gr.line_count
+        )
         gr.scores["source_efficiency"] = calculate_source_eff_score(
             config=config, source_instruction_count=gr.line_count
         )

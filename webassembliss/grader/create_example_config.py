@@ -67,8 +67,13 @@ tc4.points = 1
 
 
 #
-# TODO: Create a grading rubric for documentation score.
+# Create a grading rubric for documentation score.
 #
+config.docs.comments_to_instr_pct_points[50] = 1
+config.docs.comments_to_instr_pct_points[40] = 0.75
+config.docs.comments_to_instr_pct_points[30] = 0.5
+# ratio < 30 would give docs.comments_to_instr_pct_default;
+# docs.comments_to_instr_pct_default is set to 0 if omitted.
 
 
 #
@@ -97,7 +102,7 @@ config.exec_eff.points[15] = 0.95  # 10 < x <= 15  would give 95%
 # Set weights for each category
 #
 config.weights["accuracy"] = 3
-config.weights["documentation"] = 0
+config.weights["documentation"] = 1
 config.weights["source_efficiency"] = 1
 config.weights["exec_efficiency"] = 1
 

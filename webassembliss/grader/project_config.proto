@@ -16,17 +16,21 @@ message TestCase {
 }
 
 // Message with information on how to measure the source code documentation.
-// commands is a list of commands to generate one double (x) based on source;
-// x is a percentage and corresponds to the documentation grade out of 100.
+// points are grade distributions, where key is a cutoff and val the percentage;
+//  - e.g., {50: 1, 30: 0.75, ...}, where x>=50 is 100%, 50>x>=30 is 75%, etc;
+// comments_to_instr defines 'points' for the ratio of the number of comment-only
+//    lines in the source file compared to the number of instruction lines.
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
 message MeasureSourceDocumentation {
-  repeated string commands = 1;
+  map<uint32, double> comments_to_instr_pct_points = 1;
+  optional double comments_to_instr_pct_default = 2;
 }
 
 // Message with information on how to measure the source code efficiency.
 // commands should calculate one int (x) from analyzing the source file;
 // points is a grade distribution, where key is a cutoff and val the percentage;
 //  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
-// default_points is pts assigned to a value of x that didn't meet any cutoff.
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
 message MeasureSourceEfficiency {
   map<uint32, double> points = 1;
   optional double default_points = 2;
@@ -45,7 +49,7 @@ enum ExecutedInstructionsAggregation {
 // aggregation defines how to combine measured execution counts for all tests;
 // points is a grade distribution, where key is a cutoff and val the percentage;
 //  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
-// default_points is pts assigned to a value of x that didn't meet any cutoff.
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
 message MeasureExecEfficiency {
   ExecutedInstructionsAggregation aggregation = 1;
   map<uint32, double> points = 2;

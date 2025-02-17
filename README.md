@@ -32,7 +32,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow testing of code (given input, expected output)
 - [x] measure lines of code
 - [x] measure executed instructions
-- [ ] measure documentation level
+- [x] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 - [x] create config file that has provided source(s), object(s), and tests
 - [ ] allow user to upload config file and run tests with their code

@@ -26,7 +26,9 @@ RUN apt update && \
     # tmux (for dev debugging in container)
     tmux\
     # protobuf to handle project grading config files
-    protobuf-compiler
+    protobuf-compiler\
+    # cloc to count source lines and comments
+    cloc
 
 # Install required python packages
 COPY requirements.txt requirements.txt
