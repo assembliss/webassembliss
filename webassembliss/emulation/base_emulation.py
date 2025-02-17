@@ -210,8 +210,6 @@ def assemble(
 ) -> Tuple[bool, str, str, str]:
     """Use the given assembler command to process the source file and create an object."""
     # TODO: add tests to make sure this function works as expected.
-    # TODO: count how many instructions are in the source file and return that as well.
-    # TODO: find the ratio of instructions and comments and report that to result as well.
 
     # Combine the different pieces into a complete assembling command.
     as_full_cmd = as_cmd_format.format(
@@ -325,6 +323,7 @@ def filter_memory(
     return out
 
 
+# TODO: create a dataclass type for the return of this method; could likely do that for all methods that return tuples.
 def timed_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],

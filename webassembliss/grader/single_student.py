@@ -81,19 +81,19 @@ def calculate_docs_score(*, config: ProjectConfig, results: GraderResults) -> fl
 
 
 def calculate_source_eff_score(
-    *, config: ProjectConfig, results: GraderResults
-) -> Tuple[float, int]:
+    *, config: ProjectConfig, source_instruction_count: int
+) -> float:
     """Calculate the source efficiency score based on the project config."""
     # TODO: implement source efficiency grading.
-    # TODO: count and return number of lines of instructions in code.
-    return 0.0, 0
+    return 0.0
 
 
 def calculate_execution_eff_score(
-    *, config: ProjectConfig, results: GraderResults
+    *, config: ProjectConfig, instructions_executed: int
 ) -> float:
     """Calculate the execution efficiency score based on the project config."""
     # TODO: implement execution efficiency grading.
+    #       hook the qiling instructions to keep a count in timed_emulation
     return 0.0
 
 
@@ -107,6 +107,11 @@ def calculate_total_score(*, config: ProjectConfig, results: GraderResults) -> f
     # TODO: create custom error for grader pipeline.
     # Make sure they have the same length
     assert len(config.weights) == len(results.scores)
+
+    # Check if they have to pass all tests to get a score;
+    # If they need to pass all tests and do not have perfect accuracy, total should be 0.
+    if config.must_pass_all_tests and (results.scores["accuracy"] < 1):
+        return 0.0
 
     # Aggregate all the weights from config and the results
     weighted_sum = total_weights = 0.0
@@ -179,11 +184,12 @@ def grade_student(
         # Calculate each category's score
         gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
         gr.scores["documentation"] = calculate_docs_score(config=config, results=gr)
-        gr.scores["source_efficiency"], gr.line_count = calculate_source_eff_score(
-            config=config, results=gr
+        gr.line_count = arch.line_count_fun(src_path)
+        gr.scores["source_efficiency"] = calculate_source_eff_score(
+            config=config, source_instruction_count=gr.line_count
         )
         gr.scores["exec_efficiency"] = calculate_execution_eff_score(
-            config=config, results=gr
+            config=config, instructions_executed=gr.exec_count
         )
 
     # Combine all categories into an overall project score

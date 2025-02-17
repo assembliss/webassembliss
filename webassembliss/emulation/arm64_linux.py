@@ -20,6 +20,7 @@ from .base_emulation import EmulationResults, clean_emulation
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
 LD_CMD = "aarch64-linux-gnu-ld"
+OBJDUMP_CMD = "aarch64-linux-gnu-objdump"
 
 # Register the NZCV register into qiling's arm64 register map so we can read status bits.
 # This was tricky to find... but here are the references in case you need to do the same:

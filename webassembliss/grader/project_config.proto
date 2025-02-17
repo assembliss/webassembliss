@@ -25,20 +25,19 @@ message MeasureSourceDocumentation {
 //  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
 // default_points is pts assigned to a value of x that didn't meet any cutoff.
 message MeasureSourceEfficiency {
-  repeated string commands = 1;
-  map<uint32, double> points = 2;
-  optional double default_points = 3;
+  map<uint32, double> points = 1;
+  optional double default_points = 2;
 }
 
 // Message with information on how to measure the executable efficiency.
-// commands should calculate one int (x) from an accumulated execution count;
 // points is a grade distribution, where key is a cutoff and val the percentage;
 //  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
-// default_points is pts assigned to a value of x that didn't meet any cutoff.
+// default_points is pts assigned to a value of x that didn't meet any cutoff;
+// average defines if we calculate points on total or average count across tests.
 message MeasureExecEfficiency {
-  repeated string commands = 1;
-  map<uint32, double> points = 2;
-  optional double default_points = 3;
+  map<uint32, double> points = 1;
+  optional double default_points = 2;
+  optional bool average = 3;
 }
 
 // Message to hold all the information regarding the project.
