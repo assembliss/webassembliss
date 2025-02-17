@@ -20,7 +20,6 @@ _start:
     add     x21, sp, #8     /* skips argc and store &argv in x21 */
 
 firstPrint: /* print the formatted message saying how many arguments were received */
-    /* store */
     add     x0, x19, '0'    /* convert argc into a char */
     ldr     x1, =val        /* get val's memory address */
     strb    w0, [x1]        /* store char_argc into appropriate mem location */
