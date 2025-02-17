@@ -42,8 +42,10 @@ class GraderResults:
     errors: str = ""
     tests: List[TestCase] = field(default_factory=list)
     line_count: int = 0
-    exec_count: int = 0
+    agg_exec_count: int = 0
     scores: Dict[str, float] = field(default_factory=dict)
+    weights: Dict[str, float] = field(default_factory=dict)
+    must_pass_all_tests: bool = False
     total: float = 0.0
 
 

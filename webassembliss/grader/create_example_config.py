@@ -37,7 +37,7 @@ tc1.stdin = "input1"
 tc1.expected_out = "Hello folks!\n"
 tc1.timeout_ms = 500_000  # 0.5s
 tc1.hidden = False
-tc1.points = 1
+tc1.points = 9
 
 tc2 = config.tests.add()
 tc2.name = "Failing test"
@@ -49,11 +49,21 @@ tc2.points = 1
 
 tc3 = config.tests.add()
 tc3.name = "Another failing test"
+tc3.cl_args.extend(["arg1", "arg2"])
 tc3.stdin = "input3"
-tc3.expected_out = "You can't see me!"
+tc3.expected_out = "I did not run..."
 tc3.timeout_ms = 500_000  # 0.5s
-tc3.hidden = True
+tc3.hidden = False
 tc3.points = 1
+
+tc4 = config.tests.add()
+tc4.name = "Yet another failing test"
+tc4.cl_args.extend(["arg1", "arg2"])
+tc4.stdin = "input4"
+tc4.expected_out = "You can't see me!"
+tc4.timeout_ms = 500_000  # 0.5s
+tc4.hidden = True
+tc4.points = 1
 
 
 #

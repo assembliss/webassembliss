@@ -98,19 +98,15 @@ def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) ->
     """Calculate the accuracy score based on the results of the test cases."""
     max_possible = sum((t.points for t in config.tests))
     total = sum((t.points for (t, r) in zip(config.tests, tests) if r.passed))
-    # Check if accuracy is all or nothing based on config.
-    # This should likely only be used if all test cases are open.
-    if total != max_possible and config.must_pass_all_tests:
-        return 0.0
     return total / max_possible
 
 
 def match_value_to_cutoff(
     *,
-    points_cutoffs: Dict[int, float],
-    default_points: int,
+    points_cutoffs: Dict[Union[int, float], float],
+    default_points: Union[int, float],
     is_higher_better: bool,
-    value: int,
+    value: Union[int, float],
 ):
     """Converts an int score into a percentage based on the points_cutoffs distribution."""
     # Sort the cutoffs in order; is_higher_better defines if we check high-low or low-high.
@@ -152,30 +148,29 @@ def calculate_execution_eff_score(
     )
 
 
-def calculate_total_score(*, config: ProjectConfig, results: GraderResults) -> float:
+def combine_category_weights(*, config: ProjectConfig) -> Dict[str, float]:
+    """Convert the int weights into percentages."""
+    total_weight = sum(config.weights.values())
+    return {cat: (weight / total_weight) for cat, weight in config.weights.items()}
+
+
+def calculate_total_score(*, results: GraderResults) -> float:
     """Calculate the overall project score based on the project config."""
 
     # TODO: create custom error for grader pipeline.
     # Make sure we have weight and scores
-    assert config.weights and results.scores
+    assert results.weights and results.scores
 
     # TODO: create custom error for grader pipeline.
     # Make sure they have the same length
-    assert len(config.weights) == len(results.scores)
+    assert len(results.weights) == len(results.scores)
 
-    # Check if they have to pass all tests to get a score;
+    # Check if they have to pass all test cases to get a non-zero score;
     # If they need to pass all tests and do not have perfect accuracy, total should be 0.
-    if config.must_pass_all_tests and (results.scores["accuracy"] < 1):
+    if results.must_pass_all_tests and (results.scores["accuracy"] < 1):
         return 0.0
 
-    # Aggregate all the weights from config and the results
-    weighted_sum = total_weights = 0.0
-    for cat, value in results.scores.items():
-        weighted_sum += value * config.weights[cat]
-        total_weights += config.weights[cat]
-
-    # Calculate the weighted average
-    return weighted_sum / total_weights
+    return sum([results.scores[c] * results.weights[c] for c in results.scores])
 
 
 def grade_student(
@@ -190,7 +185,9 @@ def grade_student(
     config = validate_and_load_project_config(wrapped_config)
 
     # Create result object
-    gr = GraderResults(project=config.name)
+    gr = GraderResults(
+        project=config.name, must_pass_all_tests=config.must_pass_all_tests
+    )
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
@@ -234,7 +231,7 @@ def grade_student(
         gr.tests, all_exec_counts = run_test_cases(
             config=config, rootfs=arch.rootfs, bin_path=bin_path
         )
-        gr.exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
+        gr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
 
         # Calculate each category's score
         gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
@@ -244,11 +241,12 @@ def grade_student(
             config=config, source_instruction_count=gr.line_count
         )
         gr.scores["exec_efficiency"] = calculate_execution_eff_score(
-            config=config, instructions_executed=gr.exec_count
+            config=config, instructions_executed=gr.agg_exec_count
         )
 
     # Combine all categories into an overall project score
-    gr.total = calculate_total_score(config=config, results=gr)
+    gr.weights = combine_category_weights(config=config)
+    gr.total = calculate_total_score(results=gr)
 
     return gr
 
