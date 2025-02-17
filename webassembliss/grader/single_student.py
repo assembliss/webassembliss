@@ -29,6 +29,9 @@ def run_test_cases(
     instructions_executed: List[int] = []
     has_failed_test = False
     for test in config.tests:
+        # Convert command-line arguments into a regular list
+        cl_args = list(test.cl_args)
+
         # Check if should stop when a single test fails
         if config.stop_on_first_test_fail and has_failed_test:
             ran_ok = False
@@ -58,7 +61,7 @@ def run_test_cases(
             ) = timed_emulation(
                 rootfs_path=rootfs,
                 bin_path=bin_path,
-                cl_args=list(test.cl_args),
+                cl_args=cl_args,
                 bin_name=config.exec_name,
                 timeout=test.timeout_ms,
                 stdin=BytesIO(test.stdin.encode()),
@@ -76,6 +79,7 @@ def run_test_cases(
             passed=(test.expected_out == actual_out and ran_ok),
             hidden=test.hidden,
             exit_code=(None if test.hidden else exit_code),
+            cl_args=cl_args,
             stdin=("" if test.hidden else test.stdin),
             expected_out=("" if test.hidden else test.expected_out),
             actual_out=("" if test.hidden else actual_out),

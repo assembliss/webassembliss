@@ -27,6 +27,7 @@ class TestCase:
     passed: bool
     hidden: bool
     exit_code: Optional[int]
+    cl_args: List[str]
     stdin: str
     expected_out: str
     actual_out: str
