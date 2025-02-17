@@ -1,3 +1,4 @@
+import subprocess
 from io import BytesIO
 from os import PathLike
 from typing import Dict, List, Optional, Tuple, Union
@@ -11,14 +12,16 @@ from .base_debugging import (
     DebuggingOptions,
     DebuggingResults,
     LineNum_DI,
+    clean_gdb_output,
     create_debugging_session,
     debug_cmd,
 )
-from .base_emulation import EmulationResults, clean_emulation
+from .base_emulation import EmulationResults, assemble, clean_emulation
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
 LD_CMD = "aarch64-linux-gnu-ld"
+OBJDUMP_CMD = "aarch64-linux-gnu-objdump"
 
 # Register the NZCV register into qiling's arm64 register map so we can read status bits.
 # This was tricky to find... but here are the references in case you need to do the same:
@@ -48,6 +51,54 @@ def get_nzcv(ql: Qiling) -> Dict[str, bool]:
     return _parse_nzcv_from_cpsr(ql.arch.regs.read("cpsr"))
 
 
+def count_source_instructions(src_path: Union[PathLike, str]) -> int:
+    """Count the number of instructions in an arm64 assembly source file."""
+
+    # Assemble source file into an object.
+    obj_path = f"{src_path}.aux_obj"
+    assembled_ok, *_ = assemble(
+        as_cmd=AS_CMD, src_path=src_path, flags=["-o"], obj_path=obj_path
+    )
+    if not assembled_ok:
+        raise RuntimeError("Not able to assemble source into an object.")
+
+    # Run object dump to find only the instructions in the source.
+    objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
+    with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
+        stdout, _ = process.communicate()
+
+    # Parse the objdump's output to count instructions.
+    lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
+
+    # Find the first instruction in the code; it has the address of 0 in the text segment.
+    first_line = 0
+    while first_line < len(lines_as_tokens):
+        if not lines_as_tokens[first_line]:
+            first_line += 1
+        elif lines_as_tokens[first_line][0] != "0:":
+            first_line += 1
+        else:
+            break
+
+    # Count lines that have instruction information.
+    instruction_count = 0
+    for i in range(first_line, len(lines_as_tokens)):
+        # Ignore empty lines.
+        if not lines_as_tokens[i]:
+            continue
+        # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
+        if lines_as_tokens[i][0] == "...":
+            break
+        # Ignore lines that do not have enough information.
+        if len(lines_as_tokens[i]) < 3:
+            continue
+
+        # Count this line as one instruction.
+        instruction_count += 1
+
+    return instruction_count
+
+
 def emulate(
     code: str,
     as_flags: Optional[List[str]] = None,
@@ -57,12 +108,14 @@ def emulate(
     source_name: str = "usrCode.S",
     obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
+    cl_args: str = "",
     registers: Optional[List[str]] = None,
 ) -> EmulationResults:
     # Create default mutable values if needed.
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
     if registers is None:
         registers = ARM64_REGISTERS
@@ -81,31 +134,26 @@ def emulate(
         obj_name=obj_name,
         bin_name=bin_name,
         registers=registers,
+        cl_args=cl_args.split(),
         get_flags_func=get_nzcv,
+        count_instructions_func=count_source_instructions,
     )
 
 
 def _parse_gdb_registers(
-    raw_text: str,
-    full_lines_to_ignore_beginning: int = 5,
-    gdb_prompt_shown: bool = True,
-    full_lines_to_ignore_end: int = 6,
+    gdb_output: bytes, *, cpsr_only: bool = False
 ) -> Dict[str, Tuple[int, bool]]:
     """Parses the result of an 'info regiters' command sent to an arm64 gdb session."""
-
+    # Clean the gdb interaction and only keep the register values.
+    lines = clean_gdb_output(
+        gdb_output=gdb_output,
+        first_line_token=f"(gdb) {'cpsr' if cpsr_only else 'x0'}",
+        last_line_token="(gdb) Detaching" if cpsr_only else "fpsr",
+    )
+    # Remove the '(gdb) ' prompt from the first relevant output line.
+    lines[0] = lines[0][len("(gdb) ") :]
+    # return {r.strip(): (int(v.strip(), 16), False) for r, v in }
     out = {}
-
-    # Split text by lines and ignores the first N and last M lines.
-    lines = raw_text.split("\n")[
-        full_lines_to_ignore_beginning:-full_lines_to_ignore_end
-    ]
-
-    # If first line has a gdb prompt, skip it manually.
-    if gdb_prompt_shown:
-        first_line_tokens = lines.pop(0).split()
-        reg, value = first_line_tokens[1], first_line_tokens[2]
-        out[reg.strip()] = int(value.strip(), 16), False
-
     # Process next lines similarly without having to worry about the gdb prompt.
     for l in lines:
         reg, value, *_ = l.split()
@@ -117,7 +165,7 @@ def _parse_gdb_registers(
 ARM64Registers_DI = DebuggingInfo(
     key="registers",
     cmds=["info registers"],
-    postprocess=lambda x: _parse_gdb_registers(x[0].decode()),
+    postprocess=lambda x: _parse_gdb_registers(x[0]),
 )
 
 ARM64Flags_DI = DebuggingInfo(
@@ -125,7 +173,7 @@ ARM64Flags_DI = DebuggingInfo(
     cmds=["info register cpsr"],
     postprocess=lambda x: _parse_nzcv_from_cpsr(
         # Parsing the output of 'info register cpsr' from gdb to get only the value of the register.
-        int(x[0].decode().split("\n")[5].split()[2], 16)
+        _parse_gdb_registers(x[0], cpsr_only=True)["cpsr"][0]
     ),
 )
 
@@ -143,6 +191,7 @@ def start_debugger(
     source_name: str = "usrCode.S",
     obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
+    cl_args: str = "",
     max_queue_size: int = 20,
     extraInfo: Optional[List[DebuggingInfo]] = None,
     workdir: Union[str, PathLike] = "userprograms",
@@ -153,6 +202,7 @@ def start_debugger(
     if as_flags is None:
         as_flags = ["-g --gdwarf-5 -o"]
     if ld_flags is None:
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
     if extraInfo is None:
         extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
@@ -173,6 +223,7 @@ def start_debugger(
         max_queue_size=max_queue_size,
         extraInfo=extraInfo,
         workdir=workdir,
+        cl_args=cl_args.split(),
     )
 
 

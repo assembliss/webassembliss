@@ -1,0 +1,21 @@
+{% extends "base.html.j2" %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 text-center bg-body-tertiary rounded-3">
+      <img width="128" height="128" src="{{ url_for('static', filename='img/assembliss-gear-icon-red.svg') }}">
+      <h1 class="text-body-emphasis">Welcome to WebAssembliss :)</h1>
+      <p class="col-lg-8 mx-auto fs-5 text-muted">
+        WebAssembliss is a tool that allows you to develop, debug, and run assembly code in a platform independent manner -- straight from your browser!
+      </p>
+      <div class="d-inline-flex gap-2 mb-5">
+        <a class="d-inline-flex align-items-center btn btn-danger btn-lg px-4 rounded-pill" href="/arm64_linux" role="button">
+          Try out the ARM64 editor
+          <svg class="bi ms-2" width="24" height="24" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8z"/></svg>
+        </a>
+        <a class="d-inline-flex align-items-center btn btn-outline-danger btn-lg px-4 rounded-pill" href="/about" role="button">
+          Learn more
+        </a>
+      </div>
+    </div>
+  </div>
+{% endblock %}

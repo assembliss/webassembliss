@@ -9,12 +9,13 @@ if __name__ == "__main__":
         "ioExample.out",
         "multiExample.out",
         "cExample.out",
+        "clArgs.out",
     ]:
         print("\n\n---- ---- ---- ---- ----\n---- ---- ---- ---- ----\n")
         print(f"Emulating {program}:\n\n")
 
         # Set up command line argv, emulated os root path, os default profile, and verboseness level.
-        argv = [program]
+        argv = [program, "test1", "two", "3"]
         rootfs = "../../rootfs/arm64_linux"
         profile = "linux.ql"
         # QL_VERBOSE.DISABLED   logging is disabled entirely

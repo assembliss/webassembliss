@@ -27,8 +27,17 @@ rocher.flask.editor_register(app)
 
 @app.route("/")
 def index():
-    # TODO: add a landing page whenever we have more architectures available.
-    return redirect("/arm64_linux/")
+    return render_template("index.html.j2")
+
+
+@app.route("/about/")
+def about():
+    return render_template("about.html.j2")
+
+
+@app.route("/grader/")
+def grader():
+    return render_template("grader.html.j2")
 
 
 @app.route("/debugdb/<keys>/")
@@ -75,8 +84,9 @@ def arm64_linux_run():
 
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json.get("cl_args", "")
     emu_results = arm64_linux_emulation(
-        session["source_code"], stdin=session["user_input"]
+        session["source_code"], stdin=session["user_input"], cl_args=session["cl_args"]
     )
 
     # TODO: return simply emu_results and do parsing of results on javascript side;
@@ -110,6 +120,7 @@ def arm64_linux_debug():
 
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json.get("cl_args", "")
     # Note that we need to have *something* stored in the session so the sid persists with the same user.
     user_signature = session.sid
     debugInfo = None
@@ -119,9 +130,13 @@ def arm64_linux_debug():
             user_signature=user_signature,
             code=session["source_code"],
             user_input=session["user_input"],
+            cl_args=session["cl_args"],
         )
 
     elif request.json["debug"].get("command", False):
+        # TODO: There is a bug either somewhere here or in this method;
+        #       a DDBError('no session') is often raised when executable exits;
+        #       is this being called more than once in the js-side?
         debugInfo = arm64_linux_gdb_cmd(
             user_signature=user_signature,
             cmd=request.json["debug"]["command"],
@@ -142,6 +157,7 @@ def arm64_linux_debug():
         "as_ok": debugInfo.assembled_ok,
         "ld_ok": debugInfo.linked_ok,
         "ran_ok": debugInfo.run_ok,
+        "memory": debugInfo.print_memory(show_ascii=True),
     }
 
 

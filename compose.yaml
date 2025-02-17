@@ -8,6 +8,9 @@ services:
       - REDIS_PORT=6379
     depends_on:
       - redis
+    # You can uncomment the line below so the app docker starts and sleeps;
+    # this allows you to launch a terminal and spin up the server yourself.
+    # command: sleep infinity
   redis:
     image: "redis:alpine"
     command: sh -c "rm -f /data/dump.rdb && exec redis-server" # Delete any data from previous run.

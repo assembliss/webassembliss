@@ -1,15 +1,17 @@
 import struct
 import subprocess
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
-from qiling.const import QL_ENDIAN, QL_STOP
+from qiling.const import QL_ENDIAN
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
+from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
+from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 
 @dataclass
@@ -25,6 +27,7 @@ class EmulationResults:
     as_args: str = ""
     as_out: str = ""
     as_err: str = ""
+    num_instructions: Optional[int] = None
     linked_ok: bool = None  # type: ignore[assignment]
     ld_args: str = ""
     ld_out: str = ""
@@ -41,7 +44,9 @@ class EmulationResults:
     memory: Dict[int, Tuple[str, Tuple[int, ...]]] = (
         None  # type: ignore[assignment] # {addr1: (struct.format, (val1, val2, ...)), ...}
     )
-    flags: Dict[str, bool] = None  # type: ignore[assignment] # {N: False, Z: True, ...}
+    flags: Dict[str, bool] = field(default_factory=dict)  # {N: False, Z: True, ...}
+    argv: List[str] = field(default_factory=list)  # ['bin_path', 'arg1', 'arg2', ...]
+    exec_instructions: Optional[int] = None
 
     def _prep_output(
         self,
@@ -166,11 +171,13 @@ Linker errors:
         out += f"Exit code: {self.run_exit_code if self.run_exit_code is not None else 'not set'}\n"
         out += f"Timeout detected: {'yes' if self.run_timeout else 'no'}\n"
         out += f"rootfs: {self.rootfs}\n"
+        out += f"argv: {self.argv}\n"
         out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
         out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
         out += f"Assembler command: '{self.as_args}'\n"
         out += f"Assembler output:\n{self._prep_output(self.as_out, '<<< no output >>>')}\n"
         out += f"Assembler errors:\n{self._prep_output(self.as_err, '<<< no reported errors >>>')}\n"
+        out += f"Number of instructions in source: {self.num_instructions if self.num_instructions is not None else 'not measured'}\n"
         out += f"Linker command: '{self.ld_args}'\n"
         out += (
             f"Linker output:\n{self._prep_output(self.ld_out, '<<< no output >>>')}\n"
@@ -179,6 +186,7 @@ Linker errors:
         out += f"Execution input:\n{self._prep_output(self.run_stdin, '<<< no user input given >>>', keep_empty_tokens=True)}\n"
         out += f"Execution output:\n{self._prep_output(self.run_stdout, '<<< no output >>>', keep_empty_tokens=True)}\n"
         out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"
+        out += f"Number of instructions executed: {self.exec_instructions if self.exec_instructions is not None else 'not measured'}\n"
         out += f"Number of bits in registers: {self.reg_num_bits}\n"
         out += self.print_registers()
         out += self.print_memory()
@@ -206,8 +214,6 @@ def assemble(
 ) -> Tuple[bool, str, str, str]:
     """Use the given assembler command to process the source file and create an object."""
     # TODO: add tests to make sure this function works as expected.
-    # TODO: count how many instructions are in the source file and return that as well.
-    # TODO: find the ratio of instructions and comments and report that to result as well.
 
     # Combine the different pieces into a complete assembling command.
     as_full_cmd = as_cmd_format.format(
@@ -259,7 +265,7 @@ def link(
         )
 
 
-def _filter_memory(
+def filter_memory(
     og_mem: Dict[int, bytearray],
     cur_mem: Dict[int, bytearray],
     little_endian: bool,
@@ -321,9 +327,19 @@ def _filter_memory(
     return out
 
 
-def _timed_emulation(
+class ExecutionCounter:
+    def __init__(self):
+        self.count = 0
+
+    def incr(self, *args, **kwargs):
+        self.count += 1
+
+
+# TODO: create a dataclass type for the return of this method; could likely do that for all methods that return tuples.
+def timed_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],
+    cl_args: List[str],
     bin_name: str,
     timeout: int,
     stdin: BytesIO,
@@ -342,14 +358,19 @@ def _timed_emulation(
     bool,  # little_endian
     Dict[int, Tuple[str, Tuple[int, ...]]],  # memory
     Dict[str, bool],  # flags
+    List[str],  # complete argv
+    int,  # number of instructions executed
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
-    # TODO: count how many instructions were executed and return that as well.
 
     # Instantiate a qiling object with the binary and rootfs we want to use.
+    argv: List[str] = [bin_path] + cl_args  # type: ignore[assignment]
     ql = Qiling(
-        [bin_path], rootfs_path, verbose=verbose, console=False, stop=QL_STOP.EXIT_TRAP
+        argv,
+        rootfs_path,
+        verbose=verbose,
+        console=False,
     )
     given_stdin = stdin.getvalue().decode()
 
@@ -364,8 +385,11 @@ def _timed_emulation(
     og_mem_values = {s: ql.mem.read(s, e - s) for s, e in relevant_mem_area}
 
     # Redirect input, output, and error streams.
-    out = BytesIO()
-    err = BytesIO()
+    # SimpleOutSteams capture the output of printf while BytesIOs do not.
+    # TODO: printf output only gets captured if serving webapp manually;
+    #       i.e., it does not show when serving via docker(-compose) command.
+    out = SimpleOutStream(fd=1)
+    err = SimpleOutStream(fd=2)
     # TODO: make emulation crash if code asks for user input but stdin is exhausted.
     ql.os.stdin = stdin
     ql.os.stdout = out
@@ -377,10 +401,15 @@ def _timed_emulation(
     # Stores a checkpoint of register values.
     og_reg_values = {r: ql.arch.regs.read(r) for r in registers}
 
+    # Adds a hook to count the executed instructions.
+    counter = ExecutionCounter()
+    ql.hook_code(counter.incr)
+
     # Run the program with specified timeout.
     execution_error = ""
     try:
         ql.run(timeout=timeout)
+
     except QlErrorCoreHook as error:
         # Catch a notimplemented interrupt error.
         # From what I can tell, this usually happens if the user has not done sys.exit.
@@ -390,6 +419,11 @@ def _timed_emulation(
         execution_error += (
             "Educated Guess: any chance you missed a sys.exit call?\n\nSTDERR output: "
         )
+
+    except UcError as error:
+        execution_error += "Runtime error! Emulation crashed while running your code:\n"
+        execution_error += f"\t'{type(error)}: {error}'\n"
+        execution_error += "Educated Guess: any chance you are accessing an invalid memory location?\n\nSTDERR output: "
 
     # Read the updated exit code.
     run_exit_code = ql.os.exit_code
@@ -418,8 +452,10 @@ def _timed_emulation(
         },
         ql.arch.bits,
         little_endian,
-        _filter_memory(og_mem_values, cur_mem_values, little_endian),
+        filter_memory(og_mem_values, cur_mem_values, little_endian),
         get_flags_func(ql),
+        argv,
+        counter.count,
     )
 
 
@@ -436,9 +472,11 @@ def clean_emulation(
     obj_name: str,
     bin_name: str,
     registers: List[str],
+    cl_args: List[str],
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
+    count_instructions_func: Callable[[Union[str, PathLike]], int] = lambda _: None,
 ) -> EmulationResults:
     # TODO: add tests to make sure this function works as expected.
 
@@ -466,6 +504,9 @@ def clean_emulation(
         if not er.assembled_ok:
             return er
 
+        # Count the number of instructions in the source code.
+        er.num_instructions = count_instructions_func(src_path)
+
         # Try linking the generated object.
         # TODO: add the option to link multiple objects.
         # TODO: add the option to receive already created objects.
@@ -488,8 +529,17 @@ def clean_emulation(
             er.little_endian,
             er.memory,
             er.flags,
-        ) = _timed_emulation(
-            rootfs_path, bin_path, bin_name, timeout, stdin, registers, get_flags_func
+            er.argv,
+            er.exec_instructions,
+        ) = timed_emulation(
+            rootfs_path,
+            bin_path,
+            cl_args,
+            bin_name,
+            timeout,
+            stdin,
+            registers,
+            get_flags_func,
         )
 
         # Sets global status field to match whether execution exited successfully.

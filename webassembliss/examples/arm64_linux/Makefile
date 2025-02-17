@@ -1,4 +1,4 @@
-all: hello changingFlags infiniteLoop ioExample multiExample cExample
+all: hello changingFlags infiniteLoop ioExample multiExample cExample clArgs
 
 hello: hello.S
 	aarch64-linux-gnu-as hello.S -g --gdwarf-5 -o hello.o
@@ -25,6 +25,10 @@ cExample: cDriver.c sampleLib.S
 	aarch64-linux-gnu-gcc cDriver.c -c -g -gdwarf -o cDriver.o
 	aarch64-linux-gnu-as sampleLib.S -g --gdwarf-5 -o sampleLib.o
 	aarch64-linux-gnu-ld cDriver.o sampleLib.o -o cExample.out -lc
+
+clArgs: clArgs.S
+	aarch64-linux-gnu-as clArgs.S -g --gdwarf-5 -o clArgs.o
+	aarch64-linux-gnu-ld clArgs.o -o clArgs.out -lc
 
 clean:
 	rm *.o *.out

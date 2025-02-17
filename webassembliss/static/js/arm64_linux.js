@@ -4,6 +4,7 @@ const ERROR_SYMBOL = "❌";
 window.lastRunInfo = null;
 window.decorations = null;
 window.gdb_line_decoration = null;
+window.cl_args = "";
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -29,7 +30,7 @@ document.addEventListener('keydown', e => {
 
 
 /* Adds toggle functionality to issue label buttons */
-document.querySelector(".feedbackCollapsible").addEventListener("click", function(event) {
+document.querySelector(".feedbackCollapsible").addEventListener("click", function (event) {
     if (event.target.classList.contains("issueLabelButton")) {
         event.target.classList.toggle("issueLabelActive");
     }
@@ -78,8 +79,8 @@ function submitIssue() {
     let ld_err = parseEmulationJSON("ld_err");
 
 
-// Template literal for body appending
-body += `
+    // Template literal for body appending
+    body += `
 
 
 ----------------------------------------------------------
@@ -90,7 +91,7 @@ as_args: ${as_args}
 as_err: ${as_err}
 ld_args: ${ld_args}
 ld_err: ${ld_err}`;
-// End of template literal
+    // End of template literal
 
     let bugLabelString = "";
     let helpWantedLabelString = "";
@@ -121,11 +122,11 @@ ld_err: ${ld_err}`;
     let encodedTitle = encodeURIComponent(title);
     let encodedLabels = encodeURIComponent(fLabelString);
 
-    if (title=="" || body=="") {
+    if (title == "" || body == "") {
         alert("Issue title or body is required.");
     } else {
         // Generate a URL query
-        if (bugLabelString=="" && helpWantedLabelString=="" && enhancementLabelString=="" && questionLabelString=="" && invalidLabelString=="") {
+        if (bugLabelString == "" && helpWantedLabelString == "" && enhancementLabelString == "" && questionLabelString == "" && invalidLabelString == "") {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
@@ -138,7 +139,7 @@ function createEditor(default_code) {
     require(['vs/editor/editor.main'], function () {
         monaco.languages.register({ id: 'arm64' });
         monaco.languages.setMonarchTokensProvider('arm64', getSyntaxHighlighting());
-        window.editor = monaco.editor.create(document.getElementById('container'), {
+        window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
             // Change "value" to upload files
             value: default_code.join('\n'),
             language: 'arm64',
@@ -189,7 +190,7 @@ function detectAndHighlightErrors() {
     // Highlight lines for each error
     lines.forEach(line => {
         line.message = line.message.replace(/`/g, '\\`');
-        addErrorHighlight(parseInt(line.lineNumber,10), [{value: line.message}]);
+        addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
     });
 }
 
@@ -206,7 +207,7 @@ function runCode() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
@@ -229,6 +230,13 @@ function runCode() {
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         });
+}
+
+function setCLArgs() {
+    new_val = prompt("Set command line arguments:", window.cl_args);
+    if (new_val !== null) {
+        window.cl_args = new_val;
+    }
 }
 
 function getSource() {
@@ -301,6 +309,9 @@ function download_file(name, contents, mime_type) {
 }
 
 function updateDebuggingInfo(data) {
+    // TODO: only update values if they're not null, e.g., after program quits we probably want to display last memory values read.
+    //          - this could also be done python-side.
+
     document.getElementById("runStatus").innerHTML = OK_SYMBOL;
 
     if (data.debugInfo.as_ok !== null) {
@@ -369,7 +380,7 @@ function startDebugger() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": { "start": true } }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true } }),
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
@@ -426,22 +437,6 @@ function stopDebugger() {
     document.getElementById("loadBtn").disabled = false;
     // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
-}
-
-function exampleHighlight(line) {
-    if (line) {
-        addErrorHighlight(line, [{
-            value: "any error messages,"
-        }, {
-            value: "can go here..."
-        }]);
-        document.getElementById("showError").disabled = true;
-        document.getElementById("hideHighlights").disabled = false;
-    } else {
-        removeAllHighlights();
-        document.getElementById("showError").disabled = false;
-        document.getElementById("hideHighlights").disabled = true;
-    }
 }
 
 function getSyntaxHighlighting() {

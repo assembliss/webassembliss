@@ -20,16 +20,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] highlight modified registers
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
-- [ ] allow user to debug code (continue, step, set breakpoint)
-	- [x] create thread with tempdir
-	- [x] continue and step
-	- [x] highlight only next line on editor
-	- [x] set breakpoints
-	- [x] remove breakpoints
-	- [x] update breakpoint highlights after removal
-	- [x] detect exit gracefully
-	- [x] show stdout/stderr from program
-	- [ ] show memory values
+- [x] allow user to debug code (continue, step, set breakpoint, see memory)
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
 - [ ] allow multiple sources to work together
@@ -38,12 +29,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] handle multiple architectures
 
 ### Grading Workflow
-- [ ] allow testing of code (given input, expected output)
-- [ ] measure lines of code
-- [ ] measure executed instructions
-- [ ] measure documentation level
+- [x] allow testing of code (given input, expected output)
+- [x] measure lines of code
+- [x] measure executed instructions
+- [x] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
-- [ ] create config file that has provided source(s), object(s), and tests
+- [x] create config file that has provided source(s), object(s), and tests
 - [ ] allow user to upload config file and run tests with their code
 - [ ] generate a results file containing user info, test results, efficiency metrics
 - [ ] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
@@ -57,7 +48,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- https://github.com/rhysd/actionlint
 - [ ] add auto-typehint-checker
 	- https://github.com/python/mypy
-- [ ] add a production deployment server (e.g., [gunicorn](https://rest-apis-flask.teclado.com/docs/deploy_to_render/docker_with_gunicorn/))
+- [x] add a production deployment server
 - [ ] update Dockerfile to use newer python version
 - [ ] add unit tests for all methods
 	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
@@ -68,6 +59,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] make debugging route and methods async
 	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
 	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
+- [ ] find best gunicorn config
+	- https://docs.gunicorn.org/en/stable/settings.html#worker-class
+	- https://docs.gunicorn.org/en/stable/design.html
 
 ### User Experience
 - [x] change the editor to hilight syntax for arm64 assembly
@@ -82,10 +76,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to change timeout
 - [ ] allow user to change registers shown
 - [ ] allow user to change memory area shown
+- [ ] give user option to delete old debugging session and start a new one
 - [ ] handle no available ports for a new debugger session
 	- maybe a timer and try again in a minute?
 - [ ] handle already active session for user
 	- maybe a popup and ask if they want to quit the old one?
 - [ ] have a toggle for ascii vs non ascii memory view
+- [ ] speedup/optimize steps in debug-mode
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)

@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+// This file can be compiled with: protoc project_config.proto --python_out=.
+// That will generate the project_config_pb2.py file that we can import in the python backend.
+
+// Message to hold information for a single test case.
+// You can use a C-driver to test student code without stdin/stdout.
+message TestCase {
+  string name = 1;
+  string stdin = 2;
+  string expected_out = 3;
+  uint32 timeout_ms = 4;
+  repeated string cl_args = 5;
+  bool hidden = 6;
+  uint32 points = 7;
+}
+
+// Message with information on how to measure the source code documentation.
+// points are grade distributions, where key is a cutoff and val the percentage;
+//  - e.g., {50: 1, 30: 0.75, ...}, where x>=50 is 100%, 50>x>=30 is 75%, etc;
+// comments_to_instr defines 'points' for the ratio of the number of comment-only
+//    lines in the source file compared to the number of instruction lines.
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
+message MeasureSourceDocumentation {
+  map<uint32, double> comments_to_instr_pct_points = 1;
+  optional double comments_to_instr_pct_default = 2;
+}
+
+// Message with information on how to measure the source code efficiency.
+// commands should calculate one int (x) from analyzing the source file;
+// points is a grade distribution, where key is a cutoff and val the percentage;
+//  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
+message MeasureSourceEfficiency {
+  map<uint32, double> points = 1;
+  optional double default_points = 2;
+}
+
+// Define available options to aggregate executed instructions over all tests.
+enum ExecutedInstructionsAggregation {
+  EXECUTEDINSTRUCTIONSAGGREGATION_UNSPECIFIED = 0;
+  SUM = 1;
+  AVERAGE = 2;
+  MAX = 3;
+  MIN = 4;
+}
+
+// Message with information on how to measure the executable efficiency.
+// aggregation defines how to combine measured execution counts for all tests;
+// points is a grade distribution, where key is a cutoff and val the percentage;
+//  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
+// default_points is pct assigned to a value of x that didn't meet any cutoff.
+message MeasureExecEfficiency {
+  ExecutedInstructionsAggregation aggregation = 1;
+  map<uint32, double> points = 2;
+  optional double default_points = 3;
+}
+
+// Message to hold all the information regarding the project.
+message ProjectConfig {
+  string name = 1;
+  string rootfs_arch = 2;
+  string user_filename = 3;
+  string exec_name = 4;
+  repeated string as_flags = 5;
+  repeated string ld_flags = 6;
+  repeated TestCase tests = 7;
+  bool stop_on_first_test_fail = 8;
+  bool must_pass_all_tests = 9;
+  optional MeasureSourceDocumentation docs = 10;
+  optional MeasureSourceEfficiency source_eff = 11;
+  optional MeasureExecEfficiency exec_eff = 12;
+  map<string, uint32> weights = 13;
+  map<string, string> extra_text_files = 14;
+  map<string, bytes> extra_bin_files = 15;
+}
+
+// Define what compression algorithm was used to compress the project config message.
+enum CompressionAlgorithm {
+  COMPRESSIONALGORITHM_UNSPECIFIED = 0;
+  BZ2 = 1;
+}
+
+// Message to hold a compressed ProjectConfig and its checksum.
+// ProjectConfig has to be compressed because: https://protobuf.dev/programming-guides/serialization-not-canonical/
+message WrappedProject {
+  bytes checksum = 1;
+  CompressionAlgorithm compression_alg = 2;
+  bytes compressed_config = 3;
+}
