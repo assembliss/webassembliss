@@ -36,11 +36,14 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
+document.getElementById("fileUpload").addEventListener("change", function(uploadEvent) {
+    importCode();
+});
+
 function importCode() {
-    let file = document.getElementById("fileUpload");
+    let file = document.getElementById("fileUpload").files[0];
 
     if (!file) {
-        alert("No file selected.");
         return;
     }
 
@@ -52,11 +55,16 @@ function importCode() {
     let fileReader = new FileReader();
     fileReader.onload = function (onLoadEvent) {
         const fileContents = onLoadEvent.target.result;
+
+        window.editor.setValue(fileContents);
     };
 
     fileReader.onerror = function () {
         alert("Error reading file.");
     };
+
+    fileReader.readAsText(file);
+
 
 }
 
