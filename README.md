@@ -31,7 +31,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 ### Grading Workflow
 - [ ] allow testing of code (given input, expected output)
 - [ ] measure lines of code
-- [ ] measure executed instructions
+- [x] measure executed instructions
 - [ ] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 - [ ] create config file that has provided source(s), object(s), and tests

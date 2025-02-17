@@ -25,19 +25,32 @@ def run_test_cases(
     """Run the test cases from the project config through qiling emulation."""
     results: List[TestCase] = []
 
+    total_instr_executed = 0
     for test in config.tests:
         # Emulate binary to get result
-        ran_ok, _, timed_out, _, actual_out, actual_err, _, _, _, _, _, _ = (
-            timed_emulation(
-                rootfs_path=rootfs,
-                bin_path=bin_path,
-                cl_args=list(test.cl_args),
-                bin_name=config.exec_name,
-                timeout=test.timeout_ms,
-                stdin=BytesIO(test.stdin.encode()),
-                registers=[],
-                get_flags_func=lambda *args, **kwargs: {},
-            )
+        (
+            ran_ok,
+            _,
+            timed_out,
+            _,
+            actual_out,
+            actual_err,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            exec_count,
+        ) = timed_emulation(
+            rootfs_path=rootfs,
+            bin_path=bin_path,
+            cl_args=list(test.cl_args),
+            bin_name=config.exec_name,
+            timeout=test.timeout_ms,
+            stdin=BytesIO(test.stdin.encode()),
+            registers=[],
+            get_flags_func=lambda *args, **kwargs: {},
         )
         # Parse through emulation output to evaluate test
         test_result = TestCase(
@@ -54,13 +67,13 @@ def run_test_cases(
             actual_err=("" if test.hidden else actual_err),
         )
         results.append(test_result)
+        total_instr_executed += exec_count
 
         # Check if should stop when a single test fails
         if config.stop_on_first_test_fail and not test_result.passed:
             break
 
-    # TODO: aggregate and return executed instructions for each test case
-    return results, 0
+    return results, total_instr_executed
 
 
 def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) -> float:

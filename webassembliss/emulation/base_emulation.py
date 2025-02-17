@@ -46,6 +46,7 @@ class EmulationResults:
     )
     flags: Dict[str, bool] = field(default_factory=dict)  # {N: False, Z: True, ...}
     argv: List[str] = field(default_factory=list)  # ['bin_path', 'arg1', 'arg2', ...]
+    exec_instructions: Optional[int] = None
 
     def _prep_output(
         self,
@@ -185,6 +186,7 @@ Linker errors:
         out += f"Execution input:\n{self._prep_output(self.run_stdin, '<<< no user input given >>>', keep_empty_tokens=True)}\n"
         out += f"Execution output:\n{self._prep_output(self.run_stdout, '<<< no output >>>', keep_empty_tokens=True)}\n"
         out += f"Execution errors:\n{self._prep_output(self.run_stderr, '<<< no reported errors >>>')}\n"
+        out += f"Number of instructions executed: {self.exec_instructions if self.exec_instructions is not None else 'not measured'}\n"
         out += f"Number of bits in registers: {self.reg_num_bits}\n"
         out += self.print_registers()
         out += self.print_memory()
@@ -325,6 +327,14 @@ def filter_memory(
     return out
 
 
+class ExecutionCounter:
+    def __init__(self):
+        self.count = 0
+
+    def incr(self, *args, **kwargs):
+        self.count += 1
+
+
 # TODO: create a dataclass type for the return of this method; could likely do that for all methods that return tuples.
 def timed_emulation(
     rootfs_path: Union[str, PathLike],
@@ -349,10 +359,10 @@ def timed_emulation(
     Dict[int, Tuple[str, Tuple[int, ...]]],  # memory
     Dict[str, bool],  # flags
     List[str],  # complete argv
+    int,  # number of instructions executed
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
-    # TODO: count how many instructions were executed and return that as well.
 
     # Instantiate a qiling object with the binary and rootfs we want to use.
     argv: List[str] = [bin_path] + cl_args  # type: ignore[assignment]
@@ -390,6 +400,10 @@ def timed_emulation(
 
     # Stores a checkpoint of register values.
     og_reg_values = {r: ql.arch.regs.read(r) for r in registers}
+
+    # Adds a hook to count the executed instructions.
+    counter = ExecutionCounter()
+    ql.hook_code(counter.incr)
 
     # Run the program with specified timeout.
     execution_error = ""
@@ -441,6 +455,7 @@ def timed_emulation(
         filter_memory(og_mem_values, cur_mem_values, little_endian),
         get_flags_func(ql),
         argv,
+        counter.count,
     )
 
 
@@ -515,6 +530,7 @@ def clean_emulation(
             er.memory,
             er.flags,
             er.argv,
+            er.exec_instructions,
         ) = timed_emulation(
             rootfs_path,
             bin_path,
