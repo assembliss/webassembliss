@@ -35,6 +35,30 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
+function importCode() {
+    let file = document.getElementById("fileUpload");
+
+    if (!file) {
+        alert("No file selected.");
+        return;
+    }
+
+    if (!file.name.endsWith(".S")) {
+        alert("Invalid file! Please select a .S file.");
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+}
+
 /* Parses through the emulation information JSON and returns the string within quotes following the target.
 */
 function parseEmulationJSON(target) {
