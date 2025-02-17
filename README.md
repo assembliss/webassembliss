@@ -29,12 +29,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] handle multiple architectures
 
 ### Grading Workflow
-- [ ] allow testing of code (given input, expected output)
-- [ ] measure lines of code
+- [x] allow testing of code (given input, expected output)
+- [x] measure lines of code
 - [x] measure executed instructions
 - [ ] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
-- [ ] create config file that has provided source(s), object(s), and tests
+- [x] create config file that has provided source(s), object(s), and tests
 - [ ] allow user to upload config file and run tests with their code
 - [ ] generate a results file containing user info, test results, efficiency metrics
 - [ ] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
