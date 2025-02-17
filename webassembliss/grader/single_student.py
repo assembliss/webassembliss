@@ -79,7 +79,7 @@ def run_test_cases(
             passed=(test.expected_out == actual_out and ran_ok),
             hidden=test.hidden,
             exit_code=(None if test.hidden else exit_code),
-            cl_args=cl_args,
+            cl_args=([] if test.hidden else cl_args),
             stdin=("" if test.hidden else test.stdin),
             expected_out=("" if test.hidden else test.expected_out),
             actual_out=("" if test.hidden else actual_out),
