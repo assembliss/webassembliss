@@ -7,12 +7,13 @@ from typing import List, Tuple, Union
 from ..emulation.base_emulation import assemble, link, timed_emulation
 from .project_config_pb2 import ProjectConfig, WrappedProject
 from .utils import (
+    EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
     TestCase,
     create_extra_files,
     create_text_file,
-    validate_project_config,
+    validate_and_load_project_config,
 )
 
 
@@ -21,59 +22,72 @@ def run_test_cases(
     config: ProjectConfig,
     rootfs: Union[PathLike, str],
     bin_path: Union[PathLike, str],
-) -> Tuple[List[TestCase], int]:
+) -> Tuple[List[TestCase], List[int]]:
     """Run the test cases from the project config through qiling emulation."""
     results: List[TestCase] = []
 
-    total_instr_executed = 0
+    instructions_executed: List[int] = []
+    has_failed_test = False
     for test in config.tests:
-        # Emulate binary to get result
-        (
-            ran_ok,
-            _,
-            timed_out,
-            _,
-            actual_out,
-            actual_err,
-            _,
-            _,
-            _,
-            _,
-            _,
-            _,
-            exec_count,
-        ) = timed_emulation(
-            rootfs_path=rootfs,
-            bin_path=bin_path,
-            cl_args=list(test.cl_args),
-            bin_name=config.exec_name,
-            timeout=test.timeout_ms,
-            stdin=BytesIO(test.stdin.encode()),
-            registers=[],
-            get_flags_func=lambda *args, **kwargs: {},
-        )
+        # Check if should stop when a single test fails
+        if config.stop_on_first_test_fail and has_failed_test:
+            ran_ok = False
+            exit_code = None
+            timed_out = False
+            actual_out = ""
+            actual_err = ""
+            exec_count = 0
+            executed = False
+
+        else:
+            # Emulate binary to get result
+            (
+                ran_ok,
+                exit_code,
+                timed_out,
+                _,
+                actual_out,
+                actual_err,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                exec_count,
+            ) = timed_emulation(
+                rootfs_path=rootfs,
+                bin_path=bin_path,
+                cl_args=list(test.cl_args),
+                bin_name=config.exec_name,
+                timeout=test.timeout_ms,
+                stdin=BytesIO(test.stdin.encode()),
+                registers=[],
+                get_flags_func=lambda *args, **kwargs: {},
+            )
+            executed = True
+
         # Parse through emulation output to evaluate test
         test_result = TestCase(
             name=test.name,
             points=test.points,
-            ran=True,
-            passed=(test.expected_out == actual_out),
-            hidden=test.hidden,
-            ran_ok=ran_ok,
+            executed=executed,
             timed_out=timed_out,
+            passed=(test.expected_out == actual_out and ran_ok),
+            hidden=test.hidden,
+            exit_code=(None if test.hidden else exit_code),
             stdin=("" if test.hidden else test.stdin),
             expected_out=("" if test.hidden else test.expected_out),
             actual_out=("" if test.hidden else actual_out),
             actual_err=("" if test.hidden else actual_err),
         )
         results.append(test_result)
-        total_instr_executed += exec_count
+        instructions_executed.append(exec_count)
+        # Check if last test has failed and set flag accordingly.
+        if not test_result.passed:
+            has_failed_test = True
 
-        # Check if should stop when a single test fails
-        if config.stop_on_first_test_fail and not test_result.passed:
-            break
-
-    return results, total_instr_executed
+    return results, instructions_executed
 
 
 def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) -> float:
@@ -97,17 +111,26 @@ def calculate_source_eff_score(
     *, config: ProjectConfig, source_instruction_count: int
 ) -> float:
     """Calculate the source efficiency score based on the project config."""
-    # TODO: implement source efficiency grading.
-    return 0.0
+    # Sort the cutoffs in order; a smaller count is better here.
+    for cutoff in sorted(config.source_eff.points.keys()):
+        # If the given count is below the cutoff, return the points for it.
+        if cutoff >= source_instruction_count:
+            return config.source_eff.points[cutoff]
+    # Did not meet any grading cutoff, return the default points.
+    return config.source_eff.default_points
 
 
 def calculate_execution_eff_score(
     *, config: ProjectConfig, instructions_executed: int
 ) -> float:
     """Calculate the execution efficiency score based on the project config."""
-    # TODO: implement execution efficiency grading.
-    #       hook the qiling instructions to keep a count in timed_emulation
-    return 0.0
+    # Sort the cutoffs in order; a smaller count is better here.
+    for cutoff in sorted(config.exec_eff.points.keys()):
+        # If the given count is below the cutoff, return the points for it.
+        if cutoff >= instructions_executed:
+            return config.exec_eff.points[cutoff]
+    # Did not meet any grading cutoff, return the default points.
+    return config.exec_eff.default_points
 
 
 def calculate_total_score(*, config: ProjectConfig, results: GraderResults) -> float:
@@ -145,8 +168,7 @@ def grade_student(
     """Grade the student submission received based on the given project config."""
 
     # Make sure the given project config is valid.
-    validate_project_config(wrapped_config)
-    config = wrapped_config.config
+    config = validate_and_load_project_config(wrapped_config)
 
     # Create result object
     gr = GraderResults(project=config.name)
@@ -190,9 +212,10 @@ def grade_student(
             return gr
 
         # Run given test cases
-        gr.tests, gr.exec_count = run_test_cases(
+        gr.tests, all_exec_counts = run_test_cases(
             config=config, rootfs=arch.rootfs, bin_path=bin_path
         )
+        gr.exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)
 
         # Calculate each category's score
         gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)

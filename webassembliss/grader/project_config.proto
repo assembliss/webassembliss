@@ -1,5 +1,8 @@
 syntax = "proto3";
 
+// This file can be compiled with: protoc project_config.proto --python_out=.
+// That will generate the project_config_pb2.py file that we can import in the python backend.
+
 // Message to hold information for a single test case.
 // You can use a C-driver to test student code without stdin/stdout.
 message TestCase {
@@ -29,15 +32,24 @@ message MeasureSourceEfficiency {
   optional double default_points = 2;
 }
 
+// Define available options to aggregate executed instructions over all tests.
+enum ExecutedInstructionsAggregation {
+  EXECUTEDINSTRUCTIONSAGGREGATION_UNSPECIFIED = 0;
+  SUM = 1;
+  AVERAGE = 2;
+  MAX = 3;
+  MIN = 4;
+}
+
 // Message with information on how to measure the executable efficiency.
+// aggregation defines how to combine measured execution counts for all tests;
 // points is a grade distribution, where key is a cutoff and val the percentage;
 //  - e.g., {20: 1, 22: 0.95, ...}, where x <= 20 is 100%, 20<x<=22 is 95%, etc;
-// default_points is pts assigned to a value of x that didn't meet any cutoff;
-// average defines if we calculate points on total or average count across tests.
+// default_points is pts assigned to a value of x that didn't meet any cutoff.
 message MeasureExecEfficiency {
-  map<uint32, double> points = 1;
-  optional double default_points = 2;
-  optional bool average = 3;
+  ExecutedInstructionsAggregation aggregation = 1;
+  map<uint32, double> points = 2;
+  optional double default_points = 3;
 }
 
 // Message to hold all the information regarding the project.
@@ -59,7 +71,16 @@ message ProjectConfig {
   map<string, bytes> extra_bin_files = 15;
 }
 
+// Define what compression algorithm was used to compress the project config message.
+enum CompressionAlgorithm {
+  COMPRESSIONALGORITHM_UNSPECIFIED = 0;
+  BZ2 = 1;
+}
+
+// Message to hold a compressed ProjectConfig and its checksum.
+// ProjectConfig has to be compressed because: https://protobuf.dev/programming-guides/serialization-not-canonical/
 message WrappedProject {
-  ProjectConfig config = 1;
-  bytes checksum = 2;
+  bytes checksum = 1;
+  CompressionAlgorithm compression_alg = 2;
+  bytes compressed_config = 3;
 }

@@ -2,24 +2,36 @@
 # This sample project grades the hello.S from the examples/arm64_linux directory.
 # It has one test case that passes and two that fail, where one that fails is hidden.
 
-from project_config_pb2 import WrappedProject
 from hashlib import sha256
+from bz2 import compress
+from project_config_pb2 import (
+    CompressionAlgorithm,
+    ExecutedInstructionsAggregation,
+    ProjectConfig,
+    WrappedProject,
+)
 
-# Create empty proto message
-wp = WrappedProject()
+#
+# Create empty ProjectConfig proto message
+#
+config = ProjectConfig()
 
+#
 # Set basic info
-wp.config.name = "Hello Project Config"
-wp.config.rootfs_arch = "ARM64"
-wp.config.user_filename = "hello.S"
-wp.config.exec_name = "hello.exe"
-wp.config.as_flags.append("-o")
-wp.config.ld_flags.append("-o")
-wp.config.must_pass_all_tests = True
-wp.config.stop_on_first_test_fail = True
+#
+config.name = "Hello Project Config"
+config.rootfs_arch = "ARM64"
+config.user_filename = "hello.S"
+config.exec_name = "hello.exe"
+config.as_flags.append("-o")
+config.ld_flags.append("-o")
+config.must_pass_all_tests = True
+config.stop_on_first_test_fail = True
 
+#
 # Create test cases
-tc1 = wp.config.tests.add()
+#
+tc1 = config.tests.add()
 tc1.name = "Passing test"
 tc1.stdin = "input1"
 tc1.expected_out = "Hello folks!\n"
@@ -27,7 +39,7 @@ tc1.timeout_ms = 500_000  # 0.5s
 tc1.hidden = False
 tc1.points = 1
 
-tc2 = wp.config.tests.add()
+tc2 = config.tests.add()
 tc2.name = "Failing test"
 tc2.stdin = "input2"
 tc2.expected_out = "Wrong output"
@@ -35,7 +47,7 @@ tc2.timeout_ms = 500_000  # 0.5s
 tc2.hidden = False
 tc2.points = 1
 
-tc3 = wp.config.tests.add()
+tc3 = config.tests.add()
 tc3.name = "Another failing test"
 tc3.stdin = "input3"
 tc3.expected_out = "You can't see me!"
@@ -43,15 +55,54 @@ tc3.timeout_ms = 500_000  # 0.5s
 tc3.hidden = True
 tc3.points = 1
 
+
+#
+# TODO: Create a grading rubric for documentation score.
+#
+
+
+#
+# Create a grading rubric for source efficiency.
+#
+config.source_eff.points[8] = 1  # instr_count <= 8 would give 100%
+config.source_eff.points[10] = 0.95  # 8 < instr_count <= 10  would give 95%
+config.source_eff.points[20] = 0.8  # 10 < instr_count <= 20  would give 80%
+# instr_count > 20 would give source_eff.default_points;
+# source_eff.default_points is set to 0 if omitted.
+
+
+#
+# Create a grading rubric for executable efficiency.
+#
+config.exec_eff.aggregation = (
+    ExecutedInstructionsAggregation.SUM
+)  # sum all execution counts into a single value (x) to grade it
+config.exec_eff.points[15] = 1  # x <= 15 would give 100%
+config.exec_eff.points[18] = 0.95  # 15 < x <= 18  would give 95%
+config.exec_eff.points[20] = 0.8  # 18 < x <= 20  would give 80%
+# x > 20 would give exec_eff.default_points;
+# exec_eff.default_points is set to 0 if omitted.
+
+
+#
 # Set weights for each category
-wp.config.weights["accuracy"] = 1
-wp.config.weights["documentation"] = 0
-wp.config.weights["source_efficiency"] = 0
-wp.config.weights["exec_efficiency"] = 0
+#
+config.weights["accuracy"] = 3
+config.weights["documentation"] = 0
+config.weights["source_efficiency"] = 1
+config.weights["exec_efficiency"] = 1
 
-# Store a checksum of the project
-wp.checksum = sha256(wp.config.SerializeToString()).digest()
 
+#
+# Create a wrapper message to distribute this config
+#
+wp = WrappedProject()
+wp.compression_alg = CompressionAlgorithm.BZ2
+wp.compressed_config = compress(config.SerializeToString())
+wp.checksum = sha256(wp.compressed_config).digest()
+
+#
 # Export to a file
+#
 with open("example_project_config.pb2", "wb") as file_out:
     file_out.write(wp.SerializeToString())

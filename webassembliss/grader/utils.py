@@ -1,27 +1,32 @@
-import subprocess
+from bz2 import decompress as BZ2_DECOMPRESS
 from dataclasses import dataclass, field
 from hashlib import sha256
 from hmac import compare_digest
 from os import PathLike
 from os.path import join
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
 from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
 from ..emulation.arm64_linux import ROOTFS_PATH as ARM64_LINUX_ROOTFS
 from ..emulation.arm64_linux import count_source_instructions as ARM64_LINUX_COUNT_FUN
-from .project_config_pb2 import ProjectConfig, WrappedProject
+from .project_config_pb2 import (
+    CompressionAlgorithm,
+    ExecutedInstructionsAggregation,
+    ProjectConfig,
+    WrappedProject,
+)
 
 
 @dataclass
 class TestCase:
     name: str
     points: int
-    ran: bool
+    executed: bool
+    timed_out: bool
     passed: bool
     hidden: bool
-    ran_ok: bool
-    timed_out: bool
+    exit_code: Optional[int]
     stdin: str
     expected_out: str
     actual_out: str
@@ -51,14 +56,35 @@ class ArchConfig:
 
 
 def validate_project_config(wp: WrappedProject) -> None:
-    """Validates that the given project is valid and can be graded."""
+    """Validate ProjectConfig from given WrappedProject."""
     # Ensure the checksum from the wrapped project matches the project config.
     # TODO: create custom error for grader pipeline.
-    assert compare_digest(wp.checksum, sha256(wp.config.SerializeToString()).digest())
+    actual_check_sum = sha256(wp.compressed_config).digest()
+    assert compare_digest(wp.checksum, actual_check_sum)
     # TODO: have a valid list of project configs we accept.
     # TODO: validate that MeasureSourceDocumentation exists iff weights["documentation"] != 0
     # TODO: validate that MeasureSourceEfficiency exists iff weights["source_efficiency"] != 0
     # TODO: validate that MeasureExecEfficiency exists iff weights["exec_efficiency"] != 0
+
+
+def load_project_config(wp: WrappedProject) -> ProjectConfig:
+    """Decompress and return ProjectConfig from given WrappedProject."""
+
+    # Decompress project config
+    decompress_fun = COMPRESSION_MAP[wp.compression_alg]
+    payload = decompress_fun(wp.compressed_config)
+
+    # Create empty message and load payload into it
+    pc = ProjectConfig()
+    pc.ParseFromString(payload)
+
+    return pc
+
+
+def validate_and_load_project_config(wp: WrappedProject) -> ProjectConfig:
+    """Validate, decompress, and return ProjectConfig from given WrappedProject."""
+    validate_project_config(wp)
+    return load_project_config(wp)
 
 
 def create_bin_file(path: Union[PathLike, str], contents: bytes) -> None:
@@ -82,6 +108,7 @@ def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -
         create_bin_file(join(workspace, filename), contents)
 
 
+# Maps possible rootfs values from project_configs into relevant commands and functions.
 ROOTFS_MAP = {
     "ARM64": ArchConfig(
         rootfs=ARM64_LINUX_ROOTFS,
@@ -91,3 +118,14 @@ ROOTFS_MAP = {
         line_count_fun=ARM64_LINUX_COUNT_FUN,
     )
 }
+
+# Maps possible execution count aggregation methods into their corresponding python functions.
+EXECUTION_AGG_MAP = {
+    ExecutedInstructionsAggregation.SUM: sum,
+    ExecutedInstructionsAggregation.AVERAGE: lambda x: (sum(x) // len(x)) if x else 0,
+    ExecutedInstructionsAggregation.MAX: max,
+    ExecutedInstructionsAggregation.MIN: min,
+}
+
+# Maps possible compression algorithms to their corresponding decompression functions.
+COMPRESSION_MAP = {CompressionAlgorithm.BZ2: BZ2_DECOMPRESS}
