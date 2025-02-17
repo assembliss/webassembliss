@@ -113,7 +113,6 @@ def match_value_to_cutoff(
     """Converts an int score into a percentage based on the points_cutoffs distribution."""
     # Sort the cutoffs in order; is_higher_better defines if we check high-low or low-high.
     for cutoff in sorted(points_cutoffs.keys(), reverse=is_higher_better):
-        print(f"{cutoff=}, {value=}")
         if cutoff >= value:
             # Return the points for the first cutoff that is fulfilled.
             return points_cutoffs[cutoff]
