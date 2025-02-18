@@ -36,6 +36,38 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
+document.getElementById("fileUpload").addEventListener("change", function(uploadEvent) {
+    importCode();
+});
+
+function importCode() {
+    let file = document.getElementById("fileUpload").files[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!file.name.endsWith(".S")) {
+        alert("Invalid file! Please select a .S file.");
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+
+        window.editor.setValue(fileContents);
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+    fileReader.readAsText(file);
+
+
+}
+
 /* Parses through the emulation information JSON and returns the string within quotes following the target.
 */
 function parseEmulationJSON(target) {

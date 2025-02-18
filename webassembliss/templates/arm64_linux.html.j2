@@ -26,7 +26,8 @@
     <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
     <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
-    <input type="button" id="loadBtn" value="Load" onclick="notImplemented()" disabled="true" />
+    <input type="file" id="fileUpload" />
+    <input type="button" id="loadBtn" value="Load" onclick="importCode()" />
     <br/>
     <div id="monaco-container" style="width:800px;height:600px;border:1px solid grey"></div>
     <div>
