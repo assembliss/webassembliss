@@ -12,10 +12,11 @@ from .utils import (
     EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
-    TestCase,
+    TestCaseResults,
     create_extra_files,
     create_text_file,
     validate_and_load_project_config,
+    validate_and_load_testcase_io,
 )
 
 
@@ -24,23 +25,25 @@ def run_test_cases(
     config: ProjectConfig,
     rootfs: Union[PathLike, str],
     bin_path: Union[PathLike, str],
-) -> Tuple[List[TestCase], List[int]]:
+) -> Tuple[List[TestCaseResults], List[int]]:
     """Run the test cases from the project config through qiling emulation."""
-    results: List[TestCase] = []
+    results: List[TestCaseResults] = []
 
     instructions_executed: List[int] = []
     has_failed_test = False
     for test in config.tests:
         # Convert command-line arguments into a regular list
         cl_args = list(test.cl_args)
+        is_text, stdin, stdout = validate_and_load_testcase_io(test)
+        bytes_stdin = stdin if isinstance(stdin, bytes) else stdin.encode()
 
         # Check if should stop when a single test fails
         if config.stop_on_first_test_fail and has_failed_test:
             ran_ok = False
             exit_code = None
             timed_out = False
-            actual_out = ""
-            actual_err = ""
+            actual_out = "" if is_text else b""
+            actual_err = "" if is_text else b""
             exec_count = 0
             executed = False
 
@@ -66,24 +69,25 @@ def run_test_cases(
                 cl_args=cl_args,
                 bin_name=config.exec_name,
                 timeout=test.timeout_ms,
-                stdin=BytesIO(test.stdin.encode()),
+                stdin=BytesIO(bytes_stdin),
                 registers=[],
                 get_flags_func=lambda *args, **kwargs: {},
+                decode_io=is_text,
             )
             executed = True
 
         # Parse through emulation output to evaluate test
-        test_result = TestCase(
+        test_result = TestCaseResults(
             name=test.name,
             points=test.points,
             executed=executed,
             timed_out=timed_out,
-            passed=(test.expected_out == actual_out and ran_ok),
+            passed=(stdout == actual_out and ran_ok),
             hidden=test.hidden,
             exit_code=(None if test.hidden else exit_code),
             cl_args=([] if test.hidden else cl_args),
-            stdin=("" if test.hidden else test.stdin),
-            expected_out=("" if test.hidden else test.expected_out),
+            stdin=("" if test.hidden else stdin),
+            expected_out=("" if test.hidden else stdout),
             actual_out=("" if test.hidden else actual_out),
             actual_err=("" if test.hidden else actual_err),
         )
@@ -96,7 +100,9 @@ def run_test_cases(
     return results, instructions_executed
 
 
-def calculate_accuracy_score(*, config: ProjectConfig, tests: List[TestCase]) -> float:
+def calculate_accuracy_score(
+    *, config: ProjectConfig, tests: List[TestCaseResults]
+) -> float:
     """Calculate the accuracy score based on the results of the test cases."""
     max_possible = sum((t.points for t in config.tests))
     total = sum((t.points for (t, r) in zip(config.tests, tests) if r.passed))

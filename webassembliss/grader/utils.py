@@ -4,7 +4,7 @@ from hashlib import sha256
 from hmac import compare_digest
 from os import PathLike
 from os.path import join
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
 from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
@@ -14,12 +14,13 @@ from .project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
     ProjectConfig,
+    TestCase,
     WrappedProject,
 )
 
 
 @dataclass
-class TestCase:
+class TestCaseResults:
     name: str
     points: int
     executed: bool
@@ -28,9 +29,9 @@ class TestCase:
     hidden: bool
     exit_code: Optional[int]
     cl_args: List[str]
-    stdin: str
-    expected_out: str
-    actual_out: str
+    stdin: Union[str, bytes]
+    expected_out: Union[str, bytes]
+    actual_out: Union[str, bytes]
     actual_err: str
 
 
@@ -44,7 +45,7 @@ class GraderResults:
     assembled: bool = False
     linked: bool = False
     errors: str = ""
-    tests: List[TestCase] = field(default_factory=list)
+    tests: List[TestCaseResults] = field(default_factory=list)
     line_count: int = 0
     agg_exec_count: int = 0
     scores: Dict[str, float] = field(default_factory=dict)
@@ -92,6 +93,21 @@ def validate_and_load_project_config(wp: WrappedProject) -> ProjectConfig:
     """Validate, decompress, and return ProjectConfig from given WrappedProject."""
     validate_project_config(wp)
     return load_project_config(wp)
+
+
+def validate_and_load_testcase_io(
+    tc: TestCase,
+) -> Tuple[bool, Union[str, bytes], Union[str, bytes]]:
+    """Checks whether the test case uses str/bytes as io and return their values."""
+    # Make sure both input and output are given in the same type.
+    has_stdin_text = tc.HasField("stdin_s")
+    has_stdout_text = tc.HasField("expected_out_s")
+    # TODO: use custom grader error eventually.
+    assert has_stdin_text == has_stdout_text
+    if has_stdin_text:
+        return True, tc.stdin_s, tc.expected_out_s
+    else:
+        return False, tc.stdin_b, tc.expected_out_b
 
 
 def create_bin_file(path: Union[PathLike, str], contents: bytes) -> None:
