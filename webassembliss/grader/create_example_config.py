@@ -80,7 +80,7 @@ tc5.points = 1
 config.docs.comments_to_instr_pct_points[50] = 1
 config.docs.comments_to_instr_pct_points[40] = 0.75
 config.docs.comments_to_instr_pct_points[30] = 0.5
-# ratio < 30 would give docs.comments_to_instr_pct_default;
+# pct < 30 would give docs.comments_to_instr_pct_default;
 # docs.comments_to_instr_pct_default is set to 0 if omitted.
 
 
