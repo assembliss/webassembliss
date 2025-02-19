@@ -49,6 +49,7 @@ class SubmissionResults:
     project_checksum: bytes
     must_pass_all_tests: bool
     line_count: int = 0
+    pct_comment_only_lines: float = 0.0
     agg_exec_count: int = 0
     received_test_points: int = 0
     max_test_points: int = 0
@@ -62,10 +63,14 @@ class SubmissionResults:
 @dataclass
 class GraderResults:
     submission: SubmissionResults
-    tests: List[TestCaseResults] = field(default_factory=list)
     assembled: bool = False
     linked: bool = False
     errors: str = ""
+    tests: List[TestCaseResults] = field(default_factory=list)
+    docs_points: Dict = field(default_factory=dict)
+    source_points: Dict = field(default_factory=dict)
+    exec_points: Dict = field(default_factory=dict)
+    exec_agg_method: str = ""
 
 
 @dataclass

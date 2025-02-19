@@ -126,7 +126,7 @@ def match_value_to_cutoff(
 
 def calculate_docs_score(
     *, config: ProjectConfig, src_path: str, instr_count: int
-) -> float:
+) -> Tuple[float, float]:
     """Calculate the documentation score based on the project config."""
 
     # TODO: Also measure level of in-line comments.
@@ -137,11 +137,14 @@ def calculate_docs_score(
         data = loads(stdout.decode())
         comment_count = data["SUM"]["comment"]
         pct = 100 * comment_count / instr_count
-        return match_value_to_cutoff(
-            points_cutoffs=config.docs.comments_to_instr_pct_points,
-            default_points=config.docs.comments_to_instr_pct_default,
-            value=pct,
-            is_higher_better=True,
+        return (
+            match_value_to_cutoff(
+                points_cutoffs=config.docs.comments_to_instr_pct_points,
+                default_points=config.docs.comments_to_instr_pct_default,
+                value=pct,
+                is_higher_better=True,
+            ),
+            pct,
         )
     raise RuntimeError("Unable to calculate documentation score.")
 
@@ -219,7 +222,13 @@ def grade_student(
         files=student_files,
         must_pass_all_tests=config.must_pass_all_tests,
     )
-    gr = GraderResults(submission=sr)
+    gr = GraderResults(
+        submission=sr,
+        exec_agg_method=str(config.exec_eff.aggregation),
+        exec_points=config.exec_eff.points,
+        source_points=config.source_eff.points,
+        docs_points=config.docs.comments_to_instr_pct_points,
+    )
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
@@ -275,7 +284,7 @@ def grade_student(
         # Calculate each category's score
         sr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
         sr.line_count = arch.line_count_fun(src_path)
-        sr.scores["documentation"] = calculate_docs_score(
+        sr.scores["documentation"], sr.pct_comment_only_lines = calculate_docs_score(
             config=config, src_path=src_path, instr_count=sr.line_count
         )
         sr.scores["source_efficiency"] = calculate_source_eff_score(
