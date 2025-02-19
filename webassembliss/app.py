@@ -61,7 +61,7 @@ def grader():
         # Send that data to the results page.
         return render_template(
             "grader_results.html.j2",
-            results=results,
+            results=results.to_dict(),
         )
 
     # If not POST, show the submission form.

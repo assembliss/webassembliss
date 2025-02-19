@@ -301,7 +301,7 @@ def grade_form_submission(
     student_ID: str,
     student_file: FileStorage,
     project_proto: FileStorage,
-) -> str:
+) -> GraderResults:
     """Process files from the submission form, run the grader, and return a dict result."""
     student_files = {student_file.filename: student_file.read().decode()}
     wrapped_config = load_wrapped_project(project_proto.read())
@@ -311,7 +311,7 @@ def grade_form_submission(
         student_name=student_name,
         student_ID=student_ID,
     )
-    return results.to_json()  # type: ignore[attr-defined]
+    return results
 
 
 if __name__ == "__main__":
