@@ -42,10 +42,10 @@ COPY resources/qiling_debugger_gdb_gdb.py ${QL_GDB_PATH}
 
 # Copy the app code into the container and set the workdirectory to point to that.
 COPY webassembliss /webassembliss
-WORKDIR /webassembliss
+WORKDIR /
 
 # You can uncomment the line below to set the backend to run in debug mode.
 # ENV FLASK_DEBUG=1
 
 # Container command to serve flask app
-CMD [ "gunicorn", "--config" , "gunicorn_config.py", "app:app"]
+CMD [ "gunicorn", "--config" , "webassembliss/gunicorn_config.py", "webassembliss.app:app"]
