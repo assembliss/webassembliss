@@ -35,8 +35,8 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 - [x] create config file that has provided source(s), object(s), and tests
-- [ ] allow user to upload config file and run tests with their code
-- [ ] generate a results file containing user info, test results, efficiency metrics
+- [x] allow user to upload config file and run tests with their code
+- [x] generate a results file containing user info, test results, efficiency metrics
 - [ ] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
 
 ### Project Setup

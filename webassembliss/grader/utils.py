@@ -1,10 +1,12 @@
-from bz2 import decompress as BZ2_DECOMPRESS
+from bz2 import decompress as bz2_decompress
 from dataclasses import dataclass, field
 from hashlib import sha256
 from hmac import compare_digest
 from os import PathLike
 from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
+
+from dataclasses_json import dataclass_json
 
 from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
 from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
@@ -19,6 +21,7 @@ from .project_config_pb2 import (
 )
 
 
+@dataclass_json
 @dataclass
 class TestCaseResults:
     name: str
@@ -35,23 +38,34 @@ class TestCaseResults:
     actual_err: str
 
 
+@dataclass_json
 @dataclass
-class GraderResults:
+class SubmissionResults:
+    timestamp: str
+    name: str
+    ID: str
+    files: Dict[str, str]
     project_name: str
     project_checksum: bytes
-    student_name: str
-    student_ID: str
-    student_files: Dict[str, str]
+    must_pass_all_tests: bool
+    line_count: int = 0
+    agg_exec_count: int = 0
+    received_test_points: int = 0
+    max_test_points: int = 0
+    scores: Dict[str, float] = field(default_factory=dict)
+    weights: Dict[str, float] = field(default_factory=dict)
+    total: float = 0.0
+    checksum: bytes = b"''"
+
+
+@dataclass_json
+@dataclass
+class GraderResults:
+    submission: SubmissionResults
+    tests: List[TestCaseResults] = field(default_factory=list)
     assembled: bool = False
     linked: bool = False
     errors: str = ""
-    tests: List[TestCaseResults] = field(default_factory=list)
-    line_count: int = 0
-    agg_exec_count: int = 0
-    scores: Dict[str, float] = field(default_factory=dict)
-    weights: Dict[str, float] = field(default_factory=dict)
-    must_pass_all_tests: bool = False
-    total: float = 0.0
 
 
 @dataclass
@@ -131,6 +145,19 @@ def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -
         create_bin_file(join(workspace, filename), contents)
 
 
+def create_check_sum(sr: SubmissionResults) -> bytes:
+    """Creates a checksum based on the SubmissionResults values."""
+    return sha256(f"{sr}".encode()).digest()
+
+
+def load_wrapped_project(buffer: bytes) -> WrappedProject:
+    """Parse the given buffer into a WrappedProject."""
+    wp = WrappedProject()
+    # TODO: handle possible parsing error.
+    wp.ParseFromString(buffer)
+    return wp
+
+
 # Maps possible rootfs values from project_configs into relevant commands and functions.
 ROOTFS_MAP = {
     "ARM64": ArchConfig(
@@ -151,4 +178,4 @@ EXECUTION_AGG_MAP = {
 }
 
 # Maps possible compression algorithms to their corresponding decompression functions.
-COMPRESSION_MAP = {CompressionAlgorithm.BZ2: BZ2_DECOMPRESS}
+COMPRESSION_MAP = {CompressionAlgorithm.BZ2: bz2_decompress}

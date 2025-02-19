@@ -1,12 +1,15 @@
+from json import loads
 from os import environ
 
 import rocher.flask  # type: ignore[import-untyped]
-from emulation.arm64_linux import emulate as arm64_linux_emulation
-from emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
-from emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
-from flask import Flask, abort, current_app, redirect, render_template, request, session
+from flask import Flask, abort, current_app, render_template, request, session
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
+
+from .emulation.arm64_linux import emulate as arm64_linux_emulation
+from .emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
+from .emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
+from .grader.single_student import grade_form_submission
 
 app = Flask(__name__)
 
@@ -35,9 +38,45 @@ def about():
     return render_template("about.html.j2")
 
 
-@app.route("/grader/")
+@app.route("/grader/", methods=["POST", "GET"])
 def grader():
+    if request.method == "POST":
+        # If POST, make sure we got here from the submission form.
+        if request.referrer != request.url:
+            abort(403)
+
+        # Process the information we received.
+        student_name = request.form["name"]
+        student_ID = request.form["unityID"]
+        user_code = request.files["userCode"]
+        project_proto = request.files["projectProto"]
+        # Run the grader.
+        results = grade_form_submission(
+            student_name=student_name,
+            student_ID=student_ID,
+            student_file=user_code,
+            project_proto=project_proto,
+        )
+        print(results)
+        # Send that data to the results page.
+        return render_template(
+            "grader_results.html.j2",
+            results=results,
+        )
+
+    # If not POST, show the submission form.
     return render_template("grader.html.j2")
+
+
+@app.route("/debug/grader-results/")
+def grader_results():
+    sample_data = loads(
+        r"""{"submission": {"timestamp": "2025-02-19T18:23:51.647278+00:00", "name": "ABC", "ID": "DEF", "files": {"hello.S": ".data\r\n\r\n/* Data segment: define our message string and calculate its length. */\r\nmsg:\r\n    .ascii        \"Hello folks!\\n\"\r\nlen = . - msg\r\n\r\n.text\r\n\r\n/* Our application's entry point. */\r\n.global _start\r\n_start:\r\n    /* syscall write(int fd, const void *buf, size_t count) */\r\n    mov     x0, #1      /* fd := STDOUT_FILENO */\r\n    ldr     x1, =msg    /* buf := msg */\r\n    ldr     x2, =len    /* count := len */\r\n    mov     w8, #64     /* write is syscall #64 */\r\n    svc     #0          /* invoke syscall */\r\n\r\n    /* syscall exit(int status) */\r\n    mov     x0, #0      /* status := 0 */\r\n    mov     w8, #93     /* exit is syscall #93 */\r\n    svc     #0          /* invoke syscall */\r\n"}, "project_name": "Hello Project Config", "project_checksum": [168, 4, 3, 88, 59, 77, 41, 191, 192, 129, 126, 211, 87, 3, 142, 239, 199, 5, 183, 254, 192, 216, 100, 162, 58, 191, 240, 140, 50, 160, 79, 228], "must_pass_all_tests": true, "line_count": 8, "agg_exec_count": 24, "received_test_points": 10, "max_test_points": 15, "scores": {"accuracy": 0.6666666666666666, "documentation": 1.0, "source_efficiency": 1.0, "exec_efficiency": 0.0}, "weights": {"source_efficiency": 0.16666666666666666, "documentation": 0.16666666666666666, "accuracy": 0.5, "exec_efficiency": 0.16666666666666666}, "total": 0.0, "checksum": [92, 217, 163, 94, 117, 231, 63, 200, 118, 44, 41, 200, 9, 246, 50, 116, 68, 241, 208, 171, 231, 160, 51, 202, 232, 81, 98, 134, 222, 204, 24, 57]}, "tests": [{"name": "Passing test", "points": 5, "executed": true, "timed_out": false, "passed": true, "hidden": false, "exit_code": 0, "cl_args": [], "stdin": "input1", "expected_out": "Hello folks!\n", "actual_out": "Hello folks!\n", "actual_err": ""}, {"name": "Passing test with bytes", "points": 5, "executed": true, "timed_out": false, "passed": true, "hidden": false, "exit_code": 0, "cl_args": [], "stdin": [105, 110, 112, 117, 116, 50], "expected_out": [72, 101, 108, 108, 111, 32, 102, 111, 108, 107, 115, 33, 10], "actual_out": [72, 101, 108, 108, 111, 32, 102, 111, 108, 107, 115, 33, 10], "actual_err": ""}, {"name": "Failing test", "points": 2, "executed": true, "timed_out": false, "passed": false, "hidden": false, "exit_code": 0, "cl_args": [], "stdin": "input3", "expected_out": "Wrong output", "actual_out": "Hello folks!\n", "actual_err": ""}, {"name": "Another failing test", "points": 2, "executed": false, "timed_out": false, "passed": false, "hidden": false, "exit_code": null, "cl_args": ["arg1", "arg2"], "stdin": "input4", "expected_out": "I did not run...", "actual_out": "", "actual_err": ""}, {"name": "Yet another failing test", "points": 1, "executed": false, "timed_out": false, "passed": false, "hidden": true, "exit_code": null, "cl_args": [], "stdin": "", "expected_out": "", "actual_out": "", "actual_err": ""}], "assembled": true, "linked": true, "errors": ""}"""
+    )
+    return render_template(
+        "grader_results.html.j2",
+        results=sample_data,
+    )
 
 
 @app.route("/debugdb/<keys>/")

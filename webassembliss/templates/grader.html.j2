@@ -4,22 +4,38 @@
   <div class="container">
     <div class="p-5 bg-body-tertiary rounded-3">
       <h1 class="text-center text-body-emphasis">Grader</h1>
-      <form class="row gy-2 gx-3 align-items-center">
-        <div class="col-md-6">
+      <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
+          enctype=multipart/form-data>
+        <legend>Make a submission</legend>
+        <div class="col-md-6 form-floating">
+          <input type="text" class="form-control" id="name" name="name" placeholder="" required>
           <label for="name">Name</label>
-          <input type="text" class="form-control" id="name" placeholder="">
+          <div class="invalid-feedback">
+            Please enter your name.
+          </div>
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 form-floating">
+          <input type="text" class="form-control" id="unityID" name="unityID" placeholder="" required>
           <label for="unityID">UnityID</label>
-          <input type="text" class="form-control" id="unityID" placeholder="">
-        </div>
-        <div class="mb-3">
-          <label for="projectProto" class="form-label">Project Config File</label>
-          <input type="file" class="form-control" id="projectProto" aria-describedby="projectProto">
+          <div class="invalid-feedback">
+            Please enter your ID.
+          </div>
         </div>
         <div class="mb-3">
           <label for="userCode" class="form-label">Source File</label>
-          <input type="file" class="form-control" id="userCode">
+          <input type="file" class="form-control" id="userCode" name="userCode" required>
+          <div id="emailHelp" class="form-text">This is the source code to be graded.</div>
+          <div class="invalid-feedback">
+            Please choose a file containing your source code.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="projectProto" class="form-label">Project Config File</label>
+          <input type="file" class="form-control" id="projectProto" name="projectProto" aria-describedby="projectProto" required>
+          <div id="emailHelp" class="form-text">This is the project configuration file in .pb2 format.</div>
+          <div class="invalid-feedback">
+            Please choose a file containing the project configuration; this must have a .pb2 extension.
+          </div>
         </div>
         <div class="mb3">
           <button type="submit" class="btn btn-danger">Submit</button>
@@ -27,4 +43,7 @@
       </form>
     </div>
   </div>
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/grader.js') }}"></script>
 {% endblock %}

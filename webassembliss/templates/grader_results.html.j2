@@ -1,0 +1,79 @@
+{% extends "base.html.j2" %}
+{% block title %} - Grader Results{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">Grader Results</h1>
+      <div class="text-center">
+        <button type="submit" class="btn btn-danger" onclick='download_file("test.json", "[]", "application/json")'>Download file for submission</button>
+      </div>
+            
+      <h2>Total Score: {{ "%.2f"| format(results.submission.total * 100) }}</h2>
+      
+
+      <h2>Project Info</h2>
+      <h5>Name: {{ results.submission.project_name }}</h3>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.submission.must_pass_all_tests }}</h5>
+
+      
+      <h2>Accuracy ({{ "%.2f"| format(results.submission.weights.accuracy * 100)}}%) </h2>
+      Category total: {{ "%.2f"| format(results.submission.scores.accuracy * 100) }}
+      
+      
+      <h2>Documentation ({{ "%.2f"| format(results.submission.weights.documentation * 100) }}%)</h2>
+      Category total: {{ "%.2f"| format(results.submission.scores.documentation * 100) }}
+      
+      
+      <h2>Source Efficiency ({{ "%.2f"| format(results.submission.weights.source_efficiency * 100) }}%)</h2>
+      Instructions written: {{ results.submission.line_count }}
+      <br/>
+      Category total: {{ "%.2f"| format(results.submission.scores.source_efficiency * 100) }}
+      
+      
+      <h2>Execution Efficiency ({{ "%.2f"| format(results.submission.weights.exec_efficiency * 100) }}%)</h2>
+      Instructions executed: {{ results.submission.agg_exec_count }}
+      <br/>
+      Category total: {{ "%.2f"| format(results.submission.scores.exec_efficiency * 100) }}
+      
+      
+      <div class="accordion" id="accordionPanelsStayOpenExample">
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+        Accordion Item #1
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse show">
+      <div class="accordion-body">
+        <strong>This is the first item's accordion body.</strong> It is shown by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseTwo" aria-expanded="false" aria-controls="panelsStayOpen-collapseTwo">
+        Accordion Item #2
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseTwo" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <strong>This is the second item's accordion body.</strong> It is hidden by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+      </div>
+    </div>
+  </div>
+  <div class="accordion-item">
+    <h2 class="accordion-header">
+      <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseThree" aria-expanded="false" aria-controls="panelsStayOpen-collapseThree">
+        Accordion Item #3
+      </button>
+    </h2>
+    <div id="panelsStayOpen-collapseThree" class="accordion-collapse collapse">
+      <div class="accordion-body">
+        <strong>This is the third item's accordion body.</strong> It is hidden by default, until the collapse plugin adds the appropriate classes that we use to style each element. These classes control the overall appearance, as well as the showing and hiding via CSS transitions. You can modify any of this with custom CSS or overriding our default variables. It's also worth noting that just about any HTML can go within the <code>.accordion-body</code>, though the transition does limit overflow.
+      </div>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+{% endblock %}

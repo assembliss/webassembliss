@@ -111,3 +111,9 @@
 .wab-link:visited {
     color: #dc3546;
 }
+
+.collapse {
+    &:not(.show) {
+        display: none;
+    }
+}

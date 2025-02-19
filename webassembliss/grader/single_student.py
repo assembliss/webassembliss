@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from io import BytesIO
 from json import loads
 from os import PathLike
@@ -6,15 +7,20 @@ from subprocess import PIPE, Popen
 from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
 
+from werkzeug.datastructures import FileStorage
+
 from ..emulation.base_emulation import assemble, link, timed_emulation
 from .project_config_pb2 import ProjectConfig, WrappedProject
 from .utils import (
     EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
+    SubmissionResults,
     TestCaseResults,
+    create_check_sum,
     create_extra_files,
     create_text_file,
+    load_wrapped_project,
     validate_and_load_project_config,
     validate_and_load_testcase_io,
 )
@@ -43,7 +49,7 @@ def run_test_cases(
             exit_code = None
             timed_out = False
             actual_out = "" if is_text else b""
-            actual_err = "" if is_text else b""
+            actual_err = ""
             exec_count = 0
             executed = False
 
@@ -98,15 +104,6 @@ def run_test_cases(
             has_failed_test = True
 
     return results, instructions_executed
-
-
-def calculate_accuracy_score(
-    *, config: ProjectConfig, tests: List[TestCaseResults]
-) -> float:
-    """Calculate the accuracy score based on the results of the test cases."""
-    max_possible = sum((t.points for t in config.tests))
-    total = sum((t.points for (t, r) in zip(config.tests, tests) if r.passed))
-    return total / max_possible
 
 
 def match_value_to_cutoff(
@@ -178,7 +175,9 @@ def combine_category_weights(*, config: ProjectConfig) -> Dict[str, float]:
     return {cat: (weight / total_weight) for cat, weight in config.weights.items()}
 
 
-def calculate_total_score(*, results: GraderResults) -> float:
+def calculate_total_score(
+    *, results: SubmissionResults, must_pass_all_tests: bool
+) -> float:
     """Calculate the overall project score based on the project config."""
 
     # TODO: create custom error for grader pipeline.
@@ -191,7 +190,7 @@ def calculate_total_score(*, results: GraderResults) -> float:
 
     # Check if they have to pass all test cases to get a non-zero score;
     # If they need to pass all tests and do not have perfect accuracy, total should be 0.
-    if results.must_pass_all_tests and (results.scores["accuracy"] < 1):
+    if must_pass_all_tests and (results.scores["accuracy"] < 1):
         return 0.0
 
     return sum([results.scores[c] * results.weights[c] for c in results.scores])
@@ -209,15 +208,17 @@ def grade_student(
     # Make sure the given project config is valid.
     config = validate_and_load_project_config(wrapped_config)
 
-    # Create result object
-    gr = GraderResults(
+    # Create result objects
+    sr = SubmissionResults(
         project_checksum=wrapped_config.checksum,
         project_name=config.name,
-        student_name=student_name,
-        student_ID=student_ID,
-        student_files=student_files,
+        timestamp=datetime.now(timezone.utc).isoformat(),
+        name=student_name,
+        ID=student_ID,
+        files=student_files,
         must_pass_all_tests=config.must_pass_all_tests,
     )
+    gr = GraderResults(submission=sr)
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
@@ -264,32 +265,60 @@ def grade_student(
         gr.tests, all_exec_counts = run_test_cases(
             config=config, rootfs=arch.rootfs, bin_path=bin_path
         )
-        gr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
+        sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
+        sr.max_test_points = sum((t.points for t in config.tests))
+        sr.received_test_points = sum(
+            (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
+        )
 
         # Calculate each category's score
-        gr.scores["accuracy"] = calculate_accuracy_score(config=config, tests=gr.tests)
-        gr.line_count = arch.line_count_fun(src_path)
-        gr.scores["documentation"] = calculate_docs_score(
-            config=config, src_path=src_path, instr_count=gr.line_count
+        sr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
+        sr.line_count = arch.line_count_fun(src_path)
+        sr.scores["documentation"] = calculate_docs_score(
+            config=config, src_path=src_path, instr_count=sr.line_count
         )
-        gr.scores["source_efficiency"] = calculate_source_eff_score(
-            config=config, source_instruction_count=gr.line_count
+        sr.scores["source_efficiency"] = calculate_source_eff_score(
+            config=config, source_instruction_count=sr.line_count
         )
-        gr.scores["exec_efficiency"] = calculate_execution_eff_score(
-            config=config, instructions_executed=gr.agg_exec_count
+        sr.scores["exec_efficiency"] = calculate_execution_eff_score(
+            config=config, instructions_executed=sr.agg_exec_count
         )
 
     # Combine all categories into an overall project score
-    gr.weights = combine_category_weights(config=config)
-    gr.total = calculate_total_score(results=gr)
+    sr.weights = combine_category_weights(config=config)
+    sr.total = calculate_total_score(
+        results=sr, must_pass_all_tests=sr.must_pass_all_tests
+    )
+
+    # Finally, add a checksum to the contents of this file.
+    sr.checksum = create_check_sum(sr)
 
     return gr
 
 
+def grade_form_submission(
+    student_name: str,
+    student_ID: str,
+    student_file: FileStorage,
+    project_proto: FileStorage,
+) -> str:
+    """Process files from the submission form, run the grader, and return a dict result."""
+    student_files = {student_file.filename: student_file.read().decode()}
+    wrapped_config = load_wrapped_project(project_proto.read())
+    results = grade_student(
+        wrapped_config=wrapped_config,
+        student_files=student_files,  # type: ignore[arg-type]
+        student_name=student_name,
+        student_ID=student_ID,
+    )
+    return results.to_json()  # type: ignore[attr-defined]
+
+
 if __name__ == "__main__":
+    example_path = "/webassembliss/examples/grader"
     source_name = "hello.S"
-    source_path = join("", "webassembliss", "examples", "arm64_linux", source_name)
-    config_path = join("", "webassembliss", "grader", "example_project_config.pb2")
+    source_path = join(example_path, source_name)
+    config_path = join(example_path, "example_project_config.pb2")
     with open(config_path, "rb") as config_fp, open(source_path) as source_fp:
         config = WrappedProject()
         config.ParseFromString(config_fp.read())
