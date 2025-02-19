@@ -131,7 +131,7 @@ ld_err: ${ld_err}`;
     let encodedLabels = encodeURIComponent(fLabelString);
 
     if (title == "" || body == "") {
-        alert("Issue title or body is required.");
+        alert("Issue title and body is required.");
     } else {
         // Generate a URL query
         if (bugLabelString == "" && helpWantedLabelString == "" && enhancementLabelString == "" && questionLabelString == "" && invalidLabelString == "") {
