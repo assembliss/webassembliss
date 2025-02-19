@@ -33,37 +33,45 @@ config.stop_on_first_test_fail = True
 #
 tc1 = config.tests.add()
 tc1.name = "Passing test"
-tc1.stdin = "input1"
-tc1.expected_out = "Hello folks!\n"
+tc1.stdin_s = "input1"
+tc1.expected_out_s = "Hello folks!\n"
 tc1.timeout_ms = 500_000  # 0.5s
 tc1.hidden = False
-tc1.points = 9
+tc1.points = 5
 
 tc2 = config.tests.add()
-tc2.name = "Failing test"
-tc2.stdin = "input2"
-tc2.expected_out = "Wrong output"
+tc2.name = "Passing test with bytes"
+tc2.stdin_b = "input2".encode()
+tc2.expected_out_b = "Hello folks!\n".encode()
 tc2.timeout_ms = 500_000  # 0.5s
 tc2.hidden = False
-tc2.points = 1
+tc2.points = 5
 
 tc3 = config.tests.add()
-tc3.name = "Another failing test"
-tc3.cl_args.extend(["arg1", "arg2"])
-tc3.stdin = "input3"
-tc3.expected_out = "I did not run..."
+tc3.name = "Failing test"
+tc3.stdin_s = "input3"
+tc3.expected_out_s = "Wrong output"
 tc3.timeout_ms = 500_000  # 0.5s
 tc3.hidden = False
-tc3.points = 1
+tc3.points = 2
 
 tc4 = config.tests.add()
-tc4.name = "Yet another failing test"
+tc4.name = "Another failing test"
 tc4.cl_args.extend(["arg1", "arg2"])
-tc4.stdin = "input4"
-tc4.expected_out = "You can't see me!"
+tc4.stdin_s = "input4"
+tc4.expected_out_s = "I did not run..."
 tc4.timeout_ms = 500_000  # 0.5s
-tc4.hidden = True
-tc4.points = 1
+tc4.hidden = False
+tc4.points = 2
+
+tc5 = config.tests.add()
+tc5.name = "Yet another failing test"
+tc5.cl_args.extend(["arg1", "arg2"])
+tc5.stdin_s = "input5"
+tc5.expected_out_s = "You can't see me!"
+tc5.timeout_ms = 500_000  # 0.5s
+tc5.hidden = True
+tc5.points = 1
 
 
 #

@@ -35,8 +35,8 @@ class EmulationResults:
     run_ok: bool = None  # type: ignore[assignment]
     run_exit_code: Optional[Union[int, str]] = None
     run_timeout: bool = None  # type: ignore[assignment]
-    run_stdin: str = ""
-    run_stdout: str = ""
+    run_stdin: Union[str, bytes] = ""
+    run_stdout: Union[str, bytes] = ""
     run_stderr: str = ""
     registers: Dict[str, Tuple[int, bool]] = None  # type: ignore[assignment] # {reg1: (val1, changed), ...}
     reg_num_bits: int = None  # type: ignore[assignment]
@@ -50,7 +50,7 @@ class EmulationResults:
 
     def _prep_output(
         self,
-        msg: str,
+        msg: Union[str, bytes],
         empty: str,
         left_padding: str = "\t",
         split_char="\n",
@@ -58,6 +58,9 @@ class EmulationResults:
         keep_empty_tokens: bool = False,
     ) -> str:
         """Pretty-print multi-line output for any command in a standard way."""
+        if isinstance(msg, bytes):
+            msg = msg.decode()
+
         out = left_padding
         if msg:
             tokens = [t for t in msg.split(split_char) if t or keep_empty_tokens]
@@ -346,12 +349,13 @@ def timed_emulation(
     registers: List[str],
     get_flags_func: Callable[[Qiling], Dict[str, bool]],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
+    decode_io: bool = True,
 ) -> Tuple[
     bool,  # run_ok
     Optional[int],  # exit code
     bool,  # timeout
-    str,  # stdin
-    str,  # stdout
+    Union[str, bytes],  # stdin
+    Union[str, bytes],  # stdout
     str,  # stderr
     Dict[str, Tuple[int, bool]],  # registers
     int,  # num_bits
@@ -372,8 +376,8 @@ def timed_emulation(
         verbose=verbose,
         console=False,
     )
-    given_stdin = stdin.getvalue().decode()
 
+    given_stdin = stdin.getvalue().decode() if decode_io else stdin.getvalue()
     # Find memory allocated for the user code's execution.
     relevant_mem_area = []
     for _start, _end, _, _label, _ in ql.mem.get_mapinfo():
@@ -444,7 +448,7 @@ def timed_emulation(
         run_exit_code,
         run_timeout,
         given_stdin,
-        out.getvalue().decode(),
+        out.getvalue().decode() if decode_io else out.getvalue(),
         execution_error + err.getvalue().decode(),
         {
             r: (v, v != og_reg_values[r])
@@ -476,7 +480,9 @@ def clean_emulation(
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
     timeout: int = 5_000_000,  # 5 seconds
-    count_instructions_func: Callable[[Union[str, PathLike]], int] = lambda _: None,
+    count_instructions_func: Callable[
+        [Union[str, PathLike]], Optional[int]
+    ] = lambda _: None,
 ) -> EmulationResults:
     # TODO: add tests to make sure this function works as expected.
 

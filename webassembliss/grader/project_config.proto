@@ -7,12 +7,18 @@ syntax = "proto3";
 // You can use a C-driver to test student code without stdin/stdout.
 message TestCase {
   string name = 1;
-  string stdin = 2;
-  string expected_out = 3;
-  uint32 timeout_ms = 4;
-  repeated string cl_args = 5;
-  bool hidden = 6;
-  uint32 points = 7;
+  oneof stdin_oneof {
+    string stdin_s = 2;
+    bytes stdin_b = 3;
+  }
+  oneof expected_out_oneof {
+    string expected_out_s = 4;
+    bytes expected_out_b = 5;
+  }
+  uint32 timeout_ms = 6;
+  repeated string cl_args = 7;
+  bool hidden = 8;
+  uint32 points = 9;
 }
 
 // Message with information on how to measure the source code documentation.
