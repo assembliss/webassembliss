@@ -55,6 +55,7 @@ def run_test_cases(
 
         else:
             # Emulate binary to get result
+            # TODO: force a max timeout here.
             (
                 ran_ok,
                 exit_code,
