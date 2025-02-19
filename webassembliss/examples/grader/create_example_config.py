@@ -1,6 +1,9 @@
 # This file creates an example project config.
-# This sample project grades the hello.S from the examples/arm64_linux directory.
-# It has one test case that passes and two that fail, where one that fails is hidden.
+
+# Add the grader directory to the path so we can load the proto.
+import sys
+
+sys.path.insert(1, "/webassembliss/grader")
 
 from hashlib import sha256
 from bz2 import compress
