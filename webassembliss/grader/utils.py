@@ -50,14 +50,11 @@ class SubmissionResults:
     files: Dict[str, str]
     project_name: str
     project_checksum64: str
-    must_pass_all_tests: bool
     line_count: int = 0
     pct_comment_only_lines: float = 0.0
     agg_exec_count: int = 0
     received_test_points: int = 0
     max_test_points: int = 0
-    scores: Dict[str, float] = field(default_factory=dict)
-    weights: Dict[str, float] = field(default_factory=dict)
     total: float = 0.0
     checksum64: str = "''"
 
@@ -66,9 +63,12 @@ class SubmissionResults:
 @dataclass
 class GraderResults:
     submission: SubmissionResults
+    must_pass_all_tests: bool
     assembled: bool = False
     linked: bool = False
     errors: str = ""
+    scores: Dict[str, float] = field(default_factory=dict)
+    weights: Dict[str, float] = field(default_factory=dict)
     tests: List[TestCaseResults] = field(default_factory=list)
     docs_points: List[Tuple[str, float]] = field(default_factory=list)
     source_points: List[Tuple[str, float]] = field(default_factory=list)

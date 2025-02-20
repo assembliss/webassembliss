@@ -17,19 +17,20 @@
       <h5>Your code assembled: {{ results.assembled }}</h5>
       <h5>Your code linked: {{ results.linked }}</h5>
       <h5>Error messages: "{{ results.errors }}"</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.submission.must_pass_all_tests }}</h5>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
 
       <h2>Accuracy</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.submission.weights.accuracy * 100) }}%</h5>
-      <h5>Total points possible: {{ results.submission.max_test_points }}</h5>
-      <h5>Points you received with this submission: {{ results.submission.received_test_points }}</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.submission.scores.accuracy * 100) }}%</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.submission.must_pass_all_tests }}</h5>
+      <h5>Weight of this category: {{ "%.2f"| format(results.weights.accuracy * 100) }}%</h5>
+      <h5>Total test points available: {{ results.submission.max_test_points }}</h5>
+      <h5>Total test points this submission passed: {{ results.submission.received_test_points }}</h5>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
+      <h5>Your score on this category: {{ "%.2f"| format(results.scores.accuracy * 100) }}%</h5>
 
       <h2>Documentation</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.submission.weights.documentation * 100) }}%</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.submission.scores.documentation * 100) }}%</h5>
+      <h5>Weight of this category: {{ "%.2f"| format(results.weights.documentation * 100) }}%</h5>
       <h5>Comment-only lines: {{ "%.2f"| format(results.submission.pct_comment_only_lines) }}%</h5>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
+      <h5>Your score on this category: {{ "%.2f"| format(results.scores.documentation * 100) }}%</h5>
       <table class="table table-striped">
         <thead>
           <tr>
@@ -47,9 +48,10 @@
       </table>
 
       <h2>Source Efficiency</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.submission.weights.source_efficiency * 100) }}%</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.submission.scores.source_efficiency * 100) }}%</h5>
+      <h5>Weight of this category: {{ "%.2f"| format(results.weights.source_efficiency * 100) }}%</h5>
       <h5>Instructions written: {{ results.submission.line_count }}</h5>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
+      <h5>Your score on this category: {{ "%.2f"| format(results.scores.source_efficiency * 100) }}%</h5>
       <table class="table table-striped">
         <thead>
           <tr>
@@ -67,10 +69,11 @@
       </table>
 
       <h2>Execution Efficiency</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.submission.weights.exec_efficiency * 100) }}%</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.submission.scores.exec_efficiency * 100) }}%</h5>
+      <h5>Weight of this category: {{ "%.2f"| format(results.weights.exec_efficiency * 100) }}%</h5>
       <h5>Aggregation method: {{ results.exec_agg_method }}</h5>
       <h5>Aggregated instructions executed: {{ results.submission.agg_exec_count }}</h5>
+      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
+      <h5>Your score on this category: {{ "%.2f"| format(results.scores.exec_efficiency * 100) }}%</h5>
       <table class="table table-striped">
         <thead>
           <tr>

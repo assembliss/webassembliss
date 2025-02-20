@@ -185,9 +185,13 @@ def combine_category_weights(*, config: ProjectConfig) -> Dict[str, float]:
     return {cat: (weight / total_weight) for cat, weight in config.weights.items()}
 
 
-def calculate_total_score(
-    *, results: SubmissionResults, must_pass_all_tests: bool
-) -> float:
+def check_and_fix_testcase_requirement(*, results: GraderResults) -> None:
+    """Zero out grades, if needed, if the project requires all testcases to be passed for a non-zero score."""
+    if results.must_pass_all_tests and results.scores["accuracy"] < 1:
+        results.scores = {k: 0.0 for k in results.scores}
+
+
+def calculate_total_score(*, results: GraderResults) -> float:
     """Calculate the overall project score based on the project config."""
 
     # TODO: create custom error for grader pipeline.
@@ -198,11 +202,7 @@ def calculate_total_score(
     # Make sure they have the same length
     assert len(results.weights) == len(results.scores)
 
-    # Check if they have to pass all test cases to get a non-zero score;
-    # If they need to pass all tests and do not have perfect accuracy, total should be 0.
-    if must_pass_all_tests and (results.scores["accuracy"] < 1):
-        return 0.0
-
+    # Combine the weighted average for the total score.
     return sum([results.scores[c] * results.weights[c] for c in results.scores])
 
 
@@ -226,10 +226,10 @@ def grade_student(
         name=student_name,
         ID=student_ID,
         files=student_files,
-        must_pass_all_tests=config.must_pass_all_tests,
     )
     gr = GraderResults(
         submission=sr,
+        must_pass_all_tests=config.must_pass_all_tests,
         exec_agg_method=ExecutedInstructionsAggregation.Name(
             config.exec_eff.aggregation
         ),
@@ -302,23 +302,25 @@ def grade_student(
         )
 
         # Calculate each category's score
-        sr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
+        gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
         sr.line_count = arch.line_count_fun(src_path)
-        sr.scores["documentation"], sr.pct_comment_only_lines = calculate_docs_score(
+        gr.scores["documentation"], sr.pct_comment_only_lines = calculate_docs_score(
             config=config, src_path=src_path, instr_count=sr.line_count
         )
-        sr.scores["source_efficiency"] = calculate_source_eff_score(
+        gr.scores["source_efficiency"] = calculate_source_eff_score(
             config=config, source_instruction_count=sr.line_count
         )
-        sr.scores["exec_efficiency"] = calculate_execution_eff_score(
+        gr.scores["exec_efficiency"] = calculate_execution_eff_score(
             config=config, instructions_executed=sr.agg_exec_count
         )
 
-    # Combine all categories into an overall project score
-    sr.weights = combine_category_weights(config=config)
-    sr.total = calculate_total_score(
-        results=sr, must_pass_all_tests=sr.must_pass_all_tests
-    )
+    # Combine all categories' weights into percentages.
+    gr.weights = combine_category_weights(config=config)
+    # Check if the project requires all test cases to be passed for a non-zero score;
+    # If it does, this method will zero out the scores inside of the grader results.
+    check_and_fix_testcase_requirement(results=gr)
+    # Combine the weights and scores into an overall score.
+    sr.total = calculate_total_score(results=gr)
 
     # Finally, add a checksum to the contents of this file.
     sr.checksum64 = bytes_to_b64(create_check_sum(sr))
