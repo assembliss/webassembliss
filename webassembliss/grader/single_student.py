@@ -24,6 +24,7 @@ from .utils import (
     bytes_to_b64,
     create_check_sum,
     create_extra_files,
+    create_test_diff,
     create_text_file,
     format_points_scale,
     load_wrapped_project,
@@ -89,6 +90,12 @@ def run_test_cases(
             )
             executed = True
 
+        diff = create_test_diff(stdout, actual_out)
+        if is_text:
+            actual_out = repr(actual_out)
+            stdout = repr(stdout)
+            stdin = repr(stdin)
+
         # Parse through emulation output to evaluate test
         test_result = TestCaseResults(
             name=test.name,
@@ -103,6 +110,7 @@ def run_test_cases(
             expected_out=("" if test.hidden else stdout),
             actual_out=("" if test.hidden else actual_out),
             actual_err=("" if test.hidden else actual_err),
+            diff=("" if test.hidden else diff),
         )
         results.append(test_result)
         instructions_executed.append(exec_count)

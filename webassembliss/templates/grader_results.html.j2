@@ -182,29 +182,47 @@
                       <tbody>
                         <tr>
                           <td>Command Line Arguments:</td>
-                          <td>{{ results.tests[i].cl_args }}</td>
+                          <td><code>{{ results.tests[i].cl_args }}</code></td>
                         </tr>
                         <tr>
                           <td>Input:</td>
-                          <td>"{{ results.tests[i].stdin }}"</td>
+                          <td><code>{{ results.tests[i].stdin }}</code></td>
                         </tr>
                         <tr>
-                          <td>Expected Output:</td>
-                          <td>"{{ results.tests[i].expected_out }}"</td>
-                        </tr>
-                        <tr>
-                          <td>Actual Output:</td>
-                          <td>"{{ results.tests[i].actual_out }}"</td>
-                        </tr>
-                        <tr>
-                          <td>Error Stream:</td>
-                          <td>"{{ results.tests[i].actual_err }}"</td>
+                          <td>Expected Out:</td>
+                          <td><code>{{ results.tests[i].expected_out }}</code></td>
                         </tr>
                         <tr>
                           <td>Exit Code:</td>
-                          <td>{{ results.tests[i].exit_code }}</td>
+                          {% if results.tests[i].executed %}
+                            <td><code>{{ results.tests[i].exit_code }}</code></td>
+                          {% else %}
+                            <td>test did not run</td>
+                          {% endif %}
+                        </tr>
+                        <tr>
+                          <td>Error Stream:</td>
+                          {% if results.tests[i].executed %}
+                            <td><code>{{ results.tests[i].actual_err }}</code></td>
+                          {% else %}
+                            <td>test did not run</td>
+                          {% endif %}
+                        </tr>
+                        <tr>
+                          <td>Actual Out:</td>
+                          {% if results.tests[i].executed %}
+                            <td><code>{{ results.tests[i].actual_out }}</code></td>
+                          {% else %}
+                            <td>test did not run</td>
+                          {% endif %}
                         </tr>
                     </table>
+                    {% if results.tests[i].executed and not results.tests[i].passed %}
+                      <!-- End div so the diff text is not centered -->
+                      </div><div>
+                      <h4>Expected vs Actual side-by-side comparison</h4>
+                      {{ results.tests[i].diff }}
+                    {% endif %}
                   {% endif %}
                 </div>
               </div>
@@ -212,9 +230,6 @@
           </div>
         {% endfor %}
       </div>
-
-
-      
     </div>
   </div>
 {% endblock %}

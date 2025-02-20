@@ -2,6 +2,7 @@ from base64 import decode as b64_decode
 from base64 import encode as b64_encode
 from bz2 import decompress as bz2_decompress
 from dataclasses import dataclass, field
+from difflib import HtmlDiff
 from hashlib import sha256
 from hmac import compare_digest
 from io import BytesIO
@@ -39,6 +40,7 @@ class TestCaseResults:
     expected_out: Union[str, bytes]
     actual_out: Union[str, bytes]
     actual_err: str
+    diff: str
 
 
 @dataclass_json
@@ -197,6 +199,22 @@ def format_points_scale(
         last = k
     out.append((f"{last} {angle} x", default_points))
     return out
+
+
+def create_test_diff(
+    expected_out: Union[str, bytes], actual_out: Union[str, bytes]
+) -> str:
+    """Create an HTML-diff for the test case."""
+    if isinstance(expected_out, bytes) and isinstance(actual_out, bytes):
+        expected = [f"{b}" for b in expected_out]
+        actual = [f"{b}" for b in actual_out]
+    elif isinstance(expected_out, str) and isinstance(actual_out, str):
+        expected = repr(expected_out)[1:-1].split("\\n")
+        actual = repr(actual_out)[1:-1].split("\\n")
+    else:
+        # TODO: replace with grader custom error.
+        raise RuntimeError("expected_out and actual_out should have the same type.")
+    return HtmlDiff().make_file(expected, actual)
 
 
 # Maps possible rootfs values from project_configs into relevant commands and functions.

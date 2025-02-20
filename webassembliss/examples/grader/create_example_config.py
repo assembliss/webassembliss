@@ -22,7 +22,7 @@ config = ProjectConfig()
 #
 # Set basic info
 #
-config.name = "Hello Project Config"
+config.name = "Hello World Project"
 config.rootfs_arch = "ARM64"
 config.user_filename = "hello.S"
 config.exec_name = "hello.exe"
@@ -53,7 +53,7 @@ tc2.points = 5
 tc3 = config.tests.add()
 tc3.name = "Failing test"
 tc3.stdin_s = "input3"
-tc3.expected_out_s = "Wrong output"
+tc3.expected_out_s = "Hello\tfolks!\n"
 tc3.timeout_ms = 500_000  # 0.5s
 tc3.hidden = False
 tc3.points = 2
@@ -62,14 +62,14 @@ tc4 = config.tests.add()
 tc4.name = "Another failing test"
 tc4.cl_args.extend(["arg1", "arg2"])
 tc4.stdin_s = "input4"
-tc4.expected_out_s = "I did not run..."
+tc4.expected_out_s = "Hello folks!\r\n"
 tc4.timeout_ms = 500_000  # 0.5s
 tc4.hidden = False
 tc4.points = 2
 
 tc5 = config.tests.add()
-tc5.name = "Yet another failing test"
-tc5.cl_args.extend(["arg1", "arg2"])
+tc5.name = "Hidden failing test"
+tc5.cl_args.extend(["arg3", "arg4"])
 tc5.stdin_s = "input5"
 tc5.expected_out_s = "You can't see me!"
 tc5.timeout_ms = 500_000  # 0.5s
