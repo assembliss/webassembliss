@@ -343,6 +343,7 @@ def grade_form_submission(
     project_proto: FileStorage,
 ) -> GraderResults:
     """Process files from the submission form, run the grader, and return a dict result."""
+    # TODO: validate all the files that are being read; catch exception and show a message.
     student_files = {student_file.filename: student_file.read().decode()}
     wrapped_config = load_wrapped_project(project_proto.read())
     results = grade_student(
