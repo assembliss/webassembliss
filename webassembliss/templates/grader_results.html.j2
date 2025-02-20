@@ -7,95 +7,214 @@
       <div class="text-center">
         <button type="submit" class="btn btn-danger" onclick='parseJSONAndDownload("{{ results.submission.project_name | replace(" ","") }}_{{ results.submission.ID }}_results.json", {{ results.submission | tojson }})'>Download file for submission</button>
       </div>
+      <hr>
+      <h2 class="text-center">Total Score: {{ "%.2f"| format(results.submission.total * 100) }}%</h2>
+      <hr>
+      <h3>Detailed Breakdown</h3>
+      <div class="accordion" id="accordionPanelsStayOpenExample">
+        <div class="accordion-item">      
+          <h2 class="accordion-header">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#infoPanel" aria-expanded="true" aria-controls="infoPanel">
+              Submission Info
+            </button>
+          </h2>
+          <div id="infoPanel" class="accordion-collapse collapse show">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Submission Time:</strong> {{ results.submission.timestamp }}</li>
+                <li class="list-group-item"><strong>User Info:</strong> {{ results.submission.name }} ({{ results.submission.ID }})</li>
+                <li class="list-group-item"><strong>Project Name:</strong> {{ results.submission.project_name }}</li>
+                <li class="list-group-item"><strong>Your code assembled:</strong> {{ results.assembled }}</li>
+                <li class="list-group-item"><strong>Your code linked:</strong> {{ results.linked }}</li>
+                <li class="list-group-item"><strong>Error messages:</strong> "{{ results.errors }}"</li>
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">      
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accuracyPanel" aria-expanded="false" aria-controls="accuracyPanel">
+              Accuracy
+            </button>
+          </h2>
+          <div id="accuracyPanel" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.accuracy * 100) }}%</li>
+                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.accuracy * 100) }}%</li>
+                <li class="list-group-item"><strong>Total test points available:</strong> {{ results.submission.max_test_points }}</li>
+                <li class="list-group-item"><strong>Total test points this submission passed:</strong> {{ results.submission.received_test_points }}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">      
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#docsPanel" aria-expanded="false" aria-controls="docsPanel">
+              Documentation
+            </button>
+          </h2>
+          <div id="docsPanel" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.documentation * 100) }}%</li>
+                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.documentation * 100) }}%</li>
+                <li class="list-group-item"><strong>Comment-only lines:</strong> {{ "%.2f"| format(results.submission.pct_comment_only_lines) }}%</li>
+              </ul>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Range</th>
+                    <th scope="col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r, p in results.docs_points %}
+                    <tr>
+                      <td>{{ r }}</td>
+                      <td>{{ "%.2f"| format(p * 100) }}%</td>
+                    </tr>
+                  {% endfor %}
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">      
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#srcEffPanel" aria-expanded="false" aria-controls="srcEffPanel">
+              Source Efficiency
+            </button>
+          </h2>
+          <div id="srcEffPanel" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.source_efficiency * 100) }}%</li>
+                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.source_efficiency * 100) }}%</li>
+                <li class="list-group-item"><strong>Instructions written:</strong> {{ results.submission.line_count }}</li>
+              </ul>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Range</th>
+                    <th scope="col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r, p in results.source_points %}
+                    <tr>
+                      <td>{{ r }}</td>
+                      <td>{{ "%.2f"| format(p * 100) }}%</td>
+                    </tr>
+                  {% endfor %}
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="accordion-item">      
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#exeEffPanel" aria-expanded="false" aria-controls="exeEffPanel">
+              Execution Efficiency
+            </button>
+          </h2>
+          <div id="exeEffPanel" class="accordion-collapse collapse">
+            <div class="accordion-body">
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.exec_efficiency * 100) }}%</li>
+                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.exec_efficiency * 100) }}%</li>
+                <li class="list-group-item"><strong>Aggregation method:</strong> {{ results.exec_agg_method }}</li>
+                <li class="list-group-item"><strong>Aggregated instructions executed:</strong> {{ results.submission.agg_exec_count }}</li>
+              </ul>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Range</th>
+                    <th scope="col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r, p in results.exec_points %}
+                    <tr>
+                      <td>{{ r }}</td>
+                      <td>{{ "%.2f"| format(p * 100) }}%</td>
+                    </tr>
+                  {% endfor %}
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr>
+      <h3>Test Cases</h3>
+      <div class="accordion" id="testCasesAccordion">
+        {% for i in range(results.tests|length) %}
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTest{{ i + 1 }}" aria-expanded="false" aria-controls="collapseTest{{ i + 1 }}">
+                {% if results.tests[i].passed %}
+                  <img src="{{ url_for('static', filename='img/check-circle.svg') }}" alt="checkmark" width: 6em>
+                {% else %}
+                  <img src="{{ url_for('static', filename='img/x-circle-fill.svg') }}" alt="checkmark" width: 6em>
+                {% endif %}
+                &nbsp;
+                Test #{{ i + 1 }} ({{ results.tests[i].name }})
+              </button>
+            </h2>
+            <div id="collapseTest{{ i + 1 }}" class="accordion-collapse collapse" data-bs-parent="#testCasesAccordion">
+              <div class="accordion-body">
+                <ul class="list-group list-group-flush">
+                  <li class="list-group-item"><strong>Test Name:</strong> {{ results.tests[i].name }}</li>
+                  <li class="list-group-item"><strong>Executed:</strong> {{ results.tests[i].executed }}</li>
+                  <li class="list-group-item"><strong>Passed:</strong> {{ results.tests[i].passed }}</li>
+                  <li class="list-group-item"><strong>Timed out:</strong> {{ results.tests[i].timed_out }}</li>
+                  <li class="list-group-item"><strong>Points:</strong> {{ results.tests[i].points }}</li>
+                </ul>
+                <div class="text-center">
+                  {% if results.tests[i].hidden %}
+                    <p>I/O is hidden for this test.</p>
+                  {% else %}
+                    <h4>I/O</h4>
+                    <table class="table table-striped">
+                      <tbody>
+                        <tr>
+                          <td>Command Line Arguments:</td>
+                          <td>{{ results.tests[i].cl_args }}</td>
+                        </tr>
+                        <tr>
+                          <td>Input:</td>
+                          <td>"{{ results.tests[i].stdin }}"</td>
+                        </tr>
+                        <tr>
+                          <td>Expected Output:</td>
+                          <td>"{{ results.tests[i].expected_out }}"</td>
+                        </tr>
+                        <tr>
+                          <td>Actual Output:</td>
+                          <td>"{{ results.tests[i].actual_out }}"</td>
+                        </tr>
+                        <tr>
+                          <td>Error Stream:</td>
+                          <td>"{{ results.tests[i].actual_err }}"</td>
+                        </tr>
+                        <tr>
+                          <td>Exit Code:</td>
+                          <td>{{ results.tests[i].exit_code }}</td>
+                        </tr>
+                    </table>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
 
-      <h2>Total Score: {{ "%.2f"| format(results.submission.total * 100) }}%</h2>
 
-      <h2>Submission Info</h2>
-      <h5>Submission Time: {{ results.submission.timestamp }}</h5>
-      <h5>User Info: {{ results.submission.name }} ({{ results.submission.ID }})</h5>
-      <h5>Project Name: {{ results.submission.project_name }}</h5>
-      <h5>Your code assembled: {{ results.assembled }}</h5>
-      <h5>Your code linked: {{ results.linked }}</h5>
-      <h5>Error messages: "{{ results.errors }}"</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
-
-      <h2>Accuracy</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.weights.accuracy * 100) }}%</h5>
-      <h5>Total test points available: {{ results.submission.max_test_points }}</h5>
-      <h5>Total test points this submission passed: {{ results.submission.received_test_points }}</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.scores.accuracy * 100) }}%</h5>
-
-      <h2>Documentation</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.weights.documentation * 100) }}%</h5>
-      <h5>Comment-only lines: {{ "%.2f"| format(results.submission.pct_comment_only_lines) }}%</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.scores.documentation * 100) }}%</h5>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th scope="col">Range</th>
-            <th scope="col">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r, p in results.docs_points %}
-            <tr>
-              <td>{{ r }}</td>
-              <td>{{ "%.2f"| format(p * 100) }}%</td>
-            </tr>
-          {% endfor %}
-      </table>
-
-      <h2>Source Efficiency</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.weights.source_efficiency * 100) }}%</h5>
-      <h5>Instructions written: {{ results.submission.line_count }}</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.scores.source_efficiency * 100) }}%</h5>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th scope="col">Range</th>
-            <th scope="col">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r, p in results.source_points %}
-            <tr>
-              <td>{{ r }}</td>
-              <td>{{ "%.2f"| format(p * 100) }}%</td>
-            </tr>
-          {% endfor %}
-      </table>
-
-      <h2>Execution Efficiency</h2>
-      <h5>Weight of this category: {{ "%.2f"| format(results.weights.exec_efficiency * 100) }}%</h5>
-      <h5>Aggregation method: {{ results.exec_agg_method }}</h5>
-      <h5>Aggregated instructions executed: {{ results.submission.agg_exec_count }}</h5>
-      <h5>Must pass all test cases for a non-zero grade: {{ results.must_pass_all_tests }}</h5>
-      <h5>Your score on this category: {{ "%.2f"| format(results.scores.exec_efficiency * 100) }}%</h5>
-      <table class="table table-striped">
-        <thead>
-          <tr>
-            <th scope="col">Range</th>
-            <th scope="col">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r, p in results.exec_points %}
-            <tr>
-              <td>{{ r }}</td>
-              <td>{{ "%.2f"| format(p * 100) }}%</td>
-            </tr>
-          {% endfor %}
-      </table>
-
-      <h2>Test Cases</h2>
-      {% for i in range(results.tests|length) %}
-        {{ i+1 }} -> {{ results.tests[i] }}
-        <br/><br/>
-      {% endfor %}
-
+      
     </div>
   </div>
 {% endblock %}
