@@ -90,7 +90,6 @@ def run_test_cases(
             )
             executed = True
 
-        diff = create_test_diff(stdout, actual_out)
         if is_text:
             actual_out = repr(actual_out)
             stdout = repr(stdout)
@@ -110,7 +109,6 @@ def run_test_cases(
             expected_out=("" if test.hidden else stdout),
             actual_out=("" if test.hidden else actual_out),
             actual_err=("" if test.hidden else actual_err),
-            diff=("" if test.hidden else diff),
         )
         results.append(test_result)
         instructions_executed.append(exec_count)
@@ -303,6 +301,7 @@ def grade_student(
         gr.tests, all_exec_counts = run_test_cases(
             config=config, rootfs=arch.rootfs, bin_path=bin_path
         )
+        gr.test_diffs = [create_test_diff(t) for t in gr.tests]
         sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
         sr.max_test_points = sum((t.points for t in config.tests))
         sr.received_test_points = sum(

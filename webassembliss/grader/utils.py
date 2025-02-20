@@ -40,7 +40,6 @@ class TestCaseResults:
     expected_out: Union[str, bytes]
     actual_out: Union[str, bytes]
     actual_err: str
-    diff: str
 
 
 @dataclass_json
@@ -72,6 +71,7 @@ class GraderResults:
     scores: Dict[str, float] = field(default_factory=dict)
     weights: Dict[str, float] = field(default_factory=dict)
     tests: List[TestCaseResults] = field(default_factory=list)
+    test_diffs: List[str] = field(default_factory=list)
     docs_points: List[Tuple[str, float]] = field(default_factory=list)
     source_points: List[Tuple[str, float]] = field(default_factory=list)
     exec_points: List[Tuple[str, float]] = field(default_factory=list)
@@ -201,16 +201,16 @@ def format_points_scale(
     return out
 
 
-def create_test_diff(
-    expected_out: Union[str, bytes], actual_out: Union[str, bytes]
-) -> str:
+def create_test_diff(test: TestCase) -> str:
     """Create an HTML-diff for the test case."""
+    expected_out = test.expected_out
+    actual_out = test.actual_out
     if isinstance(expected_out, bytes) and isinstance(actual_out, bytes):
         expected = [f"{b}" for b in expected_out]
         actual = [f"{b}" for b in actual_out]
     elif isinstance(expected_out, str) and isinstance(actual_out, str):
-        expected = repr(expected_out)[1:-1].split("\\n")
-        actual = repr(actual_out)[1:-1].split("\\n")
+        expected = expected_out[1:-1].split("\\n")
+        actual = actual_out[1:-1].split("\\n")
     else:
         # TODO: replace with grader custom error.
         raise RuntimeError("expected_out and actual_out should have the same type.")
