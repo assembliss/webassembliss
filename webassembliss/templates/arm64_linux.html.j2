@@ -11,14 +11,16 @@
 {% endblock %}
 {% block navbar %}
     <li class="nav-item dropdown">
-        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">ARM64 Resources</a>
-        <div class="dropdown-menu">
-            <a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://developer.arm.com/documentation/102374/latest/">Official Documentation</a>
-            <a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf">Swarthmore's Reference Sheet</a>
-            <a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://courses.cs.washington.edu/courses/cse469/19wi/arm64.pdf">UW's Quick Reference</a>
-            <a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://blog.xhyeax.com/2022/04/28/arm64-syscall-table/">Syscalls for ARM64 - Linux</a>
-            <a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html">Syscalls for many architectures</a>
-        </div>
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            ARM64 Resources
+        </a>
+        <ul class="dropdown-menu">
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://developer.arm.com/documentation/102374/latest/">Official Documentation</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf">Swarthmore's Reference Sheet</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://courses.cs.washington.edu/courses/cse469/19wi/arm64.pdf">UW's Quick Reference</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://blog.xhyeax.com/2022/04/28/arm64-syscall-table/">Syscalls for ARM64 - Linux</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html">Syscalls for many architectures</a></li>
+        </ul>
     </li>
 {% endblock %}
 {% block content %}
