@@ -1,7 +1,10 @@
+from base64 import decode as b64_decode
+from base64 import encode as b64_encode
 from bz2 import decompress as bz2_decompress
 from dataclasses import dataclass, field
 from hashlib import sha256
 from hmac import compare_digest
+from io import BytesIO
 from os import PathLike
 from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
@@ -46,7 +49,7 @@ class SubmissionResults:
     ID: str
     files: Dict[str, str]
     project_name: str
-    project_checksum: bytes
+    project_checksum64: str
     must_pass_all_tests: bool
     line_count: int = 0
     pct_comment_only_lines: float = 0.0
@@ -56,7 +59,7 @@ class SubmissionResults:
     scores: Dict[str, float] = field(default_factory=dict)
     weights: Dict[str, float] = field(default_factory=dict)
     total: float = 0.0
-    checksum: bytes = b"''"
+    checksum64: str = "''"
 
 
 @dataclass_json
@@ -67,9 +70,9 @@ class GraderResults:
     linked: bool = False
     errors: str = ""
     tests: List[TestCaseResults] = field(default_factory=list)
-    docs_points: Dict = field(default_factory=dict)
-    source_points: Dict = field(default_factory=dict)
-    exec_points: Dict = field(default_factory=dict)
+    docs_points: List[Tuple[str, float]] = field(default_factory=list)
+    source_points: List[Tuple[str, float]] = field(default_factory=list)
+    exec_points: List[Tuple[str, float]] = field(default_factory=list)
     exec_agg_method: str = ""
 
 
@@ -161,6 +164,39 @@ def load_wrapped_project(buffer: bytes) -> WrappedProject:
     # TODO: handle possible parsing error.
     wp.ParseFromString(buffer)
     return wp
+
+
+def bytes_to_b64(buf: bytes) -> str:
+    """Convert the given bytes buffer into a base64 encoded string."""
+    in_bio = BytesIO(buf)
+    out_bio = BytesIO()
+    b64_encode(in_bio, out_bio)
+    return out_bio.getvalue().decode()
+
+
+def b64_to_bytes(s64: str) -> bytes:
+    """Convert the given base64-encoded string into bytes."""
+    in_bio = BytesIO(s64.encode())
+    out_bio = BytesIO()
+    b64_decode(in_bio, out_bio)
+    return out_bio.getvalue()
+
+
+def format_points_scale(
+    points: Dict[int, float], default_points: float, is_higher_better: bool
+) -> List[Tuple[str, float]]:
+    """Parse a point spread from the config proto into a string that can be displayed in the grader results page."""
+    out: List[Tuple[str, float]] = []
+    last = None
+    angle = ">" if is_higher_better else "<"
+    for k in sorted(points, reverse=is_higher_better):
+        if last is None:
+            out.append((f"x {angle}= {k}", points[k]))
+        else:
+            out.append((f"{last} {angle} x {angle}= {k}", points[k]))
+        last = k
+    out.append((f"{last} {angle} x", default_points))
+    return out
 
 
 # Maps possible rootfs values from project_configs into relevant commands and functions.

@@ -10,16 +10,22 @@ from typing import Dict, List, Tuple, Union
 from werkzeug.datastructures import FileStorage
 
 from ..emulation.base_emulation import assemble, link, timed_emulation
-from .project_config_pb2 import ProjectConfig, WrappedProject
+from .project_config_pb2 import (
+    ExecutedInstructionsAggregation,
+    ProjectConfig,
+    WrappedProject,
+)
 from .utils import (
     EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
+    bytes_to_b64,
     create_check_sum,
     create_extra_files,
     create_text_file,
+    format_points_scale,
     load_wrapped_project,
     validate_and_load_project_config,
     validate_and_load_testcase_io,
@@ -214,7 +220,7 @@ def grade_student(
 
     # Create result objects
     sr = SubmissionResults(
-        project_checksum=wrapped_config.checksum,
+        project_checksum64=bytes_to_b64(wrapped_config.checksum),
         project_name=config.name,
         timestamp=datetime.now(timezone.utc).isoformat(),
         name=student_name,
@@ -224,10 +230,24 @@ def grade_student(
     )
     gr = GraderResults(
         submission=sr,
-        exec_agg_method=str(config.exec_eff.aggregation),
-        exec_points=config.exec_eff.points,
-        source_points=config.source_eff.points,
-        docs_points=config.docs.comments_to_instr_pct_points,
+        exec_agg_method=ExecutedInstructionsAggregation.Name(
+            config.exec_eff.aggregation
+        ),
+        exec_points=format_points_scale(
+            config.exec_eff.points,
+            config.exec_eff.default_points,
+            is_higher_better=False,
+        ),
+        source_points=format_points_scale(
+            config.source_eff.points,
+            config.source_eff.default_points,
+            is_higher_better=False,
+        ),
+        docs_points=format_points_scale(
+            config.docs.comments_to_instr_pct_points,
+            config.exec_eff.default_points,
+            is_higher_better=True,
+        ),
     )
 
     # Check that the user provided the required file
@@ -301,7 +321,7 @@ def grade_student(
     )
 
     # Finally, add a checksum to the contents of this file.
-    sr.checksum = create_check_sum(sr)
+    sr.checksum64 = bytes_to_b64(create_check_sum(sr))
 
     return gr
 
