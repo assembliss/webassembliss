@@ -2,7 +2,8 @@ function showMessage(title, content) {
     // TODO: Fix aria warnings from the modal.
     document.getElementById("okMessageModalTitle").innerText = title;
     document.getElementById("okMessageModalBody").innerText = content;
-    $("#okMessageModal").modal();
+    const okModal = new bootstrap.Modal('#okMessageModal')
+    okModal.show();
 }
 
 function download_file(name, contents, mime_type) {
