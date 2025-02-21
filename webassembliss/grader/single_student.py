@@ -358,7 +358,7 @@ if __name__ == "__main__":
     example_path = "/webassembliss/examples/grader"
     source_name = "hello.S"
     source_path = join(example_path, source_name)
-    config_path = join(example_path, "helloProject_noMustPass_noSkip.pb2")
+    config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
     with open(config_path, "rb") as config_fp, open(source_path) as source_fp:
         config = WrappedProject()
         config.ParseFromString(config_fp.read())
