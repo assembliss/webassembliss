@@ -87,11 +87,16 @@ class ArchConfig:
     line_count_fun: Callable[[Union[PathLike, str]], int]
 
 
+def create_checksum(buff: bytes) -> bytes:
+    """Create a checksum of the given bytes."""
+    return sha256(buff).digest()
+
+
 def validate_project_config(wp: WrappedProject) -> None:
     """Validate ProjectConfig from given WrappedProject."""
     # Ensure the checksum from the wrapped project matches the project config.
     # TODO: create custom error for grader pipeline.
-    actual_check_sum = sha256(wp.compressed_config).digest()
+    actual_check_sum = create_checksum(wp.compressed_config)
     assert compare_digest(wp.checksum, actual_check_sum)
     # TODO: have a valid list of project configs we accept.
     # TODO: validate that MeasureSourceDocumentation exists iff weights["documentation"] != 0
@@ -153,11 +158,6 @@ def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -
 
     for filename, contents in config.extra_bin_files.items():
         create_bin_file(join(workspace, filename), contents)
-
-
-def create_check_sum(sr: SubmissionResults) -> bytes:
-    """Creates a checksum based on the SubmissionResults values."""
-    return sha256(f"{sr}".encode()).digest()
 
 
 def load_wrapped_project(buffer: bytes) -> WrappedProject:

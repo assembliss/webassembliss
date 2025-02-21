@@ -39,7 +39,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to upload config file and run tests with their code
 - [x] generate a results file containing user info, test results, efficiency metrics
 - [x] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
-	- moved to a separate project as a cli script
+	- moved to a cli solution
 
 ### Project Setup
 - [x] generate object and binaries in a temp folder inside rootfs

@@ -22,7 +22,7 @@ from .utils import (
     SubmissionResults,
     TestCaseResults,
     bytes_to_b64,
-    create_check_sum,
+    create_checksum,
     create_extra_files,
     create_test_diff,
     create_text_file,
@@ -330,7 +330,7 @@ def grade_student(
     sr.total = calculate_total_score(results=gr)
 
     # Finally, add a checksum to the contents of this file.
-    sr.checksum64 = bytes_to_b64(create_check_sum(sr))
+    sr.checksum64 = bytes_to_b64(create_checksum(f"{sr}".encode()))
 
     return gr
 

@@ -22,7 +22,7 @@ config = ProjectConfig()
 #
 # Set basic info
 #
-config.name = "Hello World Project"
+config.name = "Hello World Project (yesMustPass-yesSkip)"
 config.rootfs_arch = "ARM64"
 config.user_filename = "hello.S"
 config.exec_name = "hello.exe"
