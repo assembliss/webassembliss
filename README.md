@@ -33,11 +33,13 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] measure lines of code
 - [x] measure executed instructions
 - [x] measure documentation level
+	- [ ] measure percentage of instruction lines with a comment
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 - [x] create config file that has provided source(s), object(s), and tests
 - [x] allow user to upload config file and run tests with their code
 - [x] generate a results file containing user info, test results, efficiency metrics
-- [ ] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
+- [x] allow (super)user to upload a zip file of result files that can re-run tests to make sure results were achieved through the testing pipeline
+	- moved to a separate project as a cli script
 
 ### Project Setup
 - [x] generate object and binaries in a temp folder inside rootfs
@@ -67,7 +69,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] change the editor to hilight syntax for arm64 assembly
 - [x] allow user to download emulation information
 - [x] allow user to download code
-- [ ] allow user to upload code
+- [x] allow user to upload code
 - [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] allow user to submit an issue through the webapp
 - [x] highlight assembler errors in source code
