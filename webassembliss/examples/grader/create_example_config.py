@@ -19,6 +19,7 @@ from project_config_pb2 import (
 #
 config = ProjectConfig()
 
+
 #
 # Set basic info
 #
@@ -30,6 +31,7 @@ config.as_flags.append("-o")
 config.ld_flags.append("-o")
 config.must_pass_all_tests = True
 config.stop_on_first_test_fail = True
+
 
 #
 # Create test cases
@@ -125,6 +127,7 @@ wp = WrappedProject()
 wp.compression_alg = CompressionAlgorithm.BZ2
 wp.compressed_config = compress(config.SerializeToString())
 wp.checksum = sha256(wp.compressed_config).digest()
+
 
 #
 # Export to a file
