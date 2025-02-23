@@ -34,6 +34,11 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] measure executed instructions
 - [x] measure documentation level
 	- [ ] measure percentage of instruction lines with a comment
+		- Idea:
+			- use cloc to create a file without comments ([ref](https://github.com/AlDanial/cloc?tab=readme-ov-file#remove-comments-from-source-code-))
+			- parse through both files together, mergesort style
+			- strip lines to find match
+			- compare end of it to see if it was a comment
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 - [x] create config file that has provided source(s), object(s), and tests
 - [x] allow user to upload config file and run tests with their code
