@@ -208,15 +208,16 @@ function runCode() {
     // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
-    var source_code = getSource();
-    var user_input = document.getElementById("inputBox").value;
+    let source_code = getSource();
+    let user_input = document.getElementById("inputBox").value;
+    let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/arm64_linux/run/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, registers: registers }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;

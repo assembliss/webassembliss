@@ -112,8 +112,13 @@ def arm64_linux_run():
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
+    session["registers"] = request.json.get("registers", "")
+
     emu_results = arm64_linux_emulation(
-        session["source_code"], stdin=session["user_input"], cl_args=session["cl_args"]
+        session["source_code"],
+        stdin=session["user_input"],
+        cl_args=session["cl_args"],
+        registers=session["registers"].split(),
     )
 
     # TODO: return simply emu_results and do parsing of results on javascript side;

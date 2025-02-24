@@ -117,7 +117,7 @@ def emulate(
     if ld_flags is None:
         # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
-    if registers is None:
+    if not registers:
         registers = ARM64_REGISTERS
 
     # Run the emulation and return its status and results.

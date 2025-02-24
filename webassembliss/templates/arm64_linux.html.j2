@@ -98,6 +98,8 @@
 
     <button type="button" class="collapsible">Show/hide registers</button>
     <div class="collapsibleContent">
+        <span>You can specify the registers you want to see (e.g., "x0 x5 cpsr") -></span>
+        <textarea id="regsToShow" name="regsToShow" rows=1 cols=20 placeholder=""></textarea>
         <textarea id="regValues" name="regValues" readOnly=true rows=10 cols=100 placeholder="register values will appear here after your code finishes running..."></textarea>
         <p>Registers visualization notes:</p>
         <ul style="margin-top:-10px;">
