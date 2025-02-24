@@ -61,8 +61,15 @@
               <ul class="list-group list-group-flush">
                 <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
                 <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.documentation * 100) }}%</li>
-                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.documentation * 100) }}%</li>
-                <li class="list-group-item"><strong>Comment-only lines:</strong> {{ "%.2f"| format(results.submission.pct_comment_only_lines) }}%</li>
+                <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.documentation * 100) }}</li>
+                <li class="list-group-item"><strong>The documentation score is split into two equally weighted parts.</strong></li>
+              </ul>
+              <br/>
+              <h5>Docs - Part 1: Ratio of comment-only lines to instruction lines</h5>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Comment-only lines:</strong> {{ results.submission.comment_only_lines }}</li>
+                <li class="list-group-item"><strong>Instruction lines:</strong> {{ results.submission.instr_count }}</li>
+                <li class="list-group-item"><strong>Ratio:</strong> {{ "%.2f"| format(100 * results.submission.comment_only_lines / results.submission.instr_count) }}</li>
               </ul>
               <table class="table table-striped">
                 <thead>
@@ -72,7 +79,28 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {% for r, p in results.docs_points %}
+                  {% for r, p in results.comment_only_points %}
+                    <tr>
+                      <td>{{ r }}</td>
+                      <td>{{ "%.2f"| format(p * 100) }}%</td>
+                    </tr>
+                  {% endfor %}
+              </table>
+              <h5>Docs - Part 2: Ratio of instructions with inline-comments to instruction lines</h5>
+              <ul class="list-group list-group-flush">
+                <li class="list-group-item"><strong>Instruction lines with in-line comments:</strong> {{ results.submission.inline_comment_count }}</li>
+                <li class="list-group-item"><strong>Instruction lines:</strong> {{ results.submission.instr_count }}</li>
+                <li class="list-group-item"><strong>Ratio:</strong> {{ "%.2f"| format(100 * results.submission.inline_comment_count / results.submission.instr_count) }}</li>
+              </ul>
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th scope="col">Range</th>
+                    <th scope="col">Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r, p in results.inline_comments_points %}
                     <tr>
                       <td>{{ r }}</td>
                       <td>{{ "%.2f"| format(p * 100) }}%</td>
@@ -94,7 +122,7 @@
                 <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
                 <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.source_efficiency * 100) }}%</li>
                 <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.source_efficiency * 100) }}%</li>
-                <li class="list-group-item"><strong>Instructions written:</strong> {{ results.submission.line_count }}</li>
+                <li class="list-group-item"><strong>Instructions written:</strong> {{ results.submission.instr_count }}</li>
               </ul>
               <table class="table table-striped">
                 <thead>

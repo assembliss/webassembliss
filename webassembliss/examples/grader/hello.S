@@ -18,6 +18,6 @@ _start:
     svc     #0          /* invoke syscall */
 
     /* syscall exit(int status) */
-    mov     x0, #0      /* status := 0 */
+    mov     x0, #0     
     mov     w8, #93     /* exit is syscall #93 */
-    svc     #0          /* invoke syscall */
+    svc     #0

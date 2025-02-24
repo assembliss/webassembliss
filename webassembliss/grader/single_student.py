@@ -3,7 +3,7 @@ from io import BytesIO
 from json import loads
 from os import PathLike
 from os.path import join
-from subprocess import PIPE, Popen
+from subprocess import PIPE, Popen, run
 from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
 
@@ -129,36 +129,108 @@ def match_value_to_cutoff(
     """Converts an int score into a percentage based on the points_cutoffs distribution."""
     # Sort the cutoffs in order; is_higher_better defines if we check high-low or low-high.
     for cutoff in sorted(points_cutoffs.keys(), reverse=is_higher_better):
-        if cutoff >= value:
-            # Return the points for the first cutoff that is fulfilled.
+        # Check if the value is >= cutoff if a higher score is better;
+        #       otherwise check if cutoff >= value.
+        # Return the points for the first cutoff that is fulfilled.
+        if is_higher_better and value >= cutoff:
+            return points_cutoffs[cutoff]
+        elif not is_higher_better and cutoff >= value:
             return points_cutoffs[cutoff]
     # If did not match any cutoffs, return default points.
     return default_points
 
 
-def calculate_docs_score(
-    *, config: ProjectConfig, src_path: str, instr_count: int
-) -> Tuple[float, float]:
-    """Calculate the documentation score based on the project config."""
+def find_inline_comments_count(
+    src_path: Union[PathLike, str], inline_comment_tokens: List[str]
+) -> int:
+    """Calculate the percentage of code lines that have in-line comments."""
+    # Create a file with all comments removed.
+    cloc_command = [
+        "cloc",
+        "--strip-comments=nc",
+        "--original-dir",
+        "--quiet",
+        src_path,
+    ]
+    # TODO: hide the output of this command.
+    run(args=cloc_command)
 
-    # TODO: Also measure level of in-line comments.
+    # Read both files so we can compare their lines.
+    with open(src_path) as original_file, open(f"{src_path}.nc") as stripped_file:
+        # Read all lines from original source and remove spaces.
+        original_lines = [
+            line.strip().replace(" ", "").replace("\t", "")
+            for line in original_file.readlines()
+        ]
+        # Read all lines from stripped file and remove spaces.
+        code_lines = [
+            line.strip().replace(" ", "").replace("\t", "")
+            for line in stripped_file.readlines()
+        ]
+
+    # Parse both lines concurrently to match original line to new one.
+    commented_lines = o_line = c_line = 0
+    while o_line < len(original_lines) and c_line < len(code_lines):
+
+        if original_lines[o_line].startswith(code_lines[c_line]):
+            # Lines matched!
+            if any((t in original_lines[o_line] for t in inline_comment_tokens)):
+                # If there is a comment token in the original line, increase count of comments.
+                commented_lines += 1
+
+            # Advance both indices to the next line.
+            o_line += 1
+            c_line += 1
+
+        else:
+            # Lines did not match; advance original line to skip any comments or blank lines.
+            o_line += 1
+
+    # Ensure the entire stripped file has been processed.
+    assert c_line == len(code_lines)
+    # Calculate and return the percentage of code lines that have comments.
+    return commented_lines
+
+
+def find_comment_only_count(src_path: str) -> int:
+    """Calculate the number of lines that only have comments.."""
 
     cloc_command = ["cloc", "--skip-uniqueness", "--quiet", "--json", src_path]
     with Popen(cloc_command, stdout=PIPE, stderr=PIPE) as process:
         stdout, _ = process.communicate()
         data = loads(stdout.decode())
-        comment_count = data["SUM"]["comment"]
-        pct = 100 * comment_count / instr_count
-        return (
-            match_value_to_cutoff(
-                points_cutoffs=config.docs.comments_to_instr_pct_points,
-                default_points=config.docs.comments_to_instr_pct_default,
-                value=pct,
-                is_higher_better=True,
-            ),
-            pct,
-        )
+        return data["SUM"]["comment"]
     raise RuntimeError("Unable to calculate documentation score.")
+
+
+def calculate_docs_score(
+    *,
+    config: ProjectConfig,
+    instr_count: int,
+    comment_only_count: int,
+    inline_comment_count: int,
+) -> float:
+    """Calculate the documentation score based on the project config."""
+
+    # Calculate the score based on the comment-only lines.
+    comment_only_ratio = 100 * comment_only_count // instr_count
+    comment_only_score = match_value_to_cutoff(
+        points_cutoffs=config.docs.comments_to_instr_pct_points,
+        default_points=config.docs.comments_to_instr_pct_default,
+        value=comment_only_ratio,
+        is_higher_better=True,
+    )
+
+    # Calculate the score based on the inline-comments percentage.
+    inline_comments_pct = 100 * inline_comment_count // instr_count
+    inline_comments_score = match_value_to_cutoff(
+        points_cutoffs=config.docs.inline_comments_pct_points,
+        default_points=config.docs.inline_comments_pct_default,
+        value=inline_comments_pct,
+        is_higher_better=True,
+    )
+
+    return (comment_only_score + inline_comments_score) / 2
 
 
 def calculate_source_eff_score(
@@ -249,9 +321,14 @@ def grade_student(
             config.source_eff.default_points,
             is_higher_better=False,
         ),
-        docs_points=format_points_scale(
+        comment_only_points=format_points_scale(
             config.docs.comments_to_instr_pct_points,
-            config.exec_eff.default_points,
+            config.docs.comments_to_instr_pct_default,
+            is_higher_better=True,
+        ),
+        inline_comments_points=format_points_scale(
+            config.docs.inline_comments_pct_points,
+            config.docs.inline_comments_pct_default,
             is_higher_better=True,
         ),
     )
@@ -308,14 +385,23 @@ def grade_student(
             (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
         )
 
+        # Find info needed from the source file.
+        sr.instr_count = arch.instr_count_fun(src_path)
+        sr.inline_comment_count = find_inline_comments_count(
+            src_path, arch.inline_comment_tokens
+        )
+        sr.comment_only_lines = find_comment_only_count(src_path)
+
         # Calculate each category's score
         gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
-        sr.line_count = arch.line_count_fun(src_path)
-        gr.scores["documentation"], sr.pct_comment_only_lines = calculate_docs_score(
-            config=config, src_path=src_path, instr_count=sr.line_count
+        gr.scores["documentation"] = calculate_docs_score(
+            config=config,
+            instr_count=sr.instr_count,
+            comment_only_count=sr.comment_only_lines,
+            inline_comment_count=sr.inline_comment_count,
         )
         gr.scores["source_efficiency"] = calculate_source_eff_score(
-            config=config, source_instruction_count=sr.line_count
+            config=config, source_instruction_count=sr.instr_count
         )
         gr.scores["exec_efficiency"] = calculate_execution_eff_score(
             config=config, instructions_executed=sr.agg_exec_count

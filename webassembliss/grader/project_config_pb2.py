@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14project_config.proto\"\xdc\x01\n\x08TestCase\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x11\n\x07stdin_s\x18\x02 \x01(\tH\x00\x12\x11\n\x07stdin_b\x18\x03 \x01(\x0cH\x00\x12\x18\n\x0e\x65xpected_out_s\x18\x04 \x01(\tH\x01\x12\x18\n\x0e\x65xpected_out_b\x18\x05 \x01(\x0cH\x01\x12\x12\n\ntimeout_ms\x18\x06 \x01(\r\x12\x0f\n\x07\x63l_args\x18\x07 \x03(\t\x12\x0e\n\x06hidden\x18\x08 \x01(\x08\x12\x0e\n\x06points\x18\t \x01(\rB\r\n\x0bstdin_oneofB\x14\n\x12\x65xpected_out_oneof\"\x8c\x02\n\x1aMeasureSourceDocumentation\x12_\n\x1c\x63omments_to_instr_pct_points\x18\x01 \x03(\x0b\x32\x39.MeasureSourceDocumentation.CommentsToInstrPctPointsEntry\x12*\n\x1d\x63omments_to_instr_pct_default\x18\x02 \x01(\x01H\x00\x88\x01\x01\x1a?\n\x1d\x43ommentsToInstrPctPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42 \n\x1e_comments_to_instr_pct_default\"\xae\x01\n\x17MeasureSourceEfficiency\x12\x34\n\x06points\x18\x01 \x03(\x0b\x32$.MeasureSourceEfficiency.PointsEntry\x12\x1b\n\x0e\x64\x65\x66\x61ult_points\x18\x02 \x01(\x01H\x00\x88\x01\x01\x1a-\n\x0bPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42\x11\n\x0f_default_points\"\xe1\x01\n\x15MeasureExecEfficiency\x12\x35\n\x0b\x61ggregation\x18\x01 \x01(\x0e\x32 .ExecutedInstructionsAggregation\x12\x32\n\x06points\x18\x02 \x03(\x0b\x32\".MeasureExecEfficiency.PointsEntry\x12\x1b\n\x0e\x64\x65\x66\x61ult_points\x18\x03 \x01(\x01H\x00\x88\x01\x01\x1a-\n\x0bPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42\x11\n\x0f_default_points\"\xd4\x05\n\rProjectConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0brootfs_arch\x18\x02 \x01(\t\x12\x15\n\ruser_filename\x18\x03 \x01(\t\x12\x11\n\texec_name\x18\x04 \x01(\t\x12\x10\n\x08\x61s_flags\x18\x05 \x03(\t\x12\x10\n\x08ld_flags\x18\x06 \x03(\t\x12\x18\n\x05tests\x18\x07 \x03(\x0b\x32\t.TestCase\x12\x1f\n\x17stop_on_first_test_fail\x18\x08 \x01(\x08\x12\x1b\n\x13must_pass_all_tests\x18\t \x01(\x08\x12.\n\x04\x64ocs\x18\n \x01(\x0b\x32\x1b.MeasureSourceDocumentationH\x00\x88\x01\x01\x12\x31\n\nsource_eff\x18\x0b \x01(\x0b\x32\x18.MeasureSourceEfficiencyH\x01\x88\x01\x01\x12-\n\x08\x65xec_eff\x18\x0c \x01(\x0b\x32\x16.MeasureExecEfficiencyH\x02\x88\x01\x01\x12,\n\x07weights\x18\r \x03(\x0b\x32\x1b.ProjectConfig.WeightsEntry\x12<\n\x10\x65xtra_text_files\x18\x0e \x03(\x0b\x32\".ProjectConfig.ExtraTextFilesEntry\x12:\n\x0f\x65xtra_bin_files\x18\x0f \x03(\x0b\x32!.ProjectConfig.ExtraBinFilesEntry\x1a.\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x1a\x35\n\x13\x45xtraTextFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x34\n\x12\x45xtraBinFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42\x07\n\x05_docsB\r\n\x0b_source_effB\x0b\n\t_exec_eff\"m\n\x0eWrappedProject\x12\x10\n\x08\x63hecksum\x18\x01 \x01(\x0c\x12.\n\x0f\x63ompression_alg\x18\x02 \x01(\x0e\x32\x15.CompressionAlgorithm\x12\x19\n\x11\x63ompressed_config\x18\x03 \x01(\x0c*z\n\x1f\x45xecutedInstructionsAggregation\x12/\n+EXECUTEDINSTRUCTIONSAGGREGATION_UNSPECIFIED\x10\x00\x12\x07\n\x03SUM\x10\x01\x12\x0b\n\x07\x41VERAGE\x10\x02\x12\x07\n\x03MAX\x10\x03\x12\x07\n\x03MIN\x10\x04*E\n\x14\x43ompressionAlgorithm\x12$\n COMPRESSIONALGORITHM_UNSPECIFIED\x10\x00\x12\x07\n\x03\x42Z2\x10\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14project_config.proto\"\xdc\x01\n\x08TestCase\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x11\n\x07stdin_s\x18\x02 \x01(\tH\x00\x12\x11\n\x07stdin_b\x18\x03 \x01(\x0cH\x00\x12\x18\n\x0e\x65xpected_out_s\x18\x04 \x01(\tH\x01\x12\x18\n\x0e\x65xpected_out_b\x18\x05 \x01(\x0cH\x01\x12\x12\n\ntimeout_ms\x18\x06 \x01(\r\x12\x0f\n\x07\x63l_args\x18\x07 \x03(\t\x12\x0e\n\x06hidden\x18\x08 \x01(\x08\x12\x0e\n\x06points\x18\t \x01(\rB\r\n\x0bstdin_oneofB\x14\n\x12\x65xpected_out_oneof\"\xf4\x03\n\x1aMeasureSourceDocumentation\x12_\n\x1c\x63omments_to_instr_pct_points\x18\x01 \x03(\x0b\x32\x39.MeasureSourceDocumentation.CommentsToInstrPctPointsEntry\x12*\n\x1d\x63omments_to_instr_pct_default\x18\x02 \x01(\x01H\x00\x88\x01\x01\x12\\\n\x1ainline_comments_pct_points\x18\x03 \x03(\x0b\x32\x38.MeasureSourceDocumentation.InlineCommentsPctPointsEntry\x12(\n\x1binline_comments_pct_default\x18\x04 \x01(\x01H\x01\x88\x01\x01\x1a?\n\x1d\x43ommentsToInstrPctPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x1a>\n\x1cInlineCommentsPctPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42 \n\x1e_comments_to_instr_pct_defaultB\x1e\n\x1c_inline_comments_pct_default\"\xae\x01\n\x17MeasureSourceEfficiency\x12\x34\n\x06points\x18\x01 \x03(\x0b\x32$.MeasureSourceEfficiency.PointsEntry\x12\x1b\n\x0e\x64\x65\x66\x61ult_points\x18\x02 \x01(\x01H\x00\x88\x01\x01\x1a-\n\x0bPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42\x11\n\x0f_default_points\"\xe1\x01\n\x15MeasureExecEfficiency\x12\x35\n\x0b\x61ggregation\x18\x01 \x01(\x0e\x32 .ExecutedInstructionsAggregation\x12\x32\n\x06points\x18\x02 \x03(\x0b\x32\".MeasureExecEfficiency.PointsEntry\x12\x1b\n\x0e\x64\x65\x66\x61ult_points\x18\x03 \x01(\x01H\x00\x88\x01\x01\x1a-\n\x0bPointsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\r\n\x05value\x18\x02 \x01(\x01:\x02\x38\x01\x42\x11\n\x0f_default_points\"\xd4\x05\n\rProjectConfig\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x13\n\x0brootfs_arch\x18\x02 \x01(\t\x12\x15\n\ruser_filename\x18\x03 \x01(\t\x12\x11\n\texec_name\x18\x04 \x01(\t\x12\x10\n\x08\x61s_flags\x18\x05 \x03(\t\x12\x10\n\x08ld_flags\x18\x06 \x03(\t\x12\x18\n\x05tests\x18\x07 \x03(\x0b\x32\t.TestCase\x12\x1f\n\x17stop_on_first_test_fail\x18\x08 \x01(\x08\x12\x1b\n\x13must_pass_all_tests\x18\t \x01(\x08\x12.\n\x04\x64ocs\x18\n \x01(\x0b\x32\x1b.MeasureSourceDocumentationH\x00\x88\x01\x01\x12\x31\n\nsource_eff\x18\x0b \x01(\x0b\x32\x18.MeasureSourceEfficiencyH\x01\x88\x01\x01\x12-\n\x08\x65xec_eff\x18\x0c \x01(\x0b\x32\x16.MeasureExecEfficiencyH\x02\x88\x01\x01\x12,\n\x07weights\x18\r \x03(\x0b\x32\x1b.ProjectConfig.WeightsEntry\x12<\n\x10\x65xtra_text_files\x18\x0e \x03(\x0b\x32\".ProjectConfig.ExtraTextFilesEntry\x12:\n\x0f\x65xtra_bin_files\x18\x0f \x03(\x0b\x32!.ProjectConfig.ExtraBinFilesEntry\x1a.\n\x0cWeightsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\r:\x02\x38\x01\x1a\x35\n\x13\x45xtraTextFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x1a\x34\n\x12\x45xtraBinFilesEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42\x07\n\x05_docsB\r\n\x0b_source_effB\x0b\n\t_exec_eff\"m\n\x0eWrappedProject\x12\x10\n\x08\x63hecksum\x18\x01 \x01(\x0c\x12.\n\x0f\x63ompression_alg\x18\x02 \x01(\x0e\x32\x15.CompressionAlgorithm\x12\x19\n\x11\x63ompressed_config\x18\x03 \x01(\x0c*z\n\x1f\x45xecutedInstructionsAggregation\x12/\n+EXECUTEDINSTRUCTIONSAGGREGATION_UNSPECIFIED\x10\x00\x12\x07\n\x03SUM\x10\x01\x12\x0b\n\x07\x41VERAGE\x10\x02\x12\x07\n\x03MAX\x10\x03\x12\x07\n\x03MIN\x10\x04*E\n\x14\x43ompressionAlgorithm\x12$\n COMPRESSIONALGORITHM_UNSPECIFIED\x10\x00\x12\x07\n\x03\x42Z2\x10\x01\x62\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'project_config_pb2', globals())
@@ -22,6 +22,8 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   DESCRIPTOR._options = None
   _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._options = None
   _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._serialized_options = b'8\001'
+  _MEASURESOURCEDOCUMENTATION_INLINECOMMENTSPCTPOINTSENTRY._options = None
+  _MEASURESOURCEDOCUMENTATION_INLINECOMMENTSPCTPOINTSENTRY._serialized_options = b'8\001'
   _MEASURESOURCEEFFICIENCY_POINTSENTRY._options = None
   _MEASURESOURCEEFFICIENCY_POINTSENTRY._serialized_options = b'8\001'
   _MEASUREEXECEFFICIENCY_POINTSENTRY._options = None
@@ -32,32 +34,34 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _PROJECTCONFIG_EXTRATEXTFILESENTRY._serialized_options = b'8\001'
   _PROJECTCONFIG_EXTRABINFILESENTRY._options = None
   _PROJECTCONFIG_EXTRABINFILESENTRY._serialized_options = b'8\001'
-  _EXECUTEDINSTRUCTIONSAGGREGATION._serialized_start=1761
-  _EXECUTEDINSTRUCTIONSAGGREGATION._serialized_end=1883
-  _COMPRESSIONALGORITHM._serialized_start=1885
-  _COMPRESSIONALGORITHM._serialized_end=1954
+  _EXECUTEDINSTRUCTIONSAGGREGATION._serialized_start=1993
+  _EXECUTEDINSTRUCTIONSAGGREGATION._serialized_end=2115
+  _COMPRESSIONALGORITHM._serialized_start=2117
+  _COMPRESSIONALGORITHM._serialized_end=2186
   _TESTCASE._serialized_start=25
   _TESTCASE._serialized_end=245
   _MEASURESOURCEDOCUMENTATION._serialized_start=248
-  _MEASURESOURCEDOCUMENTATION._serialized_end=516
-  _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._serialized_start=419
-  _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._serialized_end=482
-  _MEASURESOURCEEFFICIENCY._serialized_start=519
-  _MEASURESOURCEEFFICIENCY._serialized_end=693
-  _MEASURESOURCEEFFICIENCY_POINTSENTRY._serialized_start=629
-  _MEASURESOURCEEFFICIENCY_POINTSENTRY._serialized_end=674
-  _MEASUREEXECEFFICIENCY._serialized_start=696
-  _MEASUREEXECEFFICIENCY._serialized_end=921
-  _MEASUREEXECEFFICIENCY_POINTSENTRY._serialized_start=629
-  _MEASUREEXECEFFICIENCY_POINTSENTRY._serialized_end=674
-  _PROJECTCONFIG._serialized_start=924
-  _PROJECTCONFIG._serialized_end=1648
-  _PROJECTCONFIG_WEIGHTSENTRY._serialized_start=1456
-  _PROJECTCONFIG_WEIGHTSENTRY._serialized_end=1502
-  _PROJECTCONFIG_EXTRATEXTFILESENTRY._serialized_start=1504
-  _PROJECTCONFIG_EXTRATEXTFILESENTRY._serialized_end=1557
-  _PROJECTCONFIG_EXTRABINFILESENTRY._serialized_start=1559
-  _PROJECTCONFIG_EXTRABINFILESENTRY._serialized_end=1611
-  _WRAPPEDPROJECT._serialized_start=1650
-  _WRAPPEDPROJECT._serialized_end=1759
+  _MEASURESOURCEDOCUMENTATION._serialized_end=748
+  _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._serialized_start=555
+  _MEASURESOURCEDOCUMENTATION_COMMENTSTOINSTRPCTPOINTSENTRY._serialized_end=618
+  _MEASURESOURCEDOCUMENTATION_INLINECOMMENTSPCTPOINTSENTRY._serialized_start=620
+  _MEASURESOURCEDOCUMENTATION_INLINECOMMENTSPCTPOINTSENTRY._serialized_end=682
+  _MEASURESOURCEEFFICIENCY._serialized_start=751
+  _MEASURESOURCEEFFICIENCY._serialized_end=925
+  _MEASURESOURCEEFFICIENCY_POINTSENTRY._serialized_start=861
+  _MEASURESOURCEEFFICIENCY_POINTSENTRY._serialized_end=906
+  _MEASUREEXECEFFICIENCY._serialized_start=928
+  _MEASUREEXECEFFICIENCY._serialized_end=1153
+  _MEASUREEXECEFFICIENCY_POINTSENTRY._serialized_start=861
+  _MEASUREEXECEFFICIENCY_POINTSENTRY._serialized_end=906
+  _PROJECTCONFIG._serialized_start=1156
+  _PROJECTCONFIG._serialized_end=1880
+  _PROJECTCONFIG_WEIGHTSENTRY._serialized_start=1688
+  _PROJECTCONFIG_WEIGHTSENTRY._serialized_end=1734
+  _PROJECTCONFIG_EXTRATEXTFILESENTRY._serialized_start=1736
+  _PROJECTCONFIG_EXTRATEXTFILESENTRY._serialized_end=1789
+  _PROJECTCONFIG_EXTRABINFILESENTRY._serialized_start=1791
+  _PROJECTCONFIG_EXTRABINFILESENTRY._serialized_end=1843
+  _WRAPPEDPROJECT._serialized_start=1882
+  _WRAPPEDPROJECT._serialized_end=1991
 # @@protoc_insertion_point(module_scope)

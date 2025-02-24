@@ -51,8 +51,9 @@ class SubmissionResults:
     files: Dict[str, str]
     project_name: str
     project_checksum64: str
-    line_count: int = 0
-    pct_comment_only_lines: float = 0.0
+    instr_count: int = 0
+    comment_only_lines: int = 0
+    inline_comment_count: int = 0
     agg_exec_count: int = 0
     received_test_points: int = 0
     max_test_points: int = 0
@@ -72,7 +73,8 @@ class GraderResults:
     weights: Dict[str, float] = field(default_factory=dict)
     tests: List[TestCaseResults] = field(default_factory=list)
     test_diffs: List[str] = field(default_factory=list)
-    docs_points: List[Tuple[str, float]] = field(default_factory=list)
+    comment_only_points: List[Tuple[str, float]] = field(default_factory=list)
+    inline_comments_points: List[Tuple[str, float]] = field(default_factory=list)
     source_points: List[Tuple[str, float]] = field(default_factory=list)
     exec_points: List[Tuple[str, float]] = field(default_factory=list)
     exec_agg_method: str = ""
@@ -84,7 +86,8 @@ class ArchConfig:
     workdir: str
     as_cmd: str
     ld_cmd: str
-    line_count_fun: Callable[[Union[PathLike, str]], int]
+    instr_count_fun: Callable[[Union[PathLike, str]], int]
+    inline_comment_tokens: List[str]
 
 
 def create_checksum(buff: bytes) -> bytes:
@@ -224,7 +227,8 @@ ROOTFS_MAP = {
         workdir="userprograms",
         as_cmd=ARM64_LINUX_AS,
         ld_cmd=ARM64_LINUX_LD,
-        line_count_fun=ARM64_LINUX_COUNT_FUN,
+        instr_count_fun=ARM64_LINUX_COUNT_FUN,
+        inline_comment_tokens=["/*", "//"],
     )
 }
 

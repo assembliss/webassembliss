@@ -25,11 +25,16 @@ message TestCase {
 // points are grade distributions, where key is a cutoff and val the percentage;
 //  - e.g., {50: 1, 30: 0.75, ...}, where x>=50 is 100%, 50>x>=30 is 75%, etc;
 // comments_to_instr defines 'points' for the ratio of the number of comment-only
-//    lines in the source file compared to the number of instruction lines.
+//    lines in the source file compared to the number of instruction lines;
+// default_points is pct assigned to a value of x that didn't meet any cutoff;
+// inline_comments_pct defines 'points' for the pct of the instruction lines
+//    in the source file that have inline comments;
 // default_points is pct assigned to a value of x that didn't meet any cutoff.
 message MeasureSourceDocumentation {
   map<uint32, double> comments_to_instr_pct_points = 1;
   optional double comments_to_instr_pct_default = 2;
+  map<uint32, double> inline_comments_pct_points = 3;
+  optional double inline_comments_pct_default = 4;
 }
 
 // Message with information on how to measure the source code efficiency.

@@ -82,11 +82,16 @@ tc5.points = 1
 #
 # Create a grading rubric for documentation score.
 #
-config.docs.comments_to_instr_pct_points[50] = 1
-config.docs.comments_to_instr_pct_points[40] = 0.75
-config.docs.comments_to_instr_pct_points[30] = 0.5
-# pct < 30 would give docs.comments_to_instr_pct_default;
+config.docs.comments_to_instr_pct_points[55] = 1
+config.docs.comments_to_instr_pct_points[50] = 0.75
+config.docs.comments_to_instr_pct_points[45] = 0.5
+# pct < 45 would give docs.comments_to_instr_pct_default;
 # docs.comments_to_instr_pct_default is set to 0 if omitted.
+config.docs.inline_comments_pct_points[80] = 1
+config.docs.inline_comments_pct_points[70] = 0.75
+config.docs.inline_comments_pct_points[60] = 0.5
+# pct < 60 would give docs.inline_comments_pct_default;
+# docs.inline_comments_pct_default is set to 0 if omitted.
 
 
 #
