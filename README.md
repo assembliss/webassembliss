@@ -80,7 +80,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] preserve source code between refreshes
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
-- [ ] allow user to change registers shown
+- [x] allow user to change registers shown
 - [ ] allow user to change memory area shown
 - [ ] give user option to delete old debugging session and start a new one
 - [ ] handle no available ports for a new debugger session

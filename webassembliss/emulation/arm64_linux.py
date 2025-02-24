@@ -141,14 +141,14 @@ def emulate(
 
 
 def _parse_gdb_registers(
-    gdb_output: bytes, *, cpsr_only: bool = False
+    gdb_output: bytes, *, first_register: str, last_register: Optional[str] = None
 ) -> Dict[str, Tuple[int, bool]]:
     """Parses the result of an 'info regiters' command sent to an arm64 gdb session."""
     # Clean the gdb interaction and only keep the register values.
     lines = clean_gdb_output(
         gdb_output=gdb_output,
-        first_line_token=f"(gdb) {'cpsr' if cpsr_only else 'x0'}",
-        last_line_token="(gdb) Detaching" if cpsr_only else "fpsr",
+        first_line_token=f"(gdb) {first_register}",
+        last_line_token="(gdb) Detaching" if last_register is None else last_register,
     )
     # Remove the '(gdb) ' prompt from the first relevant output line.
     lines[0] = lines[0][len("(gdb) ") :]
@@ -162,18 +162,27 @@ def _parse_gdb_registers(
     return out
 
 
-ARM64Registers_DI = DebuggingInfo(
-    key="registers",
-    cmds=["info registers"],
-    postprocess=lambda x: _parse_gdb_registers(x[0]),
-)
+def create_registers_DI(registers: Optional[List[str]]) -> DebuggingInfo:
+    """Create a DebuggingInfo object to retrieve the value of the given registers; if registers is None, retrieve all registers."""
+    if registers is None:
+        registers = []
+    return DebuggingInfo(
+        key="registers",
+        cmds=[f"info registers {' '.join(registers)}"],
+        postprocess=lambda x: _parse_gdb_registers(
+            x[0],
+            first_register=registers[0] if registers else "x0",
+            last_register=None if registers else "fpsr",
+        ),
+    )
+
 
 ARM64Flags_DI = DebuggingInfo(
     key="flags",
     cmds=["info register cpsr"],
     postprocess=lambda x: _parse_nzcv_from_cpsr(
         # Parsing the output of 'info register cpsr' from gdb to get only the value of the register.
-        _parse_gdb_registers(x[0], cpsr_only=True)["cpsr"][0]
+        _parse_gdb_registers(x[0], first_register="cpsr")["cpsr"][0]
     ),
 )
 
@@ -195,6 +204,7 @@ def start_debugger(
     max_queue_size: int = 20,
     extraInfo: Optional[List[DebuggingInfo]] = None,
     workdir: Union[str, PathLike] = "userprograms",
+    registers_to_show: Optional[List[str]] = None,
 ) -> DebuggingResults:
     """Create a new debugging session with the given parameters."""
 
@@ -205,7 +215,7 @@ def start_debugger(
         # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
     if extraInfo is None:
-        extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
+        extraInfo = [LineNum_DI, create_registers_DI(registers_to_show), ARM64Flags_DI]
 
     # Create a session and return its information.
     return create_debugging_session(
@@ -234,12 +244,13 @@ def send_debug_cmd(
     breakpoint_source: str = "",
     breakpoint_line: int = 0,
     extraInfo: Optional[List[DebuggingInfo]] = None,
+    registers_to_show: Optional[List[str]] = None,
 ) -> DebuggingResults:
     """Create a new debugging session with the given parameters."""
 
     # Create default mutable values if needed.
     if extraInfo is None:
-        extraInfo = [LineNum_DI, ARM64Registers_DI, ARM64Flags_DI]
+        extraInfo = [LineNum_DI, create_registers_DI(registers_to_show), ARM64Flags_DI]
 
     # Send command with its arguments and return execution information.
     return debug_cmd(

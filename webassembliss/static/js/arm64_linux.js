@@ -363,15 +363,16 @@ function startDebugger() {
     window.editor.updateOptions({ readOnly: true });
 
     // TODO: actually start a debugging session.
-    var source_code = getSource();
-    var user_input = document.getElementById("inputBox").value;
+    let source_code = getSource();
+    let user_input = document.getElementById("inputBox").value;
+    let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/arm64_linux/debug/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true } }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true }, registers: registers }),
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
@@ -379,14 +380,15 @@ function startDebugger() {
 }
 
 function debuggerCommand(commands) {
-    var source_code = getSource();
-    var user_input = document.getElementById("inputBox").value;
+    let source_code = getSource();
+    let user_input = document.getElementById("inputBox").value;
+    let registers = document.getElementById("regsToShow").value;
     fetch('/arm64_linux/debug/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands, registers: registers }),
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
@@ -403,7 +405,7 @@ function stepDebug() {
 
 function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
-    var lineNum = prompt("Line number to toggle breakpoint:", "");
+    let lineNum = prompt("Line number to toggle breakpoint:", "");
     if (lineNum) {
         lineNum = parseInt(lineNum);
         debuggerCommand({ "command": 3, "breakpoint_line": lineNum });

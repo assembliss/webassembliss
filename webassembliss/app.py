@@ -153,6 +153,7 @@ def arm64_linux_debug():
     session["source_code"] = request.json["source_code"]
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
+    session["registers"] = request.json.get("registers", "")
     # Note that we need to have *something* stored in the session so the sid persists with the same user.
     user_signature = session.sid
     debugInfo = None
@@ -163,6 +164,7 @@ def arm64_linux_debug():
             code=session["source_code"],
             user_input=session["user_input"],
             cl_args=session["cl_args"],
+            registers_to_show=session["registers"].split(),
         )
 
     elif request.json["debug"].get("command", False):
@@ -174,6 +176,7 @@ def arm64_linux_debug():
             cmd=request.json["debug"]["command"],
             breakpoint_source=request.json["debug"].get("breakpoint_source", ""),
             breakpoint_line=request.json["debug"].get("breakpoint_line", 0),
+            registers_to_show=session["registers"].split(),
         )
 
     else:
