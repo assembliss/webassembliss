@@ -40,6 +40,52 @@ document.getElementById("fileUpload").addEventListener("change", function (uploa
     importCode();
 });
 
+const tabs = {
+    // Start at tab #2. Tab #1 already exists when the webpage is opened
+    count: 2,
+    addTab() {
+        let tabNum = this.count;
+        let newTab = document.createElement("input");
+        newTab.type = "button";
+        newTab.className = "tabBtn";
+        newTab.value = "test";
+        newTab.id = `tab${tabNum}Btn`;
+        newTab.onclick = () => openTab(tabNum);
+
+        let newTabX = document.createElement("input");
+        newTabX.type="button";
+        newTabX.className = "tabBtnX";
+        newTabX.value = "x";
+        newTabX.id = `tab${tabNum}BtnX`;
+        newTabX.onclick = () => closeTab(tabNum);
+
+
+        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+        this.count++;
+    }
+};
+
+/* This function should do the following:
+ * - Fetch the source code of current tab that is open.
+ * - Save the current source code to the currently opened file
+ * - Fetch the target file from the target tab.
+ * - Set the window.editor value to the source code of the target file.
+ * 
+ * MAJOR ISSUE: Where to temporarily hold the files? Cookies?
+ * 
+*/
+function openTab(tabNum) {
+    window.editor.value
+    window.editor.setValue()
+}
+
+/* TODO: Before closing a tab, a check should occur to make sure it was saved. */
+function closeTab(tabNum) {
+    document.getElementById(`tab${tabNum}Btn`).remove();
+    document.getElementById(`tab${tabNum}BtnX`).remove();
+}
+
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
     console.log(file);
@@ -217,7 +263,11 @@ function runCode() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, registers: registers }),
+        body: JSON.stringify({ 
+            source_code: source_code, 
+            user_input: user_input, 
+            cl_args: window.cl_args, 
+            registers: registers }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
