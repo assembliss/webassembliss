@@ -40,6 +40,13 @@ document.getElementById("fileUpload").addEventListener("change", function (uploa
     importCode();
 });
 
+const currentTab = {
+    num: 1,
+    change(target) {
+        num = target;
+    }
+};
+
 const tabs = {
     // Start at tab #2. Tab #1 already exists when the webpage is opened
     count: 2,
@@ -48,7 +55,7 @@ const tabs = {
         let newTab = document.createElement("input");
         newTab.type = "button";
         newTab.className = "tabBtn";
-        newTab.value = "test";
+        newTab.value = `Tab${tabNum}`;
         newTab.id = `tab${tabNum}Btn`;
         newTab.onclick = () => openTab(tabNum);
 
@@ -72,18 +79,20 @@ const tabs = {
  * - Fetch the target file from the target tab.
  * - Set the window.editor value to the source code of the target file.
  * 
- * MAJOR ISSUE: Where to temporarily hold the files? Cookies?
- * 
+ * MAJOR ISSUE: Where to temporarily hold the files? Cookies? How do you then reference that?
+ * A new class/const needs to be defined containing source code and tab titles but I need guidance on that.
 */
 function openTab(tabNum) {
-    window.editor.value
+    currentTab.change(tabNum);
+    window.editor.value;
     window.editor.setValue()
 }
 
-/* TODO: Before closing a tab, a check should occur to make sure it was saved. */
+/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. */
 function closeTab(tabNum) {
     document.getElementById(`tab${tabNum}Btn`).remove();
     document.getElementById(`tab${tabNum}BtnX`).remove();
+    // Also, if current tab is open when this function is ran, swap to another tab.
 }
 
 function importCode() {
@@ -254,6 +263,7 @@ function runCode() {
     // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
+    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
