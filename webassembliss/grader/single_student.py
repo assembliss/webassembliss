@@ -152,8 +152,7 @@ def find_inline_comments_count(
         "--quiet",
         src_path,
     ]
-    # TODO: hide the output of this command.
-    run(args=cloc_command)
+    run(args=cloc_command, capture_output=True)
 
     # Read both files so we can compare their lines.
     with open(src_path) as original_file, open(f"{src_path}.nc") as stripped_file:
