@@ -5,12 +5,14 @@ import sys
 
 sys.path.insert(1, "/webassembliss/grader")
 
-from hashlib import sha256
 from bz2 import compress
+from hashlib import sha256
+
 from project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
     ProjectConfig,
+    TargetArchitecture,
     WrappedProject,
 )
 
@@ -24,8 +26,8 @@ config = ProjectConfig()
 # Set basic info
 #
 config.name = "Hello World Project (yesMustPass-yesSkip)"
-config.rootfs_arch = "ARM64"
-config.user_filename = "hello.S"
+config.arch = TargetArchitecture.ARM64
+config.required_files.append("hello.S")
 config.exec_name = "hello.exe"
 config.as_flags.append("-o")
 config.ld_flags.append("-o")

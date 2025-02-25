@@ -3,6 +3,12 @@ syntax = "proto3";
 // This file can be compiled with: protoc project_config.proto --python_out=.
 // That will generate the project_config_pb2.py file that we can import in the python backend.
 
+// Define available architectures for the grader.
+enum TargetArchitecture {
+  TARGETARCHITECTURE_UNSPECIFIED = 0;
+  ARM64 = 1;
+}
+
 // Message to hold information for a single test case.
 // You can use a C-driver to test student code without stdin/stdout.
 message TestCase {
@@ -70,8 +76,8 @@ message MeasureExecEfficiency {
 // Message to hold all the information regarding the project.
 message ProjectConfig {
   string name = 1;
-  string rootfs_arch = 2;
-  string user_filename = 3;
+  TargetArchitecture arch = 2;
+  repeated string required_files = 3;
   string exec_name = 4;
   repeated string as_flags = 5;
   repeated string ld_flags = 6;

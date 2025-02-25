@@ -1,12 +1,13 @@
 # This script can be used to validate results file(s) with a project config.
 # Example usage:
 #   python -m webassembliss.grader.validate_results \
-#          -p "/webassembliss/examples/grader/configs/helloProject_yesMustPass_yesSkip.pb2" \
+#          -p "/webassembliss/examples/grader/configs/helloProject_noMustPass_noSkip.pb2" \
 #          -s "/webassembliss/examples/grader/results/HelloWorldProject(noMustPass-noSkip)_tone_results.json" \
 #          -s "/webassembliss/examples/grader/results/HelloWorldProject(noMustPass-yesSkip)_ttwo_results.json" \
 #          -s "/webassembliss/examples/grader/results/HelloWorldProject(yesMustPass-noSkip)_tthree_results.json" \
 #          -s "/webassembliss/examples/grader/results/HelloWorldProject(yesMustPass-yesSkip)_tfour_results.json" \
-#          -s "/webassembliss/examples/grader/results/invalid_results.json" \
+#          -s "/webassembliss/examples/grader/results/invalid_score.json" \
+#          -s "/webassembliss/examples/grader/results/invalid_project.json" \
 #          -z "/webassembliss/examples/grader/results/exampleMoodleZipAll.zip" \
 #          -z "/webassembliss/examples/grader/results/exampleUnformattedZipOneTwo.zip" \
 #          -o "/webassembliss/examples/grader/test-out.csv"
@@ -61,7 +62,7 @@ def validate_submissions(
     logger.info("Validation start.")
 
     # Create headers.
-    out = "count,name,id,timestamp,project_match,checksum_match,reported_score,actual_score,score_match,any_invalid\n"
+    out = "count,path,name,id,timestamp,project_match,checksum_match,reported_score,actual_score,score_match,any_invalid\n"
 
     # Check each submission individually.
     for i, s_path in enumerate(submissions):
@@ -73,7 +74,7 @@ def validate_submissions(
             s = SubmissionResults.from_json(file_in.read())  # type: ignore[attr-defined]
 
         # Basic submission info.
-        out += f"{i+1},{s.name},{s.ID},{s.timestamp},"
+        out += f"{i+1},{s_path},{s.name},{s.ID},{s.timestamp},"
         logger.info(f"Student info: {s.name} ({s.ID})")
         logger.info(f"Submission time: {s.timestamp})")
 

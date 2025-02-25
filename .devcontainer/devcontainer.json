@@ -21,7 +21,9 @@
 				"ms-python.python",
 				"ms-python.black-formatter",
 				"ms-python.isort",
-				"ms-python.mypy-type-checker"
+				"ms-python.mypy-type-checker",
+				"plex.vscode-protolint",
+				"zxh404.vscode-proto3"
 			],
 			"settings": {
 				// Sets zsh as the default terminal for the dev container.

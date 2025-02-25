@@ -337,10 +337,12 @@ def grade_student(
     # TODO: remove this block once we can assemble/link multiple files together.
     assert len(student_files) == 1
     # TODO: allow project to require multiple files.
-    assert config.user_filename in student_files
+    assert len(config.required_files) == 1
+    for required_file in config.required_files:
+        assert required_file in student_files
 
     # Find config for the project architecture
-    arch = ROOTFS_MAP[config.rootfs_arch]
+    arch = ROOTFS_MAP[config.arch]
 
     # Create a tempdir to run the user code
     with TemporaryDirectory(dir=join(arch.rootfs, arch.workdir)) as tmpdirname:
@@ -348,8 +350,8 @@ def grade_student(
         create_extra_files(tmpdirname, config)
 
         # Create source file in temp directory
-        src_path = join(tmpdirname, config.user_filename)
-        create_text_file(src_path, student_files[config.user_filename])
+        src_path = join(tmpdirname, config.required_files[0])
+        create_text_file(src_path, student_files[config.required_files[0]])
 
         # Assemble source file
         obj_path = f"{src_path}.o"
@@ -444,6 +446,7 @@ if __name__ == "__main__":
     source_name = "hello.S"
     source_path = join(example_path, source_name)
     config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
+    config_path = join(example_path, "example_project_config.pb2")
     with open(config_path, "rb") as config_fp, open(source_path) as source_fp:
         config = WrappedProject()
         config.ParseFromString(config_fp.read())

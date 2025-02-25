@@ -20,6 +20,7 @@ from .project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
     ProjectConfig,
+    TargetArchitecture,
     TestCase,
     WrappedProject,
 )
@@ -222,7 +223,7 @@ def create_test_diff(test: TestCase) -> str:
 
 # Maps possible rootfs values from project_configs into relevant commands and functions.
 ROOTFS_MAP = {
-    "ARM64": ArchConfig(
+    TargetArchitecture.ARM64: ArchConfig(
         rootfs=ARM64_LINUX_ROOTFS,
         workdir="userprograms",
         as_cmd=ARM64_LINUX_AS,
