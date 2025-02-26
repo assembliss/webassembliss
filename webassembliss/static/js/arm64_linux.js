@@ -40,12 +40,43 @@ document.getElementById("fileUpload").addEventListener("change", function (uploa
     importCode();
 });
 
+
 const currentTab = {
     num: 1,
     change(target) {
-        num = target;
+        this.num = target;
     }
 };
+
+/* This function should do the following:
+ * - Fetch the source code of current tab that is open.
+ * - Save the current source code to the currently opened file
+ * - Store the source code of the previous tab in a cookie
+ * - Fetch the target file from the target tab's cookie
+ * - Set the window.editor value to the source code of the target cookie
+ * 
+ * MAJOR ISSUE: Where to temporarily hold the files? Cookies? How do you then reference that?
+ * A new class/const needs to be defined containing source code and tab titles but I need guidance on that.
+*/
+function openTab(tabNum) {
+    if (currentTab.num == tabNum) {
+        // TODO: Implement a tab renaming system (and make it look good... yikes!)
+        alert("rename temp");
+    } else {
+        currentTab.change(tabNum);
+        window.editor.value;
+    }
+}
+
+/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. */
+function closeTab(tabNum) {
+    document.getElementById(`tab${tabNum}Btn`).remove();
+    document.getElementById(`tab${tabNum}BtnX`).remove();
+
+    if (currentTab.num == tabNum) {
+    // Also, if current tab is open when this function is ran, swap to another tab.
+    }
+}
 
 const tabs = {
     // Start at tab #2. Tab #1 already exists when the webpage is opened
@@ -70,30 +101,9 @@ const tabs = {
         document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
         document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
         this.count++;
+        console.log("added tab")
     }
 };
-
-/* This function should do the following:
- * - Fetch the source code of current tab that is open.
- * - Save the current source code to the currently opened file
- * - Fetch the target file from the target tab.
- * - Set the window.editor value to the source code of the target file.
- * 
- * MAJOR ISSUE: Where to temporarily hold the files? Cookies? How do you then reference that?
- * A new class/const needs to be defined containing source code and tab titles but I need guidance on that.
-*/
-function openTab(tabNum) {
-    currentTab.change(tabNum);
-    window.editor.value;
-    window.editor.setValue()
-}
-
-/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. */
-function closeTab(tabNum) {
-    document.getElementById(`tab${tabNum}Btn`).remove();
-    document.getElementById(`tab${tabNum}BtnX`).remove();
-    // Also, if current tab is open when this function is ran, swap to another tab.
-}
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
