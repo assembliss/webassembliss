@@ -68,7 +68,9 @@ function openTab(tabNum) {
     }
 }
 
-/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. */
+/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
+ * TODO: Prevent last tab from being closed.
+ */
 function closeTab(tabNum) {
     document.getElementById(`tab${tabNum}Btn`).remove();
     document.getElementById(`tab${tabNum}BtnX`).remove();

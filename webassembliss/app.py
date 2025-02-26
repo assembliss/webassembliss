@@ -138,6 +138,29 @@ def arm64_linux_run():
         "info_obj": emu_results,
     }
 
+@app.route("/tab_manager/", methods=["POST", "GET"])
+def tab_manager(method):
+    if (method == "POST"):
+        # TODO: Parse JSON request, store file contents into session["user_files"]
+        if request.json is None:
+            return "No JSON data received", 400
+        if "source_code" not in request.json:
+            return "No source_code in JSON data", 400
+        if "user_files" not in session:
+            session["user_files"] = {}
+        
+        filename = request.json.get("filename")
+        if not filename:
+            return "No filename provided", 400
+
+        session["source_code"] = request.json["source_code"]
+        session["user_files"][filename].append(session["source_code"])
+
+
+
+    else: # method == "GET"
+        None
+
 
 @app.route("/arm64_linux/debug/", methods=["POST"])
 def arm64_linux_debug():
