@@ -50,6 +50,24 @@
       </div>
     </div>
 
+    <div class="modal fade" id="pleaseWaitModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="pleaseWaitModalTitle" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h1 class="modal-title fs-5" id="pleaseWaitModalTitle">Modal title</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" id="pleaseWaitModalBody"></div>
+          <div class="modal-footer">
+            <button class="btn btn-danger" type="button" disabled>
+              <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+              <span role="status" id="pleaseWaitModalStatus">Loading...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="page-content">{% block content %}{% endblock %}</div>
     <div id="footer" class="container">
         <footer class="py-3 my-4">

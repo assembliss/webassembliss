@@ -205,6 +205,8 @@ function detectAndHighlightErrors() {
 
 function runCode() {
     clearOutput();
+    // Create a floating message with a running message.
+    modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
     // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
@@ -239,7 +241,10 @@ function runCode() {
             detectAndHighlightErrors();
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
-        });
+        }).then(() =>
+            // TODO: make sure this runs even if the fetch above fails.
+            hideLoading(modal)
+        );
 }
 
 function setCLArgs() {
@@ -348,6 +353,7 @@ function updateDebuggingInfo(data) {
 function startDebugger() {
     // Clear any old information.
     clearOutput();
+    modal = showLoading('Debugger', 'Please wait for a debugging session to be created.', 'Starting...');
     // Enable active debugger buttons.
     document.getElementById("debugStop").disabled = false;
     document.getElementById("debugBreakpoint").disabled = false;
@@ -376,10 +382,13 @@ function startDebugger() {
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
-        });
+        }).then(() =>
+            // TODO: make sure this runs even if the fetch above fails.
+            hideLoading(modal)
+        );
 }
 
-function debuggerCommand(commands) {
+function debuggerCommand(commands, modal) {
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
@@ -392,29 +401,35 @@ function debuggerCommand(commands) {
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
-        });
+        }).then(() =>
+            // TODO: make sure this runs even if the fetch above fails.
+            hideLoading(modal)
+        );
 }
 
 function continueDebug() {
-    debuggerCommand({ "command": 1 });
+    modal = showLoading('Debugger', 'Please wait while we continue until the next breakpoint.', 'Continuing...');
+    debuggerCommand({ "command": 1 }, modal);
 }
 
 function stepDebug() {
-    debuggerCommand({ "command": 2 });
+    modal = showLoading('Debugger', 'Please wait while we step over this instruction.', 'Stepping...');
+    debuggerCommand({ "command": 2 }, modal);
 }
 
 function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
     let lineNum = prompt("Line number to toggle breakpoint:", "");
     if (lineNum) {
+        modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
         lineNum = parseInt(lineNum);
-        debuggerCommand({ "command": 3, "breakpoint_line": lineNum });
+        debuggerCommand({ "command": 3, "breakpoint_line": lineNum }, modal);
     }
 }
 
 function stopDebugger() {
     // Stop debugging session.
-    debuggerCommand({ "command": 4 });
+    debuggerCommand({ "command": 4 }, null);
     // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
     removeAllHighlights();
     // Disable active debugger buttons.
