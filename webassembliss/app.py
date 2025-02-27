@@ -138,10 +138,9 @@ def arm64_linux_run():
         "info_obj": emu_results,
     }
 
-@app.route("/tab_manager/", methods=["POST", "GET"])
+@app.route("/tab_manager/", methods=["POST", "GET", "DELETE"])
 def tab_manager(method):
     if (method == "POST"):
-        # TODO: Parse JSON request, store file contents into session["user_files"]
         if request.json is None:
             return "No JSON data received", 400
         if "source_code" not in request.json:
@@ -153,13 +152,40 @@ def tab_manager(method):
         if not filename:
             return "No filename provided", 400
 
+        if (len(request.json["source_code"]) > 5120):
+            return "Source code exceeds 5KB", 400
+
         session["source_code"] = request.json["source_code"]
+
+
+        # Shouldn't the line below be put AFTER the check for summed user file size?
+        # If put after, it isn't updated properly, but then the user can exceed the limit.
         session["user_files"][filename].append(session["source_code"])
+        
+        if (sum(len(c) for c in session["user_files"].values()) > 1024000):
+            return "User exceeded 100KB between all total files", 400
+        
+        return "Flask server file cookie added", 100
 
 
+    if (method == "GET"):
+        if request.json is None:
+            return "No JSON data received", 400
+        if "source_code" not in request.json:
+            return "No source_code in JSON data", 400
+        if "user_files" not in session:
+            session["user_files"] = {}
 
-    else: # method == "GET"
-        None
+        filename = request.json.get("filename")
+        if not filename:
+            return "No filename provided", 400
+
+        return session["user_files"][filename], 100
+    
+    if (method == "DELETE"):
+
+        del session["user_files"][filename]
+        return "Deleted flask server file cookie", 100
 
 
 @app.route("/arm64_linux/debug/", methods=["POST"])
