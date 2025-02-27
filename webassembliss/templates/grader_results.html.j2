@@ -3,14 +3,14 @@
 {% block content %}
   <div class="container">
     <div class="p-5 bg-body-tertiary rounded-3">
-      <h1 class="text-center text-body-emphasis">Grader Results</h1>
+      <h1 class="text-center text-body-emphasis display-4">Grader Results</h1>
       <div class="text-center">
         <button type="submit" class="btn btn-danger" onclick='parseJSONAndDownload("{{ results.submission.project_name | replace(" ","") }}_{{ results.submission.ID }}_results.json", {{ results.submission | tojson }})'>Download file for submission</button>
       </div>
       <hr>
-      <h2 class="text-center">Total Score: {{ "%.2f"| format(results.submission.total * 100) }}%</h2>
+      <h2 class="text-center display-6">Total Score: {{ "%.2f"| format(results.submission.total * 100) }}%</h2>
       <hr>
-      <h3>Detailed Breakdown</h3>
+      <h3 class="display-6">Detailed Breakdown</h3>
       <div class="accordion" id="accordionPanelsStayOpenExample">
         <div class="accordion-item">      
           <h2 class="accordion-header">
@@ -177,7 +177,7 @@
         </div>
       </div>
       <hr>
-      <h3>Test Cases</h3>
+      <h3 class="display-6">Test Cases</h3>
       <div class="accordion" id="testCasesAccordion">
         {% for i in range(results.tests|length) %}
           <div class="accordion-item">
