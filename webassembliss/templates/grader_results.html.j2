@@ -3,7 +3,7 @@
 {% block content %}
   <div class="container">
     <div class="p-5 bg-body-tertiary rounded-3">
-      <h1 class="text-center text-body-emphasis display-4">Grader Results</h1>
+      <h1 class="text-center display-4">Grader Results</h1>
       <div class="text-center">
         <button type="submit" class="btn btn-danger" onclick='parseJSONAndDownload("{{ results.submission.project_name | replace(" ","") }}_{{ results.submission.ID }}_results.json", {{ results.submission | tojson }})'>Download file for submission</button>
       </div>
