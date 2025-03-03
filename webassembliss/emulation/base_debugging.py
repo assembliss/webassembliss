@@ -163,6 +163,8 @@ def _setup_gdb_server(
 ) -> None:
     """Create a binary from the provided code into a tempdir and setup a gdb server to debug it."""
 
+    # TODO: Check how well this scales up; is 'threading' fine or should we create a new process?
+
     # Get thread-local data.
     mydata = threading.local()
     # Create a temp dir to store the user's code.
