@@ -158,30 +158,31 @@ def tab_manager():
     if filename not in session["user_files"]:
         session["user_files"][filename] = []
 
+
     if (method == "POST"):
 
-        # Check if source code of each file exceeds 5KB before adding the source code to source_code server cookies.
-        if (len(request.json["source_code"]) > 5120):
-            return "Source code exceeds 5KB", 400
-        
-        session["source_code"] = request.json["source_code"]
+        MAX_SINGLE_FILE_SIZE = 5_120
+        MAX_TOTAL_FILE_SIZE = 102_400
 
+        # Check if source code of each file exceeds 5KB before appending the source code to user_file server cookies.
+        if (len(request.json["source_code"]) > MAX_SINGLE_FILE_SIZE):
+            return "Single file exceeds 5KB", 400
         # Check if the size of the sum of the file size for all files exceeds 100KB before appending the source code to user_file server cookies.
-        if (len(request.json["source_code"]) + sum(len(c) for c in session["user_files"].values()) > 1024000):
+        if (len(request.json["source_code"]) + sum(len(c) for c in session["user_files"].values()) > MAX_TOTAL_FILE_SIZE):
             return "User exceeded 100KB between all total files", 400
         
-        session["user_files"][filename].append(session["source_code"])
+        session["user_files"][filename] = request.json["source_code"]
         
         # Success
         return "Flask server file cookie added", 200
 
 
-    if (method == "GET"):
+    elif (method == "GET"):
 
-        return session["user_files"][filename], 200
+        return {"filename": filename, "contents": session["user_files"][filename]}, 200
     
 
-    if (method == "DELETE"):
+    elif (method == "DELETE"):
         # Make sure the file exists in the user_files before attempting to delete the cookie.
         if filename not in session["user_files"]:
             return "File not found", 400
@@ -189,6 +190,7 @@ def tab_manager():
         del session["user_files"][filename]
         return "Deleted flask server file cookie", 200
     
+
     else:
         return "No method specified", 400
 
