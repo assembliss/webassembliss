@@ -48,23 +48,35 @@ const currentTab = {
     }
 };
 
-/* This function should do the following:
- * - Fetch the source code of current tab that is open.
- * - Save the current source code to the currently opened file
- * - Store the source code of the previous tab in a cookie
- * - Fetch the target file from the target tab's cookie
- * - Set the window.editor value to the source code of the target cookie
- * 
- * MAJOR ISSUE: Where to temporarily hold the files? Cookies? How do you then reference that?
- * A new class/const needs to be defined containing source code and tab titles but I need guidance on that.
-*/
+
 function openTab(tabNum) {
     if (currentTab.num == tabNum) {
         // TODO: Implement a tab renaming system (and make it look good... yikes!)
         alert("rename temp");
     } else {
+        // Save current tab contents
+        fetch('/tab_manager/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                filename: currentTab_filename, // add this var
+                contents: currentTab_contents, // add this var too
+            }),
+        }).then(() => {
+            // Ask for saved contents of new tab
+            // Apparently, some browsers completely block GET requests that have bodies, so URL parameters are used here instead.
+            fetch(`/tab_manager/?filename=${encodeURIComponent(newTab_filename)}`, { // add the var for newTab_filename
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }}).then(response => response.json())
+        }).then(data => {
+            // here data has the content you returned from the get method
+        })
         currentTab.change(tabNum);
-        window.editor.value;
+        window.editor.value = data.contents;
     }
 }
 
