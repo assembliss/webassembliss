@@ -52,6 +52,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] add a production deployment server
 - [ ] move these TODOs to the projects tab
 - [x] update Dockerfile to use newer python version
+- [ ] speedup docker build
 - [ ] add unit tests for all methods
 	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
 - [ ] CI/CD to auto-run tests on open PRs
