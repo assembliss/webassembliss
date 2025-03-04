@@ -490,6 +490,10 @@ def clean_emulation(
     er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
     # Create a temporary directory so space gets freed after we're done with user files.
+    # TODO: Create a "rootfs sandbox" to prevent user code to corrup app functionality.
+    #           1: create a tempdir in the usual OS location (i.e., remove dir argument below)
+    #           2: recursively copy the given rootfs_path into the new tempdir: https://docs.python.org/3/library/shutil.html#shutil.copytree
+    #           3: adjust code in the with statement below to use "{tmpdirname}/{rootfs_path}/" where applicable
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
         # Create path names pointing inside the temp dir.
         src_path = f"{tmpdirname}/{source_name}"
