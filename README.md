@@ -23,6 +23,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to debug code (continue, step, set breakpoint, see memory)
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
+- [ ] ensure that user code cannot modify rootfs base files; if it can, then make a copy of rootfs into the tempdir.
 - [ ] allow multiple sources to work together
 	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
