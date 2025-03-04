@@ -30,5 +30,9 @@ clArgs: clArgs.S
 	aarch64-linux-gnu-as clArgs.S -g --gdwarf-5 -o clArgs.o
 	aarch64-linux-gnu-ld clArgs.o -o clArgs.out -lc
 
+fileIO: fileIO.S
+	aarch64-linux-gnu-as fileIO.S -g --gdwarf-5 -o fileIO.o
+	aarch64-linux-gnu-ld fileIO.o -o fileIO.out -lc
+
 clean:
 	rm *.o *.out

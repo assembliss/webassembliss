@@ -10,6 +10,7 @@ if __name__ == "__main__":
         "multiExample.out",
         "cExample.out",
         "clArgs.out",
+        "fileIO.out",
     ]:
         print("\n\n---- ---- ---- ---- ----\n---- ---- ---- ---- ----\n")
         print(f"Emulating {program}:\n\n")
