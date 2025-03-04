@@ -29,6 +29,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow multiple sources to work together
 	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
+- [ ] show user output of a specific file they create/modify with their code
 - [ ] handle multiple architectures
 
 ### Grading Workflow
