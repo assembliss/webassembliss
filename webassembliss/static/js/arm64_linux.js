@@ -40,6 +40,102 @@ document.getElementById("fileUpload").addEventListener("change", function (uploa
     importCode();
 });
 
+
+const currentTab = {
+    num: 1,
+    change(target) {
+        this.num = target;
+    }
+};
+
+
+function openTab(tabNum) {
+    if (currentTab.num == tabNum) {
+        // TODO: Implement a tab renaming system (and make it look good... yikes!)
+        alert("rename temp");
+    } else {
+        // Save current tab contents
+
+        currentTab_filename = document.getElementById(`tab${currentTab.num}Btn`).value;
+        currentTab_contents = window.editor.getValue();
+
+        newTab_filename = document.getElementById(`tab${tabNum}Btn`).value;
+
+        console.log("currentTab name:",currentTab_filename);
+        console.log("editor:", window.editor)
+        console.log("currentTab length:", currentTab_contents.length);
+        console.log(newTab_filename);
+
+        fetch('/tab_manager/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                filename: currentTab_filename,
+                contents: currentTab_contents,
+            }),
+        }).then(() => {
+            // Ask for saved contents of new tab
+            // Apparently, some browsers completely block GET requests that have bodies, so URL parameters are used here instead.
+            return fetch(`/tab_manager/?filename=${encodeURIComponent(newTab_filename)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            }).then(response => response.json())
+        .then(data => {
+            if (data && data.contents) {
+                currentTab.change(tabNum);
+                window.editor.value = data.contents;
+            } else {
+                alert("Failed to load tab contents.");
+            }
+        });
+    }
+}
+
+/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
+ * TODO: Prevent last tab from being closed.
+ */
+function closeTab(tabNum) {
+    document.getElementById(`tab${tabNum}Btn`).remove();
+    document.getElementById(`tab${tabNum}BtnX`).remove();
+
+    if (currentTab.num == tabNum) {
+    // Also, if current tab is open when this function is ran, swap to another tab.
+    }
+}
+
+// THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
+const tabs = {
+    // Start at tab #2. Tab #1 already exists when the webpage is opened
+    count: 2,
+    addTab() {
+        let tabNum = this.count;
+        let newTab = document.createElement("input");
+        newTab.type = "button";
+        newTab.className = "tabBtn";
+        newTab.value = `Tab${tabNum}`;
+        newTab.id = `tab${tabNum}Btn`;
+        newTab.onclick = () => openTab(tabNum);
+
+        let newTabX = document.createElement("input");
+        newTabX.type="button";
+        newTabX.className = "tabBtnX";
+        newTabX.value = "x";
+        newTabX.id = `tab${tabNum}BtnX`;
+        newTabX.onclick = () => closeTab(tabNum);
+
+
+        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+        this.count++;
+        console.log("added tab")
+    }
+};
+
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
     console.log(file);
@@ -210,6 +306,7 @@ function runCode() {
     // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
+    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
@@ -219,7 +316,11 @@ function runCode() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, registers: registers }),
+        body: JSON.stringify({ 
+            source_code: source_code, 
+            user_input: user_input, 
+            cl_args: window.cl_args, 
+            registers: registers }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;

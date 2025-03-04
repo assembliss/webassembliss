@@ -29,9 +29,15 @@
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
     <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
     <input type="file" id="fileUpload" />
-    <input type="button" id="loadBtn" value="Load" onclick="importCode()" />
     <br/>
-    <div id="monaco-container" style="width:800px;height:600px;border:1px solid grey"></div>
+    <div id="tabsDiv" style="display: flex">
+    <input class="tabBtn" type="button" id="tab1Btn" value="Tab1" onclick="openTab(1)"/>
+    <input class="tabBtnX" type="button" id="tab1BtnX" value="x" onclick="closeTab(1)">
+    <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
+    </div>
+    
+    <div id="monaco-container" style="width:800px;height:600px;border:1px solid grey;border-top: 0px"></div>
+    
     <div>
         <b>Debug Menu:</b>
         <input type="button" id="debugStart" value="start" onclick="startDebugger()" />
