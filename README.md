@@ -51,7 +51,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- https://github.com/python/mypy
 - [x] add a production deployment server
 - [ ] move these TODOs to the projects tab
-- [ ] update Dockerfile to use newer python version
+- [x] update Dockerfile to use newer python version
 - [ ] add unit tests for all methods
 	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
 - [ ] CI/CD to auto-run tests on open PRs

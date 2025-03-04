@@ -1,14 +1,16 @@
-# TODO: update dockerfile to use a newer python version; qiling:1.4.6 uses py3.8, but qiling:latest doesn't quite work;
-#       will probably have to move to something like alpine/ubuntu and then install everything it needs.
-FROM qilingframework/qiling:1.4.6
+FROM ubuntu:24.04
+
+ARG PYTHON_VERSION="3.13"
 
 # Location of the gdb.py file that needs to be patched.
 # Ref: https://github.com/qilingframework/qiling/issues/1377
-ARG QL_GDB_PATH="/usr/local/lib/python3.8/site-packages/qiling/debugger/gdb/gdb.py"
+ARG QL_GDB_PATH="/usr/local/lib/python${PYTHON_VERSION}/dist-packages/qiling/debugger/gdb/gdb.py"
 
-# Install zsh + omzsh
-RUN apt update && \
-    apt install wget -y && \
+#
+# Install zsh + omzsh for developing in a devcontainer.
+#
+RUN apt-get update && \
+    apt-get install -y wget && \
     sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.1/zsh-in-docker.sh)" -- \
     -t candy \
     -p git \
@@ -16,9 +18,11 @@ RUN apt update && \
     -p https://github.com/zsh-users/zsh-completions \
     -p https://github.com/zsh-users/zsh-syntax-highlighting
 
+#
 # Install required tooling.
-RUN apt update && \
-    apt install -y \
+#
+RUN apt-get update && \
+    apt-get install -y \
     # arm64 toolchain (assemble/link arm64 assembly code)
     make gcc-aarch64-linux-gnu\
     # gdb-multiarch (for user debugging sessions)
@@ -30,7 +34,34 @@ RUN apt update && \
     # cloc to count source lines and comments
     cloc
 
-# Install required python packages
+#
+# Install python and pip for the selected version.
+#
+RUN apt install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt update && \
+    apt install -y python${PYTHON_VERSION} && \
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python${PYTHON_VERSION} get-pip.py
+
+#
+# Install python libraries
+#
+
+# Need to install keystone from source to avoid errors on macos >= 10.14 host;
+# ref: https://docs.qiling.io/en/latest/install/
+RUN apt install -y cmake g++ && \
+    git clone https://github.com/keystone-engine/keystone && \
+    cd keystone && \
+    mkdir build && \
+    cd build && \
+    ../make-share.sh && \
+    cd ../bindings/python && \
+    pip install setuptools && \
+    ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
+    make install
+
+# Install other requirements.
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt --break-system-packages
 
@@ -40,12 +71,15 @@ RUN pip install -r requirements.txt --break-system-packages
 #   3. adds a special command (i) that can return qiling's variables to the gdb client.
 COPY resources/qiling_debugger_gdb_gdb.py ${QL_GDB_PATH}
 
-# Copy the app code into the container and set the workdirectory to point to that.
+#
+# Copy the app code into the container.
+#
 COPY webassembliss /webassembliss
-WORKDIR /
 
 # You can uncomment the line below to set the backend to run in debug mode.
 # ENV FLASK_DEBUG=1
 
+#
 # Container command to serve flask app
+#
 CMD [ "gunicorn", "--config" , "webassembliss/gunicorn_config.py", "webassembliss.app:app"]
