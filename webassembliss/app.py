@@ -1,7 +1,7 @@
 from os import environ
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import Flask, abort, current_app, render_template, request, session
+from flask import Flask, abort, current_app, render_template, request, session, jsonify
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
 
@@ -143,56 +143,55 @@ def arm64_linux_run():
 def tab_manager():
     method = request.method
 
-    # Make sure json is formatted properly. Fix if user_files doesn't exist.
     if request.json is None:
-        return "No JSON data received", 400
-    if "source_code" not in request.json:
-        return "No source_code in JSON data", 400
+        return jsonify({"error": "No JSON data received"}), 400
     if "user_files" not in session:
         session["user_files"] = {}
-    
-    # Make sure filename exists and is fixed if not.
-    filename = request.json.get("filename")
-    if not filename:
-        return "No filename provided", 400
-    if filename not in session["user_files"]:
-        session["user_files"][filename] = []
 
-
-    if (method == "POST"):
-
-        MAX_SINGLE_FILE_SIZE = 5_120
-        MAX_TOTAL_FILE_SIZE = 102_400
-
-        # Check if source code of each file exceeds 5KB before appending the source code to user_file server cookies.
-        if (len(request.json["source_code"]) > MAX_SINGLE_FILE_SIZE):
-            return "Single file exceeds 5KB", 400
-        # Check if the size of the sum of the file size for all files exceeds 100KB before appending the source code to user_file server cookies.
-        if (len(request.json["source_code"]) + sum(len(c) for c in session["user_files"].values()) > MAX_TOTAL_FILE_SIZE):
-            return "User exceeded 100KB between all total files", 400
+    if method == "GET":
+        filename = request.args.get("filename")
+        if not filename:
+            return jsonify({"error": "No filename provided"}), 400
+        if "user_files" not in session or filename not in session["user_files"]:
+            session["user_files"][filename] = ""
         
-        session["user_files"][filename] = request.json["source_code"]
-        
-        # Success
-        return "Flask server file cookie added", 200
 
-
-    elif (method == "GET"):
-
-        return {"filename": filename, "contents": session["user_files"][filename]}, 200
-    
-
-    elif (method == "DELETE"):
-        # Make sure the file exists in the user_files before attempting to delete the cookie.
-        if filename not in session["user_files"]:
-            return "File not found", 400
-
-        del session["user_files"][filename]
-        return "Deleted flask server file cookie", 200
-    
+        return jsonify({"filename": filename, "contents": session["user_files"][filename]}), 200
 
     else:
-        return "No method specified", 400
+        # For POST and DELETE, expect JSON data.
+        
+        if "contents" not in request.json:
+            return jsonify({"error": "No contents in JSON data"}), 400
+        
+    
+        filename = request.json.get("filename")
+        if not filename:
+            return jsonify({"error": "No filename provided"}), 400
+
+        if method == "POST":
+            if filename not in session["user_files"]:
+                session["user_files"][filename] = []
+    
+            MAX_SINGLE_FILE_SIZE = 5_120
+            MAX_TOTAL_FILE_SIZE = 102_400
+    
+            if len(request.json["contents"]) > MAX_SINGLE_FILE_SIZE:
+                return jsonify({"error": "Single file exceeds 5KB"}), 400
+            if len(request.json["contents"]) + sum(len(c) for c in session["user_files"].values()) > MAX_TOTAL_FILE_SIZE:
+                return jsonify({"error": "User exceeded 100KB between all total files"}), 400
+            
+            session["user_files"][filename] = request.json["contents"]
+            return jsonify({"message": "Flask server file cookie added"}), 200
+
+        elif method == "DELETE":
+            if filename not in session["user_files"]:
+                return jsonify({"error": "File not found"}), 400
+            del session["user_files"][filename]
+            return jsonify({"message": "Deleted flask server file cookie"}), 200
+
+        else:
+            return jsonify({"error": "No method specified"}), 400
 
 
 @app.route("/arm64_linux/debug/", methods=["POST"])

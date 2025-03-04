@@ -55,28 +55,44 @@ function openTab(tabNum) {
         alert("rename temp");
     } else {
         // Save current tab contents
+
+        currentTab_filename = document.getElementById(`tab${currentTab.num}Btn`).value;
+        currentTab_contents = window.editor.getValue();
+
+        newTab_filename = document.getElementById(`tab${tabNum}Btn`).value;
+
+        console.log("currentTab name:",currentTab_filename);
+        console.log("editor:", window.editor)
+        console.log("currentTab length:", currentTab_contents.length);
+        console.log(newTab_filename);
+
         fetch('/tab_manager/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                filename: currentTab_filename, // add this var
-                contents: currentTab_contents, // add this var too
+                filename: currentTab_filename,
+                contents: currentTab_contents,
             }),
         }).then(() => {
             // Ask for saved contents of new tab
             // Apparently, some browsers completely block GET requests that have bodies, so URL parameters are used here instead.
-            fetch(`/tab_manager/?filename=${encodeURIComponent(newTab_filename)}`, { // add the var for newTab_filename
+            return fetch(`/tab_manager/?filename=${encodeURIComponent(newTab_filename)}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
-                }}).then(response => response.json())
-        }).then(data => {
-            // here data has the content you returned from the get method
-        })
-        currentTab.change(tabNum);
-        window.editor.value = data.contents;
+                }
+            });
+            }).then(response => response.json())
+        .then(data => {
+            if (data && data.contents) {
+                currentTab.change(tabNum);
+                window.editor.value = data.contents;
+            } else {
+                alert("Failed to load tab contents.");
+            }
+        });
     }
 }
 
