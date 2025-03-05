@@ -90,10 +90,12 @@ function openTab(tabNum) {
                 currentTabBtn.className = "tabBtn";
                 currentTabBtnX.className = "tabBtnX";
                 currentTabBtnX.disabled = false;
+                currentTabBtnX.removeAttribute("hidden");
                 // For the foreground tab, disable the close button and hide it.
                 newTabBtn.className = "activeTabBtn";
                 newTabBtnX.className = "activeTabBtnX";
                 newTabBtnX.disabled = true;
+                newTabBtnX.setAttribute("hidden", "hidden");
                 // Update active tab number.
                 currentTab.change(tabNum);
             });
