@@ -31,6 +31,11 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] handle multiple architectures
+ 	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
+	- [ ] [x8664_linux](https://github.com/qilingframework/rootfs/tree/master/x8664_linux_glibc2.39)
+ 	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
+	- [ ] [mips](https://github.com/qilingframework/rootfs/tree/master/mips32el_linux)
+	- [ ] [riscv](https://github.com/qilingframework/rootfs/tree/master/riscv64_linux)
 
 ### Grading Workflow
 - [x] allow testing of code (given input, expected output)
