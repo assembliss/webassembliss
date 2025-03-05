@@ -27,12 +27,12 @@
     <input type="button" id="runBtn" value="Run" onclick="runCode()" />
     <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />
     <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
-    <input type="button" id="saveBtn" value="Save" onclick='download_file("usrCode.S", getSource(), "text/plain")'  />
+    <input type="button" id="saveBtn" value="Save" onclick="downloadCurrentTab()" />
     <input type="file" id="fileUpload" />
     <br/>
     <div id="tabsDiv" style="display: flex">
-    <input class="tabBtn" type="button" id="tab1Btn" value="Tab1" onclick="openTab(1)"/>
-    <input class="tabBtnX" type="button" id="tab1BtnX" value="x" onclick="closeTab(1)">
+    <input class="activeTabBtn" type="button" id="tab1Btn" value="Tab1" onclick="openTab(1)"/>
+    <input class="activeTabBtnX" type="button" id="tab1BtnX" value="x" onclick="closeTab(1)" disabled="true" hidden="hidden"/>
     <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
     </div>
     
