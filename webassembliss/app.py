@@ -109,7 +109,7 @@ def arm64_linux_run():
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
 
-    session["source_code"] = request.json["source_code"]
+    session["source_code"] = {"userInput": request.json["source_code"]}
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
     session["registers"] = request.json.get("registers", "")

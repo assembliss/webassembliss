@@ -465,16 +465,13 @@ def timed_emulation(
 
 def clean_emulation(
     *,  # force naming arguments
-    code: str,
+    code: Dict[str, str],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
     as_flags: List[str],
     ld_flags: List[str],
     stdin: BytesIO,
-    source_name: str,
-    obj_name: str,
-    bin_name: str,
     registers: List[str],
     cl_args: List[str],
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
@@ -486,37 +483,41 @@ def clean_emulation(
 ) -> EmulationResults:
     # TODO: add tests to make sure this function works as expected.
 
-    # Create a result object that will return the status of each step of the run process.
-    er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
-
     # Create a temporary directory so space gets freed after we're done with user files.
     # TODO: Create a "rootfs sandbox" to prevent user code to corrup app functionality.
     #           1: create a tempdir in the usual OS location (i.e., remove dir argument below)
     #           2: recursively copy the given rootfs_path into the new tempdir: https://docs.python.org/3/library/shutil.html#shutil.copytree
     #           3: adjust code in the with statement below to use "{tmpdirname}/{rootfs_path}/" where applicable
     with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
-        # Create path names pointing inside the temp dir.
-        src_path = f"{tmpdirname}/{source_name}"
-        obj_path = f"{tmpdirname}/{obj_name}"
-        bin_path = f"{tmpdirname}/{bin_name}"
+        erDict = {}
+        for filename in code.keys():
+            # Create path names pointing inside the temp dir.
+            src_path = f"{tmpdirname}/{filename}.S"
+            obj_path = f"{tmpdirname}/{filename}.o"
+            bin_path = f"{tmpdirname}/{filename}.exe"
 
-        # Create a source file in the temp dir and go through the steps to emulate it.
-        er.source_code = code
-        er.create_source_ok, er.create_source_error = create_source(src_path, code)
-        if not er.create_source_ok:
-            return er
+            # Create a result object that will return the status of each step of the run process.
+            erDict[filename] = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
-        # Try assembling the created source.
-        # TODO: add the option to assemble multiple sources.
-        er.assembled_ok, er.as_args, er.as_out, er.as_err = assemble(
-            as_cmd, src_path, as_flags, obj_path
-        )
-        if not er.assembled_ok:
-            return er
+            # Create a source file in the temp dir and go through the steps to emulate it.
+            erDict[filename].source_code = code[filename]
+            erDict[filename].create_source_ok, erDict[filename].create_source_error = create_source(src_path, code[filename])
+            if not erDict[filename].create_source_ok:
+                return erDict[filename] # NOTE: Should this be returned if there's an error?
 
-        # Count the number of instructions in the source code.
-        er.num_instructions = count_instructions_func(src_path)
+            # Try assembling the created source.
+            # TODO: add the option to assemble multiple sources.
+            erDict[filename].assembled_ok, erDict[filename].as_args, erDict[filename].as_out, erDict[filename].as_err = assemble(
+                as_cmd, src_path, as_flags, obj_path
+            )
+            if not erDict[filename].assembled_ok:
+                return erDict[filename]
 
+            # Count the number of instructions in the source code.
+            erDict[filename].num_instructions = count_instructions_func(src_path)
+
+        bin_name = "a.exe"
+        er = EmulationResults(rootfs=str(rootfs_path), flags={}) # NOTE: I cast rootfs_path to string, not sure why it was breaking.
         # Try linking the generated object.
         # TODO: add the option to link multiple objects.
         # TODO: add the option to receive already created objects.
