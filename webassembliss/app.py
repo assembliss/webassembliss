@@ -207,13 +207,10 @@ def tab_manager(filename):
             # If they did, add its contents to the response.
             # If the file does not exist, use an empty string.
             return_filename = request.json["return_file"]
-            if return_filename in session["user_files"]:
-                resp["return_file"] = {
-                    "filename": return_filename,
-                    "contents": session["user_files"].get(return_filename, ""),
-                }
-            else:
-                resp["return_file_error"] = f"Could not find '{return_filename}'"
+            resp["return_file"] = {
+                "filename": return_filename,
+                "contents": session["user_files"].get(return_filename, ""),
+            }
 
         # Return the final response.
         return jsonify(resp), 200
