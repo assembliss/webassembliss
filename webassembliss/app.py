@@ -1,7 +1,7 @@
 from os import environ
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import Flask, abort, current_app, render_template, request, session, jsonify
+from flask import Flask, abort, current_app, jsonify, render_template, request, session
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
 
@@ -22,6 +22,10 @@ SESSION_REDIS = Redis(
 )
 app.config.from_object(__name__)
 Session(app)
+
+# User file storage limits.
+MAX_SINGLE_FILE_SIZE = int(environ.get("MAX_SINGLE_FILE_SIZE", "5_120"))
+MAX_TOTAL_FILE_SIZE = int(environ.get("MAX_TOTAL_FILE_SIZE", "102_400"))
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
@@ -139,59 +143,83 @@ def arm64_linux_run():
     }
 
 
-@app.route("/tab_manager/", methods=["POST", "GET", "DELETE"])
-def tab_manager():
-    method = request.method
+@app.route("/tab_manager/<filename>/", methods=["POST", "GET", "DELETE"])
+def tab_manager(filename):
+    if not filename:
+        return jsonify({"error": "No filename provided"}), 400
 
-    if request.json is None:
-        return jsonify({"error": "No JSON data received"}), 400
-    if "user_files" not in session:
-        session["user_files"] = {}
-
-    if method == "GET":
-        filename = request.args.get("filename")
-        if not filename:
-            return jsonify({"error": "No filename provided"}), 400
+    if request.method == "GET":
+        # For GET method, return the content of the given filename.
         if "user_files" not in session or filename not in session["user_files"]:
-            session["user_files"][filename] = ""
-        
+            return jsonify({"error": f"Could not find '{filename}'"}), 400
+        return (
+            jsonify(
+                {"filename": filename, "contents": session["user_files"][filename]}
+            ),
+            200,
+        )
 
-        return jsonify({"filename": filename, "contents": session["user_files"][filename]}), 200
+    elif request.method == "DELETE":
+        # For DELETE method, delete the saved contents of the given filename
+        if "user_files" not in session or filename not in session["user_files"]:
+            return jsonify({"error": f"Could not find '{filename}'"}), 400
+        session["user_storage"] -= len(session["user_files"][filename])
+        del session["user_files"][filename]
+        return jsonify({"message": f"Deleted '{filename}' from the server"}), 200
 
-    else:
-        # For POST and DELETE, expect JSON data.
-        
+    elif request.method == "POST":
+        # For POST method, store the given contents in the filename passed in the url
+        # if, "return_file" is in the json, return the contents of that file in the response.
+
+        # Check json was received.
+        if request.json is None:
+            return jsonify({"error": "No JSON data received"}), 400
+
+        # Initialize session values to store files.
+        if "user_files" not in session:
+            session["user_files"] = {}
+            session["user_storage"] = 0
+
         if "contents" not in request.json:
             return jsonify({"error": "No contents in JSON data"}), 400
-        
-    
-        filename = request.json.get("filename")
-        if not filename:
-            return jsonify({"error": "No filename provided"}), 400
 
-        if method == "POST":
-            if filename not in session["user_files"]:
-                session["user_files"][filename] = []
-    
-            MAX_SINGLE_FILE_SIZE = 5_120
-            MAX_TOTAL_FILE_SIZE = 102_400
-    
-            if len(request.json["contents"]) > MAX_SINGLE_FILE_SIZE:
-                return jsonify({"error": "Single file exceeds 5KB"}), 400
-            if len(request.json["contents"]) + sum(len(c) for c in session["user_files"].values()) > MAX_TOTAL_FILE_SIZE:
-                return jsonify({"error": "User exceeded 100KB between all total files"}), 400
-            
-            session["user_files"][filename] = request.json["contents"]
-            return jsonify({"message": "Flask server file cookie added"}), 200
+        content_len = len(request.json["contents"])
+        if content_len > MAX_SINGLE_FILE_SIZE:
+            return jsonify({"error": "Single file exceeds max size of 5KB"}), 400
 
-        elif method == "DELETE":
-            if filename not in session["user_files"]:
-                return jsonify({"error": "File not found"}), 400
-            del session["user_files"][filename]
-            return jsonify({"message": "Deleted flask server file cookie"}), 200
+        old_len = len(session["user_files"].get(filename, ""))
+        delta_len = content_len - old_len
+        if (session["user_storage"] + delta_len) > MAX_TOTAL_FILE_SIZE:
+            return (
+                jsonify({"error": "User will exceed max storage of 100KB"}),
+                400,
+            )
 
-        else:
-            return jsonify({"error": "No method specified"}), 400
+        # Store the file and update user storage size.
+        session["user_files"][filename] = request.json["contents"]
+        session["user_storage"] += delta_len
+
+        # Create base response.
+        resp = {"message": f"Stored contents of '{filename}'"}
+
+        # Check if the user requested a return file.
+        if "return_file" in request.json:
+            # If they did, add its contents to the response.
+            # If the file does not exist, use an empty string.
+            return_filename = request.json["return_file"]
+            if return_filename in session["user_files"]:
+                resp["return_file"] = {
+                    "filename": return_filename,
+                    "contents": session["user_files"].get(return_filename, ""),
+                }
+            else:
+                resp["return_file_error"] = f"Could not find '{return_filename}'"
+
+        # Return the final response.
+        return jsonify(resp), 200
+
+    else:
+        return jsonify({"error": f"Cannot handle '{request.method}' method"}), 400
 
 
 @app.route("/arm64_linux/debug/", methods=["POST"])
