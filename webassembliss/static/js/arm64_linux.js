@@ -24,7 +24,7 @@ document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         // Prevent the Save dialog to open
         e.preventDefault();
-        download_file("usrCode.S", getSource(), "text/plain");
+        downloadCurrentTab();
     }
 });
 
@@ -39,6 +39,115 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
 document.getElementById("fileUpload").addEventListener("change", function (uploadEvent) {
     importCode();
 });
+
+
+const currentTab = {
+    num: 1,
+    change(target) {
+        this.num = target;
+    }
+};
+
+function downloadCurrentTab() {
+    let currentTab_filename = document.getElementById(`tab${currentTab.num}Btn`).value;
+    download_file(currentTab_filename, getSource(), "text/plain");
+}
+
+function openTab(tabNum) {
+    if (currentTab.num == tabNum) {
+        // TODO: Implement a tab renaming system (and make it look good... yikes!)
+        alert("rename temp");
+    } else {
+        // Save current tab contents
+
+        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+        let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+        let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
+        let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
+
+        let currentTab_filename = currentTabBtn.value;
+        let currentTab_contents = window.editor.getValue();
+
+        let newTab_filename = newTabBtn.value;
+
+        // Make a post request that will save the contents of the current tab and return the contents of the new tab.
+        fetch('/tab_manager/' + currentTab_filename, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: currentTab_contents,
+                return_file: newTab_filename
+            }),
+        }).then(response => response.json())
+            .then(data => {
+                // TODO: Validate this response.
+                // Update the editor contents.
+                window.editor.setValue(data.return_file.contents);
+                // Update button styles.
+                // For a background tab, make close button clickable and visible.
+                currentTabBtn.className = "tabBtn";
+                currentTabBtnX.className = "tabBtnX";
+                currentTabBtnX.disabled = false;
+                currentTabBtnX.removeAttribute("hidden");
+                // For the foreground tab, disable the close button and hide it.
+                newTabBtn.className = "activeTabBtn";
+                newTabBtnX.className = "activeTabBtnX";
+                newTabBtnX.disabled = true;
+                newTabBtnX.setAttribute("hidden", "hidden");
+                // Update active tab number.
+                currentTab.change(tabNum);
+            });
+    }
+}
+
+/* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
+ * TODO: Prevent last tab from being closed.
+ */
+function closeTab(tabNum) {
+    if (currentTab.num == tabNum) {
+        // TODO: if current tab is open when this function is ran, swap to another tab.
+        // Meanwhile, we just prevent that from happening... this is probably fine behavior.
+        return;
+    }
+    let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
+    fetch('/tab_manager/' + toBeClosed_filename, {
+        method: 'DELETE',
+    }).then(() => {
+        document.getElementById(`tab${tabNum}Btn`).remove();
+        document.getElementById(`tab${tabNum}BtnX`).remove();
+    });
+}
+
+// THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
+const tabs = {
+    // Start at tab #2. Tab #1 already exists when the webpage is opened
+    count: 2,
+    addTab() {
+        let tabNum = this.count;
+        let newTab = document.createElement("input");
+        newTab.type = "button";
+        newTab.className = "tabBtn";
+        newTab.value = `Tab${tabNum}`;
+        newTab.id = `tab${tabNum}Btn`;
+        newTab.onclick = () => openTab(tabNum);
+
+        let newTabX = document.createElement("input");
+        newTabX.type = "button";
+        newTabX.className = "tabBtnX";
+        newTabX.value = "x";
+        newTabX.id = `tab${tabNum}BtnX`;
+        newTabX.onclick = () => closeTab(tabNum);
+
+
+        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+        this.count++;
+        console.log("added tab")
+        openTab(tabNum);
+    }
+};
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
@@ -210,6 +319,7 @@ function runCode() {
     // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
+    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
@@ -219,7 +329,12 @@ function runCode() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, registers: registers }),
+        body: JSON.stringify({
+            source_code: source_code,
+            user_input: user_input,
+            cl_args: window.cl_args,
+            registers: registers
+        }),
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
