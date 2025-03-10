@@ -9,7 +9,6 @@ from .emulation.arm64_linux import emulate as arm64_linux_emulation
 from .emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
 from .emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
 from .grader.single_student import grade_form_submission
-from .grader.utils import GraderResults
 
 app = Flask(__name__)
 
