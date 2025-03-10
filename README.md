@@ -36,6 +36,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
  	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
 	- [ ] [mips](https://github.com/qilingframework/rootfs/tree/master/mips32el_linux)
 	- [ ] [riscv](https://github.com/qilingframework/rootfs/tree/master/riscv64_linux)
+	- [ ] [armv7](https://github.com/qilingframework/rootfs/tree/master/arm_linux)
 
 ### Grading Workflow
 - [x] allow testing of code (given input, expected output)
