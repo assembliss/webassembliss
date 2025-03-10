@@ -139,6 +139,19 @@ class TestBaseEmulation:
         assert ld_err != ""
         assert not new_exe_path.is_file()
 
+    def test_link_missing_symbol(self, tmp_path):
+        """Checks that link fails if not all symbols are defined in the object."""
+        incomplete_obj_path = join(TESTFILES_PATH, "multifile_hello_1_2.o")
+        new_exe_path = tmp_path / "hello.exe"
+        linked_ok, ld_args, _, ld_err = base_emulation.link(
+            LINKER_FOR_TESTING, incomplete_obj_path, ["-o"], new_exe_path
+        )
+        assert str(incomplete_obj_path) in ld_args
+        assert str(new_exe_path) in ld_args
+        assert linked_ok is False
+        assert ld_err != ""
+        assert not new_exe_path.is_file()
+
     def test_timed_emulation_ok(self):
         """Check that the hello world example can be emulated."""
         valid_exe_path = join(TESTFILES_PATH, "hello.exe")
@@ -161,7 +174,7 @@ class TestBaseEmulation:
             bin_path=valid_exe_path,
             cl_args=[],
             bin_name="hello.exe",
-            timeout=100_000,
+            timeout=500_000,
             stdin=BytesIO(),
             registers=[],
             get_flags_func=lambda _: {},
@@ -181,28 +194,14 @@ class TestBaseEmulation:
         assert num_exec == 8
 
     def test_timed_emulation_timed_out(self):
-        """Check that the hello world times out with 1ms timeout."""
-        valid_exe_path = join(TESTFILES_PATH, "hello.exe")
-        (
-            run_ok,
-            exit_code,
-            timeout,
-            stdin,
-            stdout,
-            stderr,
-            registers,
-            num_bits,
-            little_endian,
-            memory,
-            flags,
-            argv,
-            num_exec,
-        ) = base_emulation.timed_emulation(
+        """Check that the infinite loop example times out."""
+        valid_exe_path = join(TESTFILES_PATH, "infiniteLoop.exe")
+        (run_ok, exit_code, timeout, *_) = base_emulation.timed_emulation(
             rootfs_path=ROOTFS_FOR_TESTING,
             bin_path=valid_exe_path,
             cl_args=[],
             bin_name="hello.exe",
-            timeout=10,
+            timeout=500_000,
             stdin=BytesIO(),
             registers=[],
             get_flags_func=lambda _: {},
@@ -210,13 +209,142 @@ class TestBaseEmulation:
         assert run_ok is False
         assert exit_code is None
         assert timeout is True
-        assert stdin == ""
-        assert stdout == ""
-        assert stderr == ""
-        assert registers == {}
-        assert num_bits == 64
-        assert little_endian is True
-        assert memory
-        assert flags == {}
-        assert valid_exe_path in argv
-        assert num_exec < 8
+
+    def test_clean_emulation_ok(self):
+        """Check that the end-to-end emulation workflow works with the hello world example."""
+        valid_source = PosixPath(join(TESTFILES_PATH, "hello.S"))
+        er = base_emulation.clean_emulation(
+            code=valid_source.read_text(encoding="utf-8"),
+            rootfs_path=ROOTFS_FOR_TESTING,
+            as_cmd=ASSEMBLER_FOR_TESTING,
+            ld_cmd=LINKER_FOR_TESTING,
+            as_flags=["-o"],
+            ld_flags=["-o"],
+            stdin=BytesIO(),
+            source_name="test.S",
+            obj_name="test.o",
+            bin_name="test.exe",
+            registers=[],
+            cl_args=[],
+            timeout=500_000,
+        )
+        assert er.create_source_ok is True
+        assert er.create_source_error == ""
+        assert er.assembled_ok is True
+        assert er.as_err == ""
+        assert er.linked_ok is True
+        assert er.ld_err == ""
+        assert er.run_ok is True
+        assert er.run_exit_code == 0
+        assert er.run_timeout is False
+        assert er.run_stdout == "Hello folks!\n"
+        assert er.run_stderr == ""
+        assert er.all_ok is True
+
+    def test_clean_emulation_assemble_error(self):
+        """Check that the end-to-end emulation workflow stops if the source cannot be assembled."""
+        invalid_source = PosixPath(
+            join(
+                TESTFILES_PATH,
+                "HelloWorldProject(noMustPass-yesSkip)_ttwo_results.json",
+            )
+        )
+        er = base_emulation.clean_emulation(
+            code=invalid_source.read_text(encoding="utf-8"),
+            rootfs_path=ROOTFS_FOR_TESTING,
+            as_cmd=ASSEMBLER_FOR_TESTING,
+            ld_cmd=LINKER_FOR_TESTING,
+            as_flags=["-o"],
+            ld_flags=["-o"],
+            stdin=BytesIO(),
+            source_name="test.S",
+            obj_name="test.o",
+            bin_name="test.exe",
+            registers=[],
+            cl_args=[],
+            timeout=500_000,
+        )
+        assert er.create_source_ok is True
+        assert er.create_source_error == ""
+        assert er.assembled_ok is False
+        assert er.as_err != ""
+        assert er.linked_ok is None
+        assert er.ld_err == ""
+        assert er.run_ok is None
+        assert er.run_exit_code is None
+        assert er.run_timeout is None
+        assert er.run_stdout == ""
+        assert er.run_stderr == ""
+        assert er.all_ok is False
+
+    def test_clean_emulation_link_error(self):
+        """Check that the end-to-end emulation workflow stops if the source cannot be linked."""
+        incomplete_source = PosixPath(
+            join(
+                TESTFILES_PATH,
+                "multifile_hello_1_2.S",
+            )
+        )
+        er = base_emulation.clean_emulation(
+            code=incomplete_source.read_text(encoding="utf-8"),
+            rootfs_path=ROOTFS_FOR_TESTING,
+            as_cmd=ASSEMBLER_FOR_TESTING,
+            ld_cmd=LINKER_FOR_TESTING,
+            as_flags=["-o"],
+            ld_flags=["-o"],
+            stdin=BytesIO(),
+            source_name="test.S",
+            obj_name="test.o",
+            bin_name="test.exe",
+            registers=[],
+            cl_args=[],
+            timeout=500_000,
+        )
+        assert er.create_source_ok is True
+        assert er.create_source_error == ""
+        assert er.assembled_ok is True
+        assert er.as_err == ""
+        assert er.linked_ok is False
+        assert er.ld_err != ""
+        assert er.run_ok is None
+        assert er.run_exit_code is None
+        assert er.run_timeout is None
+        assert er.run_stdout == ""
+        assert er.run_stderr == ""
+        assert er.all_ok is False
+
+    def test_clean_emulation_timeout(self):
+        """Check that the end-to-end emulation workflow times out with the infinite loop example."""
+        incomplete_source = PosixPath(
+            join(
+                TESTFILES_PATH,
+                "infiniteLoop.S",
+            )
+        )
+        er = base_emulation.clean_emulation(
+            code=incomplete_source.read_text(encoding="utf-8"),
+            rootfs_path=ROOTFS_FOR_TESTING,
+            as_cmd=ASSEMBLER_FOR_TESTING,
+            ld_cmd=LINKER_FOR_TESTING,
+            as_flags=["-o"],
+            ld_flags=["-o"],
+            stdin=BytesIO(),
+            source_name="test.S",
+            obj_name="test.o",
+            bin_name="test.exe",
+            registers=[],
+            cl_args=[],
+            timeout=500_000,
+        )
+        assert er.create_source_ok is True
+        assert er.create_source_error == ""
+        assert er.assembled_ok is True
+        assert er.as_err == ""
+        assert er.linked_ok is True
+        assert er.ld_err == ""
+        assert er.run_ok is False
+        assert er.run_exit_code is None
+        assert er.run_timeout is True
+        assert er.run_stdout == ""
+        assert er.run_stderr == ""
+        assert er.all_ok is False

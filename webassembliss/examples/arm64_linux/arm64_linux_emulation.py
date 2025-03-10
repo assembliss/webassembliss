@@ -11,6 +11,7 @@ if __name__ == "__main__":
         "cExample.out",
         "clArgs.out",
         "fileIO.out",
+        "multiHello.out",
     ]:
         print("\n\n---- ---- ---- ---- ----\n---- ---- ---- ---- ----\n")
         print(f"Emulating {program}:\n\n")

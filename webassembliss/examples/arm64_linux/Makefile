@@ -34,5 +34,10 @@ fileIO: fileIO.S
 	aarch64-linux-gnu-as fileIO.S -g --gdwarf-5 -o fileIO.o
 	aarch64-linux-gnu-ld fileIO.o -o fileIO.out -lc
 
+multiHello: multifile_hello_1_2.S multifile_hello_2_2.S
+	aarch64-linux-gnu-as multifile_hello_1_2.S -g --gdwarf-5 -o multifile_hello_1_2.o
+	aarch64-linux-gnu-as multifile_hello_2_2.S -g --gdwarf-5 -o multifile_hello_2_2.o
+	aarch64-linux-gnu-ld multifile_hello_1_2.o multifile_hello_2_2.o -o multiHello.out
+
 clean:
 	rm *.o *.out
