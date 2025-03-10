@@ -19,19 +19,15 @@ import zipfile
 from hmac import compare_digest
 from io import BufferedReader, TextIOWrapper
 from os import mkdir, rename
-from os.path import dirname, join, basename, sep
+from os.path import basename, dirname, join, sep
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
+from ..utils import b64_to_bytes, create_checksum
+from .grader_types import SubmissionResults, load_wrapped_project
 from .project_config_pb2 import WrappedProject
 from .single_student import grade_student
-from .utils import (
-    SubmissionResults,
-    b64_to_bytes,
-    create_checksum,
-    load_wrapped_project,
-)
 
 # Get a logger to export execution information to the user.
 logger = logging.getLogger(__name__)

@@ -13,6 +13,8 @@ from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
+from ..utils import create_text_file
+
 
 @dataclass
 class EmulationResults:
@@ -200,8 +202,7 @@ Linker errors:
 def create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
     """Create a file with the provided path and write the given code string inside of it."""
     try:
-        with open(path, "w") as file_out:
-            file_out.write(code)
+        create_text_file(path, code)
         return True, ""
     except FileNotFoundError as e:
         return False, f"{e}"

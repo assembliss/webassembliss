@@ -10,26 +10,24 @@ from typing import Dict, List, Tuple, Union
 from werkzeug.datastructures import FileStorage
 
 from ..emulation.base_emulation import assemble, link, timed_emulation
-from .project_config_pb2 import (
-    ExecutedInstructionsAggregation,
-    ProjectConfig,
-    WrappedProject,
-)
-from .utils import (
+from ..utils import bytes_to_b64, create_checksum, create_text_file
+from .grader_types import (
     EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
-    bytes_to_b64,
-    create_checksum,
     create_extra_files,
     create_test_diff,
-    create_text_file,
     format_points_scale,
     load_wrapped_project,
     validate_and_load_project_config,
     validate_and_load_testcase_io,
+)
+from .project_config_pb2 import (
+    ExecutedInstructionsAggregation,
+    ProjectConfig,
+    WrappedProject,
 )
 
 
