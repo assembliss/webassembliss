@@ -199,7 +199,6 @@ Linker errors:
 
 def create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
     """Create a file with the provided path and write the given code string inside of it."""
-    # TODO: add tests to make sure this function works as expected.
     try:
         with open(path, "w") as file_out:
             file_out.write(code)
@@ -216,7 +215,6 @@ def assemble(
     as_cmd_format: str = "{as_cmd} {src_path} {joined_flags} {obj_path}",
 ) -> Tuple[bool, str, str, str]:
     """Use the given assembler command to process the source file and create an object."""
-    # TODO: add tests to make sure this function works as expected.
 
     # Combine the different pieces into a complete assembling command.
     as_full_cmd = as_cmd_format.format(
@@ -246,7 +244,6 @@ def link(
     ld_cmd_format: str = "{ld_cmd} {obj_path} {joined_flags} {bin_path}",
 ) -> Tuple[bool, str, str, str]:
     """Use the given linker command to process the object file and create a binary."""
-    # TODO: add tests to make sure this function works as expected.
 
     # Combine the different pieces into a complete linking command.
     ld_full_cmd = ld_cmd_format.format(
@@ -366,7 +363,6 @@ def timed_emulation(
     int,  # number of instructions executed
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
-    # TODO: add tests to make sure this function works as expected.
 
     # Instantiate a qiling object with the binary and rootfs we want to use.
     argv: List[str] = [bin_path] + cl_args  # type: ignore[assignment]
@@ -484,7 +480,6 @@ def clean_emulation(
         [Union[str, PathLike]], Optional[int]
     ] = lambda _: None,
 ) -> EmulationResults:
-    # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
     er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]

@@ -4,5 +4,6 @@ Flask-Session[redis]==0.8.0
 gunicorn==23.0.0
 qiling==1.4.6
 protobuf==5.29.3
+pytest==8.3.5
 redis==5.2.1
 rocher==0.52.2
