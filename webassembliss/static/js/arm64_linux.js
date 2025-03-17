@@ -36,7 +36,7 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
-document.getElementById("fileUpload").addEventListener("change", function (uploadEvent) {
+document.getElementById("fileUpload").addEventListener("change", function () {
     importCode();
 });
 
@@ -54,14 +54,47 @@ function downloadCurrentTab() {
 }
 
 function openTab(tabNum) {
+
+    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+    let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+
     if (currentTab.num == tabNum) {
-        // TODO: Implement a tab renaming system (and make it look good... yikes!)
-        alert("rename temp");
+    // Tab Renaming Functionality
+    // There might need to exist some sort of character check to make sure the filename isn't something illegal?
+    // Though it seems that even with special characters, saving files works fine.
+        renameTextBox = document.createElement('input');
+        renameTextBox.type = "text";
+        renameTextBox.className = "activeTabBtn";
+        renameTextBox.id = `tab${tabNum}Rename`;
+        renameTextBox.value = currentTabBtn.value;
+
+        currentTabBtn.replaceWith(renameTextBox);
+        renameTextBox.focus();
+        renameTextBox.select();
+
+    function replaceTabRename() {
+        renamedTab = document.createElement('input');
+        renamedTab.type = "button";
+        renamedTab.className = "activeTabBtn";
+        renamedTab.id = `tab${currentTab.num}Btn`;
+        renamedTab.value = document.getElementById(`tab${currentTab.num}Rename`).value;
+        renamedTab.onclick = () => openTab(tabNum);
+
+        document.getElementById(`tab${currentTab.num}Rename`).replaceWith(renamedTab);
+    }
+
+    document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
+        replaceTabRename();
+    });
+    document.getElementById(`tab${currentTab.num}Rename`).addEventListener("keydown", function (event) {
+        if (event.key === "Enter") {
+            replaceTabRename();
+        }
+    });
+
     } else {
         // Save current tab contents
 
-        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-        let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
         let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
         let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
 
@@ -101,7 +134,6 @@ function openTab(tabNum) {
 }
 
 /* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
- * TODO: Prevent last tab from being closed.
  */
 function closeTab(tabNum) {
     if (currentTab.num == tabNum) {
