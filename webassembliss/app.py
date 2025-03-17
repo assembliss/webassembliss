@@ -24,7 +24,7 @@ app.config.from_object(__name__)
 Session(app)
 
 # User file storage limits.
-MAX_SINGLE_FILE_SIZE = int(environ.get("MAX_SINGLE_FILE_SIZE", "5_120"))
+MAX_SINGLE_FILE_SIZE = int(environ.get("MAX_SINGLE_FILE_SIZE", "10_240"))
 MAX_TOTAL_FILE_SIZE = int(environ.get("MAX_TOTAL_FILE_SIZE", "102_400"))
 
 # Register the editor with the Flask app
@@ -185,7 +185,7 @@ def tab_manager(filename):
 
         content_len = len(request.json["contents"])
         if content_len > MAX_SINGLE_FILE_SIZE:
-            return jsonify({"error": "Single file exceeds max size of 5KB"}), 400
+            return jsonify({"error": "Single file exceeds max size of 10KB"}), 400
 
         old_len = len(session["user_files"].get(filename, ""))
         delta_len = content_len - old_len
