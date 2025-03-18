@@ -479,7 +479,6 @@ function startDebugger() {
     document.getElementById("runBtn").disabled = true;
     document.getElementById("resetBtn").disabled = true;
     document.getElementById("saveBtn").disabled = true;
-    document.getElementById("loadBtn").disabled = true;
     // Make editor read-only.
     window.editor.updateOptions({ readOnly: true });
 
@@ -557,7 +556,6 @@ function stopDebugger() {
     document.getElementById("runBtn").disabled = false;
     document.getElementById("resetBtn").disabled = false;
     document.getElementById("saveBtn").disabled = false;
-    document.getElementById("loadBtn").disabled = false;
     // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
 }
