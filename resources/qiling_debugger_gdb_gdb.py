@@ -3,6 +3,12 @@
 # Cross Platform and Multi Architecture Advanced Binary Emulation Framework
 #
 
+# Patched version by assembliss team:
+#   1. fixed issue from https://github.com/qilingframework/qiling/issues/1377;
+#   2. export debugging information to a connected database object;
+#   3. gdb server allows for client to disconnect and reconnect;
+
+
 # for watching actual protocol messages:
 #   server:     gdbserver --remote-debug 127.0.0.1:9999 /path/to/exec
 #   client:     gdb -q -ex "target remote 127.0.0.1:9999"
