@@ -17,6 +17,7 @@ from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untype
 from .base_emulation import (
     EmulationResults,
     assemble,
+    create_rootfs_sandbox,
     create_source,
     filter_memory,
     link,
@@ -386,6 +387,11 @@ def create_debugging_session(
     port = db.find_available_port(user_signature=user_signature)
     # Create a result object that will return the status of each step of the run process.
     dr = DebuggingResults(rootfs=rootfs_path, flags={}, gdb_port=port, extra_values={})  # type: ignore[arg-type]
+
+    # TODO: add sandbox on debugging sessions.
+    #   1. create a sandbox here
+    #   2. give tempdir to debugger thread
+    #   3. have debugger thread cleanup after exit
 
     # Create a queue so we can communicate with the server thread.
     new_queue: Queue = Queue(maxsize=max_queue_size)
