@@ -324,6 +324,7 @@ function runCode() {
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
+    console.log("here1");
     fetch('/arm64_linux/run/', {
         method: 'POST',
         headers: {
@@ -337,6 +338,7 @@ function runCode() {
         }),
     }).then(response => response.json())
         .then(data => {
+            console.log("here2");
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
             document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
@@ -354,6 +356,7 @@ function runCode() {
             lastRunInfo = data.info_obj;
             // Make sure to highlight detection AFTER lastRunInfo is updated!
             detectAndHighlightErrors();
+            console.log("here3");
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         }).then(() =>

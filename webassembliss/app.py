@@ -95,7 +95,7 @@ def arm64_linux_index():
     # If the user has run or debugged code, we have it saved in their session; reload it.
     if "source_code" in session:
         return render_template(
-            "arm64_linux.html.j2", default_code=session["source_code"].split("\n")
+            "arm64_linux.html.j2", default_code=session["source_code"]["usrCode.S"].split("\n")
         )
     # If no code for this user, read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
@@ -113,7 +113,7 @@ def arm64_linux_run():
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
 
-    session["source_code"] = {"userInput": request.json["source_code"]}
+    session["source_code"] = {"usrCode.S": request.json["source_code"]}
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
     session["registers"] = request.json.get("registers", "")

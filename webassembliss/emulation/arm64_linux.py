@@ -105,6 +105,7 @@ def emulate(
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
     stdin: str = "",
+    bin_name: str = "usrCode.exe",
     cl_args: str = "",
     registers: Optional[List[str]] = None,
 ) -> EmulationResults:
@@ -127,6 +128,7 @@ def emulate(
         ld_flags=ld_flags,
         timeout=timeout,
         stdin=BytesIO(stdin.encode()),
+        bin_name=bin_name,
         registers=registers,
         cl_args=cl_args.split(),
         get_flags_func=get_nzcv,
