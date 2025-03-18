@@ -7,22 +7,23 @@ ARG PYTHON_VERSION="3.13"
 ARG QL_GDB_PATH="/usr/local/lib/python${PYTHON_VERSION}/dist-packages/qiling/debugger/gdb/gdb.py"
 
 #
-# Install zsh + omzsh for developing in a devcontainer.
+# Install required tooling
 #
-RUN apt-get update && \
-    apt-get install -y wget && \
-    sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.1/zsh-in-docker.sh)" -- \
-    -t candy \
-    -p git \
-    -p https://github.com/zsh-users/zsh-autosuggestions \
-    -p https://github.com/zsh-users/zsh-completions \
-    -p https://github.com/zsh-users/zsh-syntax-highlighting
-
-#
-# Install required tooling.
-#
-RUN apt-get update && \
-    apt-get install -y \
+RUN apt update && \
+    # Install software-properties-common so we can add a new package repo.
+    apt install -y software-properties-common && \
+    # Add package repo to install specific python version.
+    add-apt-repository ppa:deadsnakes/ppa && \
+    # Update packages to fetch new repo.
+    apt update && \
+    # Install with -y to accept all changes.
+    apt install -y \
+    # cmake and g++ to build keystone from source
+    cmake g++\
+    # wget to install zsh/oh-my-zsh
+    wget\
+    # curl to install pip
+    curl\
     # arm64 toolchain (assemble/link arm64 assembly code)
     make gcc-aarch64-linux-gnu\
     # gdb-multiarch (for user debugging sessions)
@@ -32,26 +33,28 @@ RUN apt-get update && \
     # protobuf to handle project grading config files
     protobuf-compiler\
     # cloc to count source lines and comments
-    cloc
-
-#
-# Install python and pip for the selected version.
-#
-RUN apt install -y software-properties-common && \
-    add-apt-repository ppa:deadsnakes/ppa && \
-    apt update && \
-    apt install -y python${PYTHON_VERSION} && \
+    cloc\
+    # Required python version.
+    python${PYTHON_VERSION} && \
+    # Install pip for this version.
     curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python${PYTHON_VERSION} get-pip.py
+    python${PYTHON_VERSION} get-pip.py && \
+    # Install setuptools.
+    pip install setuptools && \
+    # Install zsh and oh-my-zsh
+    sh -c "$(wget -O- https://github.com/deluan/zsh-in-docker/releases/download/v1.2.1/zsh-in-docker.sh)" -- \
+    -t candy \
+    -p git \
+    -p https://github.com/zsh-users/zsh-autosuggestions \
+    -p https://github.com/zsh-users/zsh-completions \
+    -p https://github.com/zsh-users/zsh-syntax-highlighting
 
 #
 # Install python libraries
 #
-
 # Need to install keystone from source to avoid errors on macos >= 10.14 host;
 # ref: https://docs.qiling.io/en/latest/install/
-RUN apt install -y cmake g++ && \
-    git clone https://github.com/keystone-engine/keystone && \
+RUN git clone https://github.com/keystone-engine/keystone && \
     cd keystone && \
     mkdir build && \
     cd build && \
@@ -61,7 +64,7 @@ RUN apt install -y cmake g++ && \
     ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python && \
     make install
 
-# Install other requirements.
+# Install other requirements with pip.
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt --break-system-packages
 
