@@ -397,9 +397,6 @@ function addErrorHighlight(line, messages) {
 }
 
 function updateGdbLine(line) {
-    if (window.gdb_line_decoration) {
-        // TODO: remove old line decoration so only the updated next one appears.
-    }
     window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
         className: 'gdbLineDecoration'
@@ -482,7 +479,6 @@ function startDebugger() {
     // Make editor read-only.
     window.editor.updateOptions({ readOnly: true });
 
-    // TODO: actually start a debugging session.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
