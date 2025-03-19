@@ -469,7 +469,7 @@ class RootfsSandbox:
     """Class to provide a context manager that creates a rootfs sandbox."""
 
     def __init__(self, rootfs_path: Union[str, PathLike]):
-        """ "Create a temporary directory and copies the rootfs contents into it."""
+        """Creates a temporary directory and copies the rootfs contents into it."""
         self._sandbox = tempfile.TemporaryDirectory()
         shutil.copytree(rootfs_path, self._sandbox.name, dirs_exist_ok=True)
 
@@ -478,7 +478,7 @@ class RootfsSandbox:
         return self._sandbox.name
 
     def __exit__(self, *args):
-        """ "Cleans up the temporary directory when exiting the context."""
+        """Cleans up the temporary directory when exiting the context."""
         self._sandbox.cleanup()
 
 
