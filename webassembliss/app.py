@@ -154,7 +154,8 @@ def tab_manager(filename):
             return jsonify({"error": f"Could not find '{filename}'"}), 400
         return (
             jsonify(
-                {"filename": filename, "contents": session["user_files"][filename]}
+                {"filename": filename, 
+                 "contents": session["user_files"][filename]}
             ),
             200,
         )
@@ -210,6 +211,7 @@ def tab_manager(filename):
             resp["return_file"] = {
                 "filename": return_filename,
                 "contents": session["user_files"].get(return_filename, ""),
+                "user_storage": session["user_storage"]
             }
 
         # Return the final response.

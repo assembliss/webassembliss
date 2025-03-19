@@ -53,15 +53,21 @@ function downloadCurrentTab() {
     download_file(currentTab_filename, getSource(), "text/plain");
 }
 
+function changeUserStorageCounter(newValue) {
+    // MAX USER STORAGE IS TEMPORARILY DEFINED HERE AS WELL. Is it worth adding more data to the json being sent back and forth?
+    MAX_TOTAL_FILE_SIZE = 102_400;
+    document.getElementById("userStorageCounter").value = `${MAX_TOTAL_FILE_SIZE - newValue} bytes remaining`;
+}
+
 function openTab(tabNum) {
 
     let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
     let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
 
     if (currentTab.num == tabNum) {
-    // Tab Renaming Functionality
+    // Tab renaming functionality
     // There might need to exist some sort of character check to make sure the filename isn't something illegal?
-    // Though it seems that even with special characters, saving files works fine.
+    // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
         renameTextBox = document.createElement('input');
         renameTextBox.type = "text";
         renameTextBox.className = "activeTabBtn";
@@ -131,6 +137,7 @@ function openTab(tabNum) {
                 newTabBtnX.setAttribute("hidden", "hidden");
                 // Update active tab number.
                 currentTab.change(tabNum);
+                changeUserStorageCounter(data.return_file.user_storage);
             });
     }
 }
@@ -146,9 +153,12 @@ function closeTab(tabNum) {
     let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
     fetch('/tab_manager/' + toBeClosed_filename, {
         method: 'DELETE',
-    }).then(() => {
+    }).then(data => {
         document.getElementById(`tab${tabNum}Btn`).remove();
         document.getElementById(`tab${tabNum}BtnX`).remove();
+        // this doesn't quite work
+        changeUserStorageCounter(data.return_file.user_storage);
+
     });
 }
 
@@ -346,8 +356,25 @@ function detectAndHighlightErrors() {
 
 function runCode() {
     clearOutput();
-    // Why not remove highlights at the start of runCode()?
     removeAllHighlights();
+    // To make runcode() update the server cookies, something like this needs to happen, but this doesn't work.    
+
+    /*
+    fetch('/tab_manager/' + document.getElementById(`tab${currentTab.num}Btn`).value, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: window.editor.getValue(),
+            return_file: newTab_filename
+        }),
+    }).then(response => response.json())
+    .then(data => {
+        changeUserStorageCounter(data.return_file.user_storage);
+    });
+    */
+
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     let source_code = getSource();
