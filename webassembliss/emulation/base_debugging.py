@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from io import BytesIO
 from os import PathLike
+from os.path import join
 from queue import Queue
 from time import sleep
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -168,15 +169,17 @@ def _setup_gdb_server(
 
     # Get thread-local data.
     mydata = threading.local()
+    # Create a rootfs sandbox to prevent user from changing system files.
+    mydata.rootfs_sandbox = create_rootfs_sandbox(rootfs_path)
     # Create a temp dir to store the user's code.
     with tempfile.TemporaryDirectory(
-        dir=f"{rootfs_path}/{workdir}"
+        dir=join(mydata.rootfs_sandbox.name, workdir)
     ) as mydata.tmpdirname:
 
         # Create path names pointing inside the temp dir.
-        mydata.src_path = f"{mydata.tmpdirname}/{source_name}"
-        mydata.obj_path = f"{mydata.tmpdirname}/{obj_name}"
-        mydata.bin_path = f"{mydata.tmpdirname}/{bin_name}"
+        mydata.src_path = join(mydata.tmpdirname, source_name)
+        mydata.obj_path = join(mydata.tmpdirname, obj_name)
+        mydata.bin_path = join(mydata.tmpdirname, bin_name)
 
         # Create a source file in the temp dir and go through the steps to emulate it.
         mydata.create_source_ok, mydata.create_source_error = create_source(
@@ -217,11 +220,15 @@ def _setup_gdb_server(
         _run_gdb_server(
             port=port,
             argv=[mydata.bin_path] + cl_args,
-            rootfs=rootfs_path,
+            rootfs=mydata.rootfs_sandbox.name,
             user_input=user_input,
             q=q,
             bin_name=bin_name,
         )
+
+        # Cleanup the sandbox after the server quits.
+        # TODO: make sure this is cleaned up even if the server quits unexpectedly.
+        mydata.rootfs_sandbox.cleanup()
 
 
 def _send_cmds_via_gdbmultiarch(
@@ -387,11 +394,6 @@ def create_debugging_session(
     port = db.find_available_port(user_signature=user_signature)
     # Create a result object that will return the status of each step of the run process.
     dr = DebuggingResults(rootfs=rootfs_path, flags={}, gdb_port=port, extra_values={})  # type: ignore[arg-type]
-
-    # TODO: add sandbox on debugging sessions.
-    #   1. create a sandbox here
-    #   2. give tempdir to debugger thread
-    #   3. have debugger thread cleanup after exit
 
     # Create a queue so we can communicate with the server thread.
     new_queue: Queue = Queue(maxsize=max_queue_size)
