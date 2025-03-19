@@ -461,7 +461,7 @@ function updateDebuggingInfo(data) {
             addBreakpointHighlight(parseInt(line));
         }
     } else {
-        stopDebugger();
+        resetDebuggerControls();
     }
 }
 
@@ -479,7 +479,6 @@ function startDebugger() {
     document.getElementById("runBtn").disabled = true;
     document.getElementById("resetBtn").disabled = true;
     document.getElementById("saveBtn").disabled = true;
-    document.getElementById("loadBtn").disabled = true;
     // Make editor read-only.
     window.editor.updateOptions({ readOnly: true });
 
@@ -545,6 +544,9 @@ function toggleBreakpoint() {
 function stopDebugger() {
     // Stop debugging session.
     debuggerCommand({ "command": 4 }, null);
+}
+
+function resetDebuggerControls() {
     // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
     removeAllHighlights();
     // Disable active debugger buttons.
@@ -557,7 +559,6 @@ function stopDebugger() {
     document.getElementById("runBtn").disabled = false;
     document.getElementById("resetBtn").disabled = false;
     document.getElementById("saveBtn").disabled = false;
-    document.getElementById("loadBtn").disabled = false;
     // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
 }

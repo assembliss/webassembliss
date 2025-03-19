@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from io import BytesIO
 from os import PathLike
+from os.path import join
 from queue import Queue
 from time import sleep
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
@@ -16,6 +17,7 @@ from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untype
 
 from .base_emulation import (
     EmulationResults,
+    RootfsSandbox,
     assemble,
     create_source,
     filter_memory,
@@ -167,15 +169,15 @@ def _setup_gdb_server(
 
     # Get thread-local data.
     mydata = threading.local()
-    # Create a temp dir to store the user's code.
-    with tempfile.TemporaryDirectory(
-        dir=f"{rootfs_path}/{workdir}"
-    ) as mydata.tmpdirname:
+    # Create a rootfs sandbox to run user code.
+    mydata.sandbox = RootfsSandbox(rootfs_path)
+    with mydata.sandbox as mydata.sandbox_path:
+        mydata.workpath = join(mydata.sandbox_path, workdir)
 
         # Create path names pointing inside the temp dir.
-        mydata.src_path = f"{mydata.tmpdirname}/{source_name}"
-        mydata.obj_path = f"{mydata.tmpdirname}/{obj_name}"
-        mydata.bin_path = f"{mydata.tmpdirname}/{bin_name}"
+        mydata.src_path = join(mydata.workpath, source_name)
+        mydata.obj_path = join(mydata.workpath, obj_name)
+        mydata.bin_path = join(mydata.workpath, bin_name)
 
         # Create a source file in the temp dir and go through the steps to emulate it.
         mydata.create_source_ok, mydata.create_source_error = create_source(
@@ -216,7 +218,7 @@ def _setup_gdb_server(
         _run_gdb_server(
             port=port,
             argv=[mydata.bin_path] + cl_args,
-            rootfs=rootfs_path,
+            rootfs=mydata.sandbox_path,
             user_input=user_input,
             q=q,
             bin_name=bin_name,
@@ -579,6 +581,13 @@ def debug_cmd(
         dr.run_exit_code = exit_code
         dr.run_ok = True
         dr.active = False
+        # Send kill command so the server exits.
+        _send_cmds_via_gdbmultiarch(
+            port=dr.gdb_port,
+            bin_path=dr.bin_path,
+            commands=["kill"],
+            breakpoints=dr.breakpoints,
+        )
 
     # Check if the debugging session has ended.
     if not dr.active:

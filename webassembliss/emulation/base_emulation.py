@@ -1,9 +1,11 @@
+import shutil
 import struct
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
+from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
@@ -463,6 +465,23 @@ def timed_emulation(
     )
 
 
+class RootfsSandbox:
+    """Class to provide a context manager that creates a rootfs sandbox."""
+
+    def __init__(self, rootfs_path: Union[str, PathLike]):
+        """ "Create a temporary directory and copies the rootfs contents into it."""
+        self._sandbox = tempfile.TemporaryDirectory()
+        shutil.copytree(rootfs_path, self._sandbox.name, dirs_exist_ok=True)
+
+    def __enter__(self):
+        """Provides the path for the user sandbox."""
+        return self._sandbox.name
+
+    def __exit__(self, *args):
+        """ "Cleans up the temporary directory when exiting the context."""
+        self._sandbox.cleanup()
+
+
 def clean_emulation(
     *,  # force naming arguments
     code: str,
@@ -484,21 +503,20 @@ def clean_emulation(
         [Union[str, PathLike]], Optional[int]
     ] = lambda _: None,
 ) -> EmulationResults:
+    """Emulates the given code without side effects."""
     # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
     er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
-    # Create a temporary directory so space gets freed after we're done with user files.
-    # TODO: Create a "rootfs sandbox" to prevent user code to corrup app functionality.
-    #           1: create a tempdir in the usual OS location (i.e., remove dir argument below)
-    #           2: recursively copy the given rootfs_path into the new tempdir: https://docs.python.org/3/library/shutil.html#shutil.copytree
-    #           3: adjust code in the with statement below to use "{tmpdirname}/{rootfs_path}/" where applicable
-    with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
+    # Create a rootfs sandbox to run user code.
+    with RootfsSandbox(rootfs_path) as rootfs_sandbox:
+        workpath = join(rootfs_sandbox, workdir)
+
         # Create path names pointing inside the temp dir.
-        src_path = f"{tmpdirname}/{source_name}"
-        obj_path = f"{tmpdirname}/{obj_name}"
-        bin_path = f"{tmpdirname}/{bin_name}"
+        src_path = join(workpath, source_name)
+        obj_path = join(workpath, obj_name)
+        bin_path = join(workpath, bin_name)
 
         # Create a source file in the temp dir and go through the steps to emulate it.
         er.source_code = code
@@ -542,7 +560,7 @@ def clean_emulation(
             er.argv,
             er.exec_instructions,
         ) = timed_emulation(
-            rootfs_path,
+            rootfs_sandbox,
             bin_path,
             cl_args,
             bin_name,
