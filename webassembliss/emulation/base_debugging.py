@@ -170,8 +170,7 @@ def _setup_gdb_server(
     # Get thread-local data.
     mydata = threading.local()
     # Create a rootfs sandbox to run user code.
-    mydata.sandbox = RootfsSandbox(rootfs_path)
-    with mydata.sandbox as mydata.sandbox_path:
+    with RootfsSandbox(rootfs_path) as mydata.sandbox_path:
         mydata.workpath = join(mydata.sandbox_path, workdir)
 
         # Create path names pointing inside the temp dir.
