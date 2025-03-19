@@ -538,6 +538,12 @@ def debug_cmd(
     elif cmd == DebuggingOptions.BREAKPOINT:
         assert breakpoint_line, "Line number needs to be provided to add a breakpoint."
 
+        # BUG: there is a bug somewhere with using breakpoints; to reproduce:
+        #   1. start debugging session with the fileIO.S example;
+        #   2. set a breakpoint on line 92 (first line of exit block);
+        #   3. continue, it should stop at the breakpoint;
+        #   4. step, the session will end.
+
         new_breakpoint = (
             f"{breakpoint_source}:{breakpoint_line}"
             if breakpoint_source
