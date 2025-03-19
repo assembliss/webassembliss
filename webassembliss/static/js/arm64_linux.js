@@ -461,7 +461,7 @@ function updateDebuggingInfo(data) {
             addBreakpointHighlight(parseInt(line));
         }
     } else {
-        stopDebugger();
+        resetDebuggerControls();
     }
 }
 
@@ -544,6 +544,9 @@ function toggleBreakpoint() {
 function stopDebugger() {
     // Stop debugging session.
     debuggerCommand({ "command": 4 }, null);
+}
+
+function resetDebuggerControls() {
     // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
     removeAllHighlights();
     // Disable active debugger buttons.

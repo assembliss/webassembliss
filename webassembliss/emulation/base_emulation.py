@@ -465,15 +465,21 @@ def timed_emulation(
     )
 
 
-def create_rootfs_sandbox(
-    rootfs_path: Union[str, PathLike],
-) -> tempfile.TemporaryDirectory:
-    """Copies the given rootfs into a temporary directory so user code cannot modify the original files."""
-    print(f"{rootfs_path=}")
-    sandbox = tempfile.TemporaryDirectory()
-    print(f"{sandbox.name=}")
-    shutil.copytree(rootfs_path, sandbox.name, dirs_exist_ok=True)
-    return sandbox
+class RootfsSandbox:
+    """Class to provide a context manager that creates a rootfs sandbox."""
+
+    def __init__(self, rootfs_path: Union[str, PathLike]):
+        """ "Create a temporary directory and copies the rootfs contents into it."""
+        self._sandbox = tempfile.TemporaryDirectory()
+        shutil.copytree(rootfs_path, self._sandbox.name, dirs_exist_ok=True)
+
+    def __enter__(self):
+        """Provides the path for the user sandbox."""
+        return self._sandbox.name
+
+    def __exit__(self, *args):
+        """ "Cleans up the temporary directory when exiting the context."""
+        self._sandbox.cleanup()
 
 
 def clean_emulation(
@@ -497,22 +503,20 @@ def clean_emulation(
         [Union[str, PathLike]], Optional[int]
     ] = lambda _: None,
 ) -> EmulationResults:
+    """Emulates the given code without side effects."""
     # TODO: add tests to make sure this function works as expected.
 
     # Create a result object that will return the status of each step of the run process.
     er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
-    # Create a sandbox to run user code.
-    rootfs_sandbox = create_rootfs_sandbox(rootfs_path)
+    # Create a rootfs sandbox to run user code.
+    with RootfsSandbox(rootfs_path) as rootfs_sandbox:
+        workpath = join(rootfs_sandbox, workdir)
 
-    # Create a temporary directory so space gets freed after we're done with user files.
-    with tempfile.TemporaryDirectory(
-        dir=join(rootfs_sandbox.name, workdir)
-    ) as tmpdirname:
         # Create path names pointing inside the temp dir.
-        src_path = join(tmpdirname, source_name)
-        obj_path = join(tmpdirname, obj_name)
-        bin_path = join(tmpdirname, bin_name)
+        src_path = join(workpath, source_name)
+        obj_path = join(workpath, obj_name)
+        bin_path = join(workpath, bin_name)
 
         # Create a source file in the temp dir and go through the steps to emulate it.
         er.source_code = code
@@ -556,7 +560,7 @@ def clean_emulation(
             er.argv,
             er.exec_instructions,
         ) = timed_emulation(
-            rootfs_sandbox.name,
+            rootfs_sandbox,
             bin_path,
             cl_args,
             bin_name,
@@ -565,9 +569,6 @@ def clean_emulation(
             registers,
             get_flags_func,
         )
-
-        # Clears up the sandbox.
-        rootfs_sandbox.cleanup()
 
         # Sets global status field to match whether execution exited successfully.
         er.all_ok = er.run_ok

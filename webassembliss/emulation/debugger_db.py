@@ -25,9 +25,12 @@ class DebuggerDB:
         stderr_prefix: str = "STDERR_",
         exit_code_prefix: str = "EXIT_",
         insr_count_prefix: str = "INSTR_COUNT_",
+        suppress_exceptions: bool = False,
     ):
         # Create a connection with the db that decodes responses automatically.
         self._db = Redis(host=host, port=port, password=password, decode_responses=True)
+        # Value that decides if we should raise exceptions or not.
+        self._supress = suppress_exceptions
         # Initialize the required values in the database if they're not there.
         self._db.setnx("VAR_MIN_PORT", min_port)
         self._db.setnx("VAR_MAX_PORT", max_port)
@@ -95,6 +98,9 @@ class DebuggerDB:
         # Convert the json string into a dict if found.
         user_data = loads(data) if data else {}
         if user_data:
+            if self._supress:
+                # Do not throw exception if supress_exceptions flag was True to constructor.
+                return 0
             raise DDBError("User already has an active session.", **user_data)
 
         # Loops once for each port we have available.
@@ -114,6 +120,9 @@ class DebuggerDB:
                 return port
 
         # If the code gets here, none of the ports we tried was available per the db.
+        if self._supress:
+            # Do not throw exception if supress_exceptions flag was True to constructor.
+            return 0
         raise DDBError("Could not find an available port")
 
     def store_new_session_info(self, *, user_signature: str, **kwargs) -> None:
@@ -127,6 +136,9 @@ class DebuggerDB:
         # Convert the json string into a dict if found.
         user_data = loads(data) if data else {}
         if user_data:
+            if self._supress:
+                # Do not throw exception if supress_exceptions flag was True to constructor.
+                return
             raise DDBError(
                 "User already has an active session.",
                 user_signature=user_signature,
@@ -139,6 +151,9 @@ class DebuggerDB:
         port_key = self._port_key(kwargs["port"])
         # Check if the port is already in use.
         if self._db.get(port_key) == self._port_active_token:
+            if self._supress:
+                # Do not throw exception if supress_exceptions flag was True to constructor.
+                return
             raise DDBError(
                 "Port is already in use.",
                 user_signature=user_signature,
@@ -158,6 +173,9 @@ class DebuggerDB:
         user_data = loads(data) if data else {}
         # If no session for the user, raise an error.
         if not user_data:
+            if self._supress:
+                # Do not throw exception if supress_exceptions flag was True to constructor.
+                return
             raise DDBError(
                 "User has no active session.",
                 user_signature=user_signature,
@@ -176,6 +194,9 @@ class DebuggerDB:
         user_data = loads(data) if data else {}
         if user_data:
             return user_data
+        if self._supress:
+            # Do not throw exception if supress_exceptions flag was True to constructor.
+            return {}
         raise DDBError(
             "Could not find an active session for user.", user_signature=user_signature
         )
