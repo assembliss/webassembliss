@@ -542,6 +542,7 @@ def debug_cmd(
         #   2. set a breakpoint on line 92 (first line of exit block);
         #   3. continue, it should stop at the breakpoint;
         #   4. step, the session will end.
+        # Idea: keep breakpoints only on javascript side.
 
         new_breakpoint = (
             f"{breakpoint_source}:{breakpoint_line}"

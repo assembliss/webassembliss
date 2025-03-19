@@ -529,6 +529,7 @@ function stepDebug() {
 
 function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
+    // TODO: handle this only on javascript, send a list of breakpoints with the step/continue commands.
     let lineNum = prompt("Line number to toggle breakpoint:", "");
     if (lineNum) {
         modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
