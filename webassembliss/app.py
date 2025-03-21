@@ -247,9 +247,6 @@ def arm64_linux_debug():
         )
 
     elif request.json["debug"].get("command", False):
-        # TODO: There is a bug either somewhere here or in this method;
-        #       a DDBError('no session') is often raised when executable exits;
-        #       is this being called more than once in the js-side?
         debugInfo = arm64_linux_gdb_cmd(
             user_signature=user_signature,
             cmd=request.json["debug"]["command"],
