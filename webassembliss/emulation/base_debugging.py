@@ -499,6 +499,8 @@ def debug_cmd(
     #   2. set a breakpoint on line 92 (first line of exit block);
     #   3. continue, it should stop at the breakpoint;
     #   4. step, the session will end.
+    #   More info; it seems that after this breakpoint gdb just continues even though we asked to step;
+    #   If you add a breakpoint on lines 93 & 94 as well, both step and continue will work as expected.
 
     dr = DebuggingResults(flags={})
     data = db.get_user_info(user_signature=user_signature)
