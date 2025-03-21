@@ -250,8 +250,7 @@ def arm64_linux_debug():
         debugInfo = arm64_linux_gdb_cmd(
             user_signature=user_signature,
             cmd=request.json["debug"]["command"],
-            breakpoint_source=request.json["debug"].get("breakpoint_source", ""),
-            breakpoint_line=request.json["debug"].get("breakpoint_line", 0),
+            breakpoints=request.json["debug"].get("breakpoints", []),
             registers_to_show=session["registers"].split(),
         )
 

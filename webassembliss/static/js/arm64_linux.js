@@ -5,6 +5,9 @@ window.lastRunInfo = null;
 window.decorations = null;
 window.gdb_line_decoration = null;
 window.cl_args = "";
+window.nextGDBLine = null;
+
+const activeBreakpoints = {};
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -396,11 +399,13 @@ function addErrorHighlight(line, messages) {
     });
 }
 
-function updateGdbLine(line) {
-    window.gdb_line_decoration = addHighlight(line, {
-        isWholeLine: true,
-        className: 'gdbLineDecoration'
-    });
+function showGDBNextLine() {
+    if (window.nextGDBLine) {
+        window.gdb_line_decoration = addHighlight(window.nextGDBLine, {
+            isWholeLine: true,
+            className: 'gdbLineDecoration'
+        });
+    }
 }
 
 function addBreakpointHighlight(line) {
@@ -412,8 +417,24 @@ function addBreakpointHighlight(line) {
     });
 }
 
+function addCurrentTabBreakpointsHighlights() {
+    if (currentTab.num in activeBreakpoints) {
+        for (const [line, active] of Object.entries(activeBreakpoints[currentTab.num])) {
+            if (active) {
+                addBreakpointHighlight(parseInt(line));
+            }
+        }
+    }
+}
+
 function removeAllHighlights() {
     decorations.clear();
+}
+
+function showDebuggingHighlights() {
+    removeAllHighlights();
+    addCurrentTabBreakpointsHighlights();
+    showGDBNextLine();
 }
 
 function updateDebuggingInfo(data) {
@@ -451,13 +472,10 @@ function updateDebuggingInfo(data) {
     lastRunInfo = data.debugInfo;
     document.getElementById("downloadButton").disabled = false;
     if (data.debugInfo.active) {
-        removeAllHighlights();
-        updateGdbLine(data.debugInfo.next_line);
-        for (const line of data.debugInfo.breakpoints) {
-            // TODO: handle multiple sources here, would be in format 'source:line'.
-            addBreakpointHighlight(parseInt(line));
-        }
+        window.nextGDBLine = data.debugInfo.next_line;
+        showDebuggingHighlights();
     } else {
+        window.nextGDBLine = null;
         resetDebuggerControls();
     }
 }
@@ -498,16 +516,17 @@ function startDebugger() {
         );
 }
 
-function debuggerCommand(commands, modal) {
+function debuggerCommand(cmdNum, modal) {
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
+
     fetch('/arm64_linux/debug/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands, registers: registers }),
+        body: JSON.stringify({ source_code: source_code, user_input: user_input, debug: { command: cmdNum, breakpoints: createBreakpointList() }, registers: registers }),
     }).then(response => response.json())
         .then(data => {
             updateDebuggingInfo(data);
@@ -517,30 +536,44 @@ function debuggerCommand(commands, modal) {
         );
 }
 
+function createBreakpointList() {
+    bpList = [];
+    for (const [tabNum, breakpointInfo] of Object.entries(activeBreakpoints)) {
+        for (const [line, active] of Object.entries(breakpointInfo)) {
+            // TODO: this should generate a list of source_name:line_num eventually; we would need to know what is the filename for tabNum.
+            if (active) {
+                bpList.push(line);
+            }
+        }
+    }
+    return bpList
+}
+
 function continueDebug() {
     modal = showLoading('Debugger', 'Please wait while we continue until the next breakpoint.', 'Continuing...');
-    debuggerCommand({ "command": 1 }, modal);
+    debuggerCommand(1, modal);
 }
 
 function stepDebug() {
     modal = showLoading('Debugger', 'Please wait while we step over this instruction.', 'Stepping...');
-    debuggerCommand({ "command": 2 }, modal);
+    debuggerCommand(2, modal);
 }
 
 function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
-    // TODO: handle this only on javascript, send a list of breakpoints with the step/continue commands.
     let lineNum = prompt("Line number to toggle breakpoint:", "");
     if (lineNum) {
-        modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
-        lineNum = parseInt(lineNum);
-        debuggerCommand({ "command": 3, "breakpoint_line": lineNum }, modal);
+        if (!(currentTab.num in activeBreakpoints)) {
+            activeBreakpoints[currentTab.num] = {};
+        }
+        activeBreakpoints[currentTab.num][lineNum] = !activeBreakpoints[currentTab.num][lineNum];
     }
+    showDebuggingHighlights();
 }
 
 function stopDebugger() {
     // Stop debugging session.
-    debuggerCommand({ "command": 4 }, null);
+    debuggerCommand(3, null);
 }
 
 function resetDebuggerControls() {

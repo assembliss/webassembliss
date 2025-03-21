@@ -241,8 +241,7 @@ def send_debug_cmd(
     *,
     user_signature: str,
     cmd: int,
-    breakpoint_source: str = "",
-    breakpoint_line: int = 0,
+    breakpoints: List[str],
     extraInfo: Optional[List[DebuggingInfo]] = None,
     registers_to_show: Optional[List[str]] = None,
 ) -> DebuggingResults:
@@ -257,6 +256,5 @@ def send_debug_cmd(
         user_signature=user_signature,
         cmd=DebuggingOptions(cmd),
         extraInfo=extraInfo,
-        breakpoint_source=breakpoint_source,
-        breakpoint_line=breakpoint_line,
+        breakpoints=breakpoints,
     )
