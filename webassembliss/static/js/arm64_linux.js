@@ -144,14 +144,12 @@ const tabs = {
         document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
         document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
         this.count++;
-        console.log("added tab")
         openTab(tabNum);
     }
 };
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
-    console.log(file);
 
     if (!file) {
         return;
@@ -324,7 +322,6 @@ function runCode() {
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
-    console.log("here1");
     fetch('/arm64_linux/run/', {
         method: 'POST',
         headers: {
@@ -338,7 +335,6 @@ function runCode() {
         }),
     }).then(response => response.json())
         .then(data => {
-            console.log("here2");
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
             document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
@@ -356,7 +352,6 @@ function runCode() {
             lastRunInfo = data.info_obj;
             // Make sure to highlight detection AFTER lastRunInfo is updated!
             detectAndHighlightErrors();
-            console.log("here3");
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         }).then(() =>
@@ -400,9 +395,6 @@ function addErrorHighlight(line, messages) {
 }
 
 function updateGdbLine(line) {
-    if (window.gdb_line_decoration) {
-        // TODO: remove old line decoration so only the updated next one appears.
-    }
     window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
         className: 'gdbLineDecoration'
@@ -464,7 +456,7 @@ function updateDebuggingInfo(data) {
             addBreakpointHighlight(parseInt(line));
         }
     } else {
-        stopDebugger();
+        resetDebuggerControls();
     }
 }
 
@@ -482,11 +474,9 @@ function startDebugger() {
     document.getElementById("runBtn").disabled = true;
     document.getElementById("resetBtn").disabled = true;
     document.getElementById("saveBtn").disabled = true;
-    document.getElementById("loadBtn").disabled = true;
     // Make editor read-only.
     window.editor.updateOptions({ readOnly: true });
 
-    // TODO: actually start a debugging session.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
@@ -537,6 +527,7 @@ function stepDebug() {
 
 function toggleBreakpoint() {
     // TODO: handle multiple source files eventually.
+    // TODO: handle this only on javascript, send a list of breakpoints with the step/continue commands.
     let lineNum = prompt("Line number to toggle breakpoint:", "");
     if (lineNum) {
         modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
@@ -548,6 +539,9 @@ function toggleBreakpoint() {
 function stopDebugger() {
     // Stop debugging session.
     debuggerCommand({ "command": 4 }, null);
+}
+
+function resetDebuggerControls() {
     // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
     removeAllHighlights();
     // Disable active debugger buttons.
@@ -560,7 +554,6 @@ function stopDebugger() {
     document.getElementById("runBtn").disabled = false;
     document.getElementById("resetBtn").disabled = false;
     document.getElementById("saveBtn").disabled = false;
-    document.getElementById("loadBtn").disabled = false;
     // Make editor editable.
     window.editor.updateOptions({ readOnly: false });
 }

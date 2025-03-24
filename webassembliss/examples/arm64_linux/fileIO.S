@@ -9,8 +9,10 @@ outerrormsg: .ascii "Could not open file to write: "
 outfilename: .asciz "/userprograms/testfile-copy.txt"
 outerrormsgLen = . - outerrormsg - 1
 
+contentsmsg: .ascii "File contents:\n"
 buffer: .space 512
 bufLen = . - buffer
+contentsmsgLen = . - contentsmsg
 
 .text
 
@@ -49,6 +51,14 @@ closeIn: /* Close input file */
     mov     x0, x19         /* load filehandle to be closed */
     mov     w8, #57         /* close is syscall #57 */
     svc     #0
+
+showContents: /* Output the files contents to stdout */
+    /* syscall write(int fd, const void *buf, size_t count) */
+    mov     x0, #1                  /* fd := STDOUT_FILENO */
+    ldr     x1, =contentsmsg        /* buf := msg */
+    ldr     x2, =contentsmsgLen     /* count := len */
+    mov     w8, #64                 /* write is syscall #64 */
+    svc     #0                      /* invoke syscall */
 
 openOut: /* Open file to write */
     /* syscall openat(int dirfd, const char *pathname, int flags) */

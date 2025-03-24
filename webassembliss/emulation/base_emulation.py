@@ -1,9 +1,11 @@
+import shutil
 import struct
 import subprocess
 import tempfile
 from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
+from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
@@ -27,7 +29,7 @@ class EmulationResults:
     as_args: Dict[str, str] = field(default_factory=dict)
     as_out: str = ""
     as_err: str = ""
-    num_instructions: Optional[Dict[str, int]] = field(default_factory=dict)
+    num_instructions: Dict[str, Optional[int]] = field(default_factory=dict)
     linked_ok: bool = None  # type: ignore[assignment]
     ld_args: str = ""
     ld_out: str = ""
@@ -86,9 +88,16 @@ class EmulationResults:
         keep_empty_tokens: bool = False,
     ) -> str:
         out = ""
-        
+
         for filename in msgs:
-            out += f"Output for {filename}: " + self._prep_output(msgs[filename], empty, left_padding, split_char, line_num_format, keep_empty_tokens)
+            out += f"Output for {filename}: " + self._prep_output(
+                msgs[filename],
+                empty,
+                left_padding,
+                split_char,
+                line_num_format,
+                keep_empty_tokens,
+            )
 
         return out
 
@@ -256,7 +265,7 @@ def assemble(
 
 def link(
     ld_cmd: str,
-    obj_paths: List[Union[str, PathLike]],
+    obj_paths: List[str],
     flags: List[str],
     bin_path: Union[str, PathLike],
     ld_cmd_format: str = "{ld_cmd} {obj_paths} {joined_flags} {bin_path}",
@@ -267,7 +276,7 @@ def link(
     # Combine the different pieces into a complete linking command.
     ld_full_cmd = ld_cmd_format.format(
         ld_cmd=ld_cmd,
-        obj_paths=" ".join(obj_paths), # HERE IS THE ISSUE
+        obj_paths=" ".join(obj_paths),
         joined_flags=" ".join(flags),
         bin_path=bin_path,
     ).split()
@@ -479,9 +488,26 @@ def timed_emulation(
     )
 
 
+class RootfsSandbox:
+    """Class to provide a context manager that creates a rootfs sandbox."""
+
+    def __init__(self, rootfs_path: Union[str, PathLike]):
+        """Creates a temporary directory and copies the rootfs contents into it."""
+        self._sandbox = tempfile.TemporaryDirectory()
+        shutil.copytree(rootfs_path, self._sandbox.name, dirs_exist_ok=True)
+
+    def __enter__(self):
+        """Provides the path for the user sandbox."""
+        return self._sandbox.name
+
+    def __exit__(self, *args):
+        """Cleans up the temporary directory when exiting the context."""
+        self._sandbox.cleanup()
+
+
 def clean_emulation(
     *,  # force naming arguments
-    code: Dict[str, str],
+    source_files: Dict[str, str],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
@@ -498,37 +524,41 @@ def clean_emulation(
         [Union[str, PathLike]], Optional[int]
     ] = lambda _: None,
 ) -> EmulationResults:
+    """Emulates the given code without side effects."""
     # TODO: add tests to make sure this function works as expected.
 
-    # Create a temporary directory so space gets freed after we're done with user files.
-    # TODO: Create a "rootfs sandbox" to prevent user code to corrup app functionality.
-    #           1: create a tempdir in the usual OS location (i.e., remove dir argument below)
-    #           2: recursively copy the given rootfs_path into the new tempdir: https://docs.python.org/3/library/shutil.html#shutil.copytree
-    #           3: adjust code in the with statement below to use "{tmpdirname}/{rootfs_path}/" where applicable
-    with tempfile.TemporaryDirectory(dir=f"{rootfs_path}/{workdir}") as tmpdirname:
-        bin_path = f"{tmpdirname}/{bin_name}"
-        er = EmulationResults(rootfs=rootfs_path, flags={})
+    # Create a result object that will return the status of each step of the run process.
+    er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
+
+    # Create a rootfs sandbox to run user code.
+    with RootfsSandbox(rootfs_path) as rootfs_sandbox:
+        workpath = join(rootfs_sandbox, workdir)
+
+        # Create path names pointing inside the temp dir.
+        bin_path = join(workpath, bin_name)
         obj_paths = []
 
-        for filename in code.keys():
+        for filename in source_files:
             # Create path names pointing inside the temp dir.
-            src_path = f"{tmpdirname}/{filename}"
-
-            obj_name = filename.split(".")[0] + ".o"
-            obj_path = f"{tmpdirname}/{obj_name}"
+            src_path = join(workpath, filename)
+            obj_path = src_path + ".o"
             obj_paths.append(obj_path)
 
             # Create a source file in the temp dir and go through the steps to emulate it.
-            er.source_code[filename] = code[filename]
-            er.create_source_ok[filename], er.create_source_error[filename] = create_source(src_path, code[filename])
+            er.source_code[filename] = source_files[filename]
+            er.create_source_ok[filename], er.create_source_error[filename] = (
+                create_source(src_path, source_files[filename])
+            )
             if not er.create_source_ok[filename]:
                 return er
 
             # Try assembling the created source.
-            # TODO: add the option to assemble multiple sources.
-            er.assembled_ok[filename], er.as_args[filename], as_out_temp, as_err_temp = assemble(
-                as_cmd, src_path, as_flags, obj_path
-            )
+            (
+                er.assembled_ok[filename],
+                er.as_args[filename],
+                as_out_temp,
+                as_err_temp,
+            ) = assemble(as_cmd, src_path, as_flags, obj_path)
 
             er.as_err += f"Output for {filename}: {as_err_temp}\n"
             er.as_out += f"Output for {filename}: {as_out_temp}\n"
@@ -539,7 +569,6 @@ def clean_emulation(
             er.num_instructions[filename] = count_instructions_func(src_path)
 
         # Try linking the generated object.
-        # TODO: add the option to link multiple objects.
         # TODO: add the option to receive already created objects.
         er.linked_ok, er.ld_args, er.ld_out, er.ld_err = link(
             ld_cmd, obj_paths, ld_flags, bin_path
@@ -563,7 +592,7 @@ def clean_emulation(
             er.argv,
             er.exec_instructions,
         ) = timed_emulation(
-            rootfs_path,
+            rootfs_sandbox,
             bin_path,
             cl_args,
             bin_name,

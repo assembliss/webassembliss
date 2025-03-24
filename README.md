@@ -23,14 +23,18 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] allow user to debug code (continue, step, set breakpoint, see memory)
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
-- [ ] ensure that user code cannot modify rootfs base files
-	- [x] well, they actually can modify things
-	- [ ] create a sandbox for each user emulation
+- [x] created a sandbox for each user emulation
 - [ ] allow multiple sources to work together
 	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] handle multiple architectures
+ 	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
+	- [ ] [x8664_linux](https://github.com/qilingframework/rootfs/tree/master/x8664_linux_glibc2.39)
+ 	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
+	- [ ] [mips](https://github.com/qilingframework/rootfs/tree/master/mips32el_linux)
+	- [ ] [riscv](https://github.com/qilingframework/rootfs/tree/master/riscv64_linux)
+	- [ ] [armv7](https://github.com/qilingframework/rootfs/tree/master/arm_linux)
 
 ### Grading Workflow
 - [x] allow testing of code (given input, expected output)

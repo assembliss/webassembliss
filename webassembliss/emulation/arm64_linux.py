@@ -100,7 +100,7 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
 
 
 def emulate(
-    code: Dict[str, str],
+    source_files: Dict[str, str],
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
@@ -120,7 +120,7 @@ def emulate(
 
     # Run the emulation and return its status and results.
     return clean_emulation(
-        code=code,
+        source_files=source_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,
