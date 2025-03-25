@@ -155,7 +155,8 @@ def tab_manager(filename):
         return (
             jsonify(
                 {"filename": filename, 
-                 "contents": session["user_files"][filename]}
+                 "contents": session["user_files"][filename],
+                 "user_storage": session["user_storage"]}
             ),
             200,
         )
@@ -166,7 +167,8 @@ def tab_manager(filename):
             return jsonify({"error": f"Could not find '{filename}'"}), 400
         session["user_storage"] -= len(session["user_files"][filename])
         del session["user_files"][filename]
-        return jsonify({"message": f"Deleted '{filename}' from the server"}), 200
+        return jsonify({"message": f"Deleted '{filename}' from the server",
+                        "user_storage": session["user_storage"]}), 200
 
     elif request.method == "POST":
         # For POST method, store the given contents in the filename passed in the url

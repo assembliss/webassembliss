@@ -87,6 +87,8 @@ function openTab(tabNum) {
         renamedTab.onclick = () => openTab(tabNum);
 
         document.getElementById(`tab${currentTab.num}Rename`).replaceWith(renamedTab);
+
+        // TODO: Update python side directly right here.
     }
 
     document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
@@ -121,7 +123,10 @@ function openTab(tabNum) {
             }),
         }).then(response => response.json())
             .then(data => {
-                // TODO: Validate this response.
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
                 // Update the editor contents.
                 window.editor.setValue(data.return_file.contents);
                 // Update button styles.
@@ -359,7 +364,7 @@ function runCode() {
     removeAllHighlights();
     // To make runcode() update the server cookies, something like this needs to happen, but this doesn't work.    
 
-    /*
+    
     fetch('/tab_manager/' + document.getElementById(`tab${currentTab.num}Btn`).value, {
         method: 'POST',
         headers: {
@@ -367,13 +372,12 @@ function runCode() {
         },
         body: JSON.stringify({
             contents: window.editor.getValue(),
-            return_file: newTab_filename
         }),
     }).then(response => response.json())
     .then(data => {
-        changeUserStorageCounter(data.return_file.user_storage);
+        // changeUserStorageCounter(data.return_file.user_storage);
     });
-    */
+    
 
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
