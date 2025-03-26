@@ -89,7 +89,18 @@ textarea {
     border-left: 0px;
 }
 
-
+.overlayAlert {
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 9999;
+}
 
 
 td {

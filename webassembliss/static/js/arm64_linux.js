@@ -79,16 +79,51 @@ function openTab(tabNum) {
         renameTextBox.select();
 
     function replaceTabRename() {
-        renamedTab = document.createElement('input');
-        renamedTab.type = "button";
-        renamedTab.className = "activeTabBtn";
-        renamedTab.id = `tab${currentTab.num}Btn`;
-        renamedTab.value = document.getElementById(`tab${currentTab.num}Rename`).value;
-        renamedTab.onclick = () => openTab(tabNum);
+        newTabName = document.getElementById(`tab${currentTab.num}Rename`).value;
+        // Validate new tab names
+        // Allowed file extensions in the editor
+        const extensions = ['.S'];
+        let tabNameHasExtension = false;
+        let tabNameIsAllowed = true;
 
-        document.getElementById(`tab${currentTab.num}Rename`).replaceWith(renamedTab);
+        for (const extension of extensions) {
+            if (newTabName.endsWith(extension)) {
+                tabNameHasExtension = true;
+                break;
+            }
+        }
 
-        // TODO: Update python side directly right here.
+        if (!tabNameHasExtension) {
+            tabNameIsAllowed = false;
+        }
+
+        if (tabNameIsAllowed) {
+            renamedTab = document.createElement('input');
+            renamedTab.type = "button";
+            renamedTab.className = "activeTabBtn";
+            renamedTab.id = `tab${currentTab.num}Btn`;
+            renamedTab.value = newTabName
+            renamedTab.onclick = () => openTab(tabNum);
+
+            document.getElementById(`tab${currentTab.num}Rename`).replaceWith(renamedTab);
+
+            // TODO: Update python side directly right here.
+
+        } else { // Tab name ISN'T allowed.
+            if (!tabNameHasExtension) {
+                overlayAlert = document.createElement('div');
+                overlayAlert.className = "overlayAlert";
+                overlayAlert.textContent = "Tab name must have a file extension."
+                
+                document.getElementById(`tab${currentTab.num}.Rename`).appendChild(overlayAlert);
+
+                setTimeout(() => {
+                    if (overlayAlert) {
+                        overlayAlert.remove();
+                    }
+                }, 5000);
+            }
+        } 
     }
 
     document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
@@ -176,7 +211,7 @@ const tabs = {
         let newTab = document.createElement("input");
         newTab.type = "button";
         newTab.className = "tabBtn";
-        newTab.value = `Tab${tabNum}`;
+        newTab.value = `Tab${tabNum}.S`;
         newTab.id = `tab${tabNum}Btn`;
         newTab.onclick = () => openTab(tabNum);
 
