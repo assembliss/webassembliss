@@ -73,13 +73,14 @@ function openTab(tabNum) {
         renameTextBox.className = "activeTabBtn";
         renameTextBox.id = `tab${tabNum}Rename`;
         renameTextBox.value = currentTabBtn.value;
+        renameTextBox.setAttribute("autocomplete", "off");
 
         currentTabBtn.replaceWith(renameTextBox);
         renameTextBox.focus();
         renameTextBox.select();
 
     function replaceTabRename() {
-        newTabName = document.getElementById(`tab${currentTab.num}Rename`).value;
+        newTabName = renameTextBox.value;
         // Validate new tab names
         // Allowed file extensions in the editor
         const extensions = ['.S'];
@@ -93,7 +94,12 @@ function openTab(tabNum) {
             }
         }
 
-        if (!tabNameHasExtension) {
+        // TODO: FETCH A LIST OF CURRENT TABS. Get their titles, and compare the new tab name to all of them. 
+        // If any are equal to the new tab name, set tabNameIsNotDuplicate to false.
+
+        
+
+        if (!tabNameHasExtension && tabNameIsNotDuplicate) {
             tabNameIsAllowed = false;
         }
 
@@ -105,24 +111,25 @@ function openTab(tabNum) {
             renamedTab.value = newTabName
             renamedTab.onclick = () => openTab(tabNum);
 
-            document.getElementById(`tab${currentTab.num}Rename`).replaceWith(renamedTab);
+            renameTextBox.replaceWith(renamedTab);
+
+            if (filenameTooltip) {
+                filenameTooltip.hide();
+            }
 
             // TODO: Update python side directly right here.
 
-        } else { // Tab name ISN'T allowed.
-            if (!tabNameHasExtension) {
-                overlayAlert = document.createElement('div');
-                overlayAlert.className = "overlayAlert";
-                overlayAlert.textContent = "Tab name must have a file extension."
-                
-                document.getElementById(`tab${currentTab.num}.Rename`).appendChild(overlayAlert);
+        } else { // Tab name ISN'T allowed. Show tooltip showing what's wrong.
+            renameTextBox.setAttribute("data-bs-toggle", "popover");
+            renameTextBox.setAttribute("data-bs-placement", "top");
 
-                setTimeout(() => {
-                    if (overlayAlert) {
-                        overlayAlert.remove();
-                    }
-                }, 5000);
+            if (!tabNameHasExtension) {
+                renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");                
             }
+
+            filenameTooltip = new bootstrap.Tooltip(renameTextBox);
+            filenameTooltip.show();
+            renameTextBox.focus();
         } 
     }
 
