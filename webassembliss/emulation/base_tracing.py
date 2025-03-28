@@ -12,7 +12,7 @@ from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untype
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 from ..protos.py.trace_info_pb2 import ExecutionTrace, TraceStep
-from .base_emulation import RootfsSandbox, assemble, create_source, filter_memory, link
+from .base_emulation import RootfsSandbox, assemble, create_source, link
 
 
 def find_next_addr(ql: Qiling) -> int:
@@ -48,6 +48,31 @@ def find_bin_exit_addr(ql: Qiling) -> int:
         size = getsize(ql.path)
     return base + size
 
+def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[str, int]:
+    chunks = {}
+
+    for s, mem_values in mem.items():
+        for i in range(0, len(mem_values), 4):
+            new_chunk = 0
+            
+            new_chunk |= (mem_values[i] << 24)
+            new_chunk |= (mem_values[i + 1] << 16)
+            new_chunk |= (mem_values[i + 2] << 8)
+            new_chunk |= (mem_values[i + 3])
+            
+            if new_chunk:
+                chunks[s + i] = new_chunk
+
+    return chunks
+
+def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]) -> Dict[str, int]:
+    og_chunks = get_memory_chunks(original_mem)
+    mod_chunks = get_memory_chunks(modified_mem)
+
+    delta_chunks = {addr: val for addr, val in mod_chunks.items() if val != og_chunks.get(addr, 0)}
+    delta_chunks.update({addr: 0 for addr in og_chunks if addr not in mod_chunks})
+
+    return delta_chunks
 
 def stepped_emulation(
     rootfs_path: Union[str, PathLike],
@@ -61,7 +86,7 @@ def stepped_emulation(
     get_flags_func: Callable[[Qiling], Dict[str, bool]],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
-    str, str, bool, List[TraceStep]  # argv  # exit_code  # reached_max_steps  # steps
+    str, str, bool, List[TraceStep], Dict[int, int]  # argv  # exit_code  # reached_max_steps  # steps  # mapped memory areas
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
@@ -100,7 +125,7 @@ def stepped_emulation(
     steps = [
         TraceStep(
             register_delta={r: v for r, v in cur_reg_values.items() if v},
-            # mem_chg=cur_mem_values,
+            memory_delta=find_mem_delta({}, cur_mem_values),
             flag_delta={r: v for r, v in cur_flag_values.items() if v},
         )
     ]
@@ -121,6 +146,7 @@ def stepped_emulation(
         # Emulate one step.
         execution_error = ""
         try:
+            # TODO: apply timeout as a sum of each instruction, i.e., timeout the stepped_emulation method.
             ql.emu_start(
                 begin=find_next_addr(ql), end=exit_address, timeout=timeout, count=1
             )
@@ -153,9 +179,7 @@ def stepped_emulation(
         new_flag_values = get_flags_func(ql)
 
         # Compare the new values with the old ones and only save the changed entries into our Step.
-        # TODO: compare the memory values
-        # mem_delta = None
-        # filter_memory(og_mem_values, cur_mem_values, little_endian),
+        mem_delta=find_mem_delta(cur_mem_values, new_mem_values)
         reg_delta = {r: v for r, v in new_reg_values.items() if cur_reg_values[r] != v}
         flag_delta = {
             f: v for f, v in new_flag_values.items() if cur_flag_values[f] != v
@@ -169,9 +193,10 @@ def stepped_emulation(
         # Add this step information to our step list.
         steps.append(
             TraceStep(
+                # TODO: map the instruction address to 'file:linenum'.
                 line_executed="??",
                 register_delta=reg_delta,
-                # mem_chg=mem_delta,
+                memory_delta=mem_delta,
                 flag_delta=flag_delta,
                 exit_code=ql.os.exit_code,
                 stdout=out.getvalue().decode(),
@@ -183,7 +208,7 @@ def stepped_emulation(
         if ql.os.exit_code is not None or emulation_error:
             break
 
-    return argv, ql.os.exit_code, step_num == max_steps, steps
+    return argv, ql.os.exit_code, step_num == max_steps, steps, relevant_mem_area
 
 
 def clean_trace(
@@ -253,6 +278,7 @@ def clean_trace(
             exit_code,
             reached_max_steps,
             trace_steps,
+            mapped_memory,
         ) = stepped_emulation(
             rootfs_path=rootfs_sandbox,
             bin_path=bin_path,
@@ -264,9 +290,14 @@ def clean_trace(
             registers=registers,
             get_flags_func=get_flags_func,
         )
+
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
         et.steps.extend(trace_steps)
+
+        for start, end in mapped_memory:
+            et.mapped_memory[start] = end
+
         if exit_code is not None:
             et.exit_code = exit_code
 
@@ -301,6 +332,7 @@ if __name__ == "__main__":
     print(f"{et.argv=}")
     print(f"{et.exit_code=}")
     print(f"{et.reached_max_steps=}")
+    print(f"{et.mapped_memory=}")
     print("Steps:")
     for i, s in enumerate(et.steps):
         print(f"[#{i}] {s}\n")
