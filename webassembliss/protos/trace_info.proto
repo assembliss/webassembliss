@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+// This file can be compiled with: protoc trace_info.proto --python_out=py --js_out=js
+// That will generate the trace_info.py file that we can import in the python backend, and a trace_info.js that we can import in the frontend.
+
+// Message to hold information about a single instruction execution.
+// It stores the differences in registers/memory/flags/output this instruction caused.
+message TraceStep {
+  string line_executed = 1;
+  string stdout = 2;
+  string stderr = 3;
+  optional sint32 exit_code = 4;
+  map<string, sint64> register_delta = 5;
+  map<string, bool> flag_delta = 6;
+}
+
+// Message to hold information about an entire emulation.
+// It stores information about the architecture emulated and a list of TraceSteps.
+message ExecutionTrace {
+  string rootfs = 1;
+  bool assembled_ok = 2;
+  bool linked_ok = 3;
+  string argv = 4;
+  optional sint32 exit_code = 5;
+  bool reached_max_steps = 6;
+  repeated TraceStep steps = 7;
+}
