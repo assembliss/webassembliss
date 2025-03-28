@@ -310,8 +310,11 @@ def clean_trace(
 if __name__ == "__main__":
     from .arm64_linux import ARM64_REGISTERS, AS_CMD, LD_CMD, ROOTFS_PATH, get_nzcv
 
-    filename = "/webassembliss/examples/arm64_linux/hello.S"
-    with open(filename) as file_in:
+    path = "/webassembliss/examples/arm64_linux/"
+    filename = "hello.S"
+    # BUG: fileIO.S raises an exception with a very large number.
+    # TODO: fix fileIO.S issue.
+    with open(join(path, filename)) as file_in:
         et = clean_trace(
             source_files={filename: file_in.read()},
             rootfs_path=ROOTFS_PATH,
