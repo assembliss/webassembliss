@@ -236,6 +236,9 @@ def clean_trace(
 
     # Create a rootfs sandbox to run user code.
     with RootfsSandbox(rootfs_path) as rootfs_sandbox:
+        # BUG: join ignores all previous arguments if it encounters an absolute path;
+        #       This allows the user to go around the sandbox if workdir, bin_name,
+        #       or filename is an absolute path; could add asserts at top of method.
         workpath = join(rootfs_sandbox, workdir)
 
         # Create path names pointing inside the temp dir.
