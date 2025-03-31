@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+import subprocess
 from io import BytesIO
 from os import PathLike
 from os.path import getsize, isabs, join
@@ -11,7 +11,7 @@ from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
-from ..protos.py.trace_info_pb2 import ExecutionTrace, TraceStep
+from ..protos.py.trace_info_pb2 import ExecutionTrace, LineInfo, TraceStep
 from .base_emulation import RootfsSandbox, assemble, create_source, link
 
 
@@ -76,6 +76,33 @@ def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, b
 
     return delta_chunks
 
+def create_linenum_map(obj_dump_cmd: str, bin_path: str, source_filenames: List[str]) -> Dict[int, Tuple[int, int]]:
+    linenum_map = {}
+
+    decode_lines_cmd = [obj_dump_cmd, "--dwarf=decodedline", bin_path]
+    with subprocess.Popen(decode_lines_cmd, stdout=subprocess.PIPE) as process:
+        stdout, _ = process.communicate()
+
+    for block in stdout.decode().split("Stmt")[1:]:
+        
+        filename = block.strip().split()[0]
+        file_index = source_filenames.index(filename)
+
+        for line in block.split("\n"):
+            
+            if not line:
+                # Ignore empty lines.
+                continue
+            
+            tokens = line.split()
+            if not tokens[-1] == "x":
+                # Ignore non-statements.
+                continue
+            # Map instruction address to source code line number.
+            linenum_map[int(tokens[2], 16)] = (file_index, int(tokens[1]))
+
+    return linenum_map
+
 def stepped_emulation(
     rootfs_path: Union[str, PathLike],
     bin_path: Union[str, PathLike],
@@ -86,6 +113,8 @@ def stepped_emulation(
     stdin: BytesIO,
     registers: List[str],
     get_flags_func: Callable[[Qiling], Dict[str, bool]],
+    objdump_cmd: str,
+    source_filenames: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
     str, str, bool, List[TraceStep], Dict[int, int]  # argv  # exit_code  # reached_max_steps  # steps  # mapped memory areas
@@ -132,6 +161,9 @@ def stepped_emulation(
         )
     ]
 
+    # Create a map to translate PC value to a source line.
+    linenum_map = create_linenum_map(objdump_cmd, bin_path, source_filenames)
+
     # Flag to stop emulation early.
     emulation_error = False
 
@@ -149,8 +181,9 @@ def stepped_emulation(
         execution_error = ""
         try:
             # TODO: apply timeout as a sum of each instruction, i.e., timeout the stepped_emulation method.
+            next_instr_addr = find_next_addr(ql)
             ql.emu_start(
-                begin=find_next_addr(ql), end=exit_address, timeout=timeout, count=1
+                begin=next_instr_addr, end=exit_address, timeout=timeout, count=1
             )
 
         except QlErrorCoreHook as error:
@@ -193,10 +226,13 @@ def stepped_emulation(
         cur_flag_values = new_flag_values
 
         # Add this step information to our step list.
+        line_executed = LineInfo()
+        fi, ln = linenum_map[next_instr_addr]
+        line_executed.filename_index = fi
+        line_executed.linenum = ln
         steps.append(
             TraceStep(
-                # TODO: map the instruction address to 'file:linenum'.
-                line_executed="??",
+                line_executed=line_executed,
                 register_delta=reg_delta,
                 memory_delta=mem_delta,
                 flag_delta=flag_delta,
@@ -221,6 +257,7 @@ def clean_trace(
     ld_cmd: str,
     as_flags: List[str],
     ld_flags: List[str],
+    objdump_cmd: str,
     stdin: BytesIO,
     bin_name: str,
     registers: List[str],
@@ -235,6 +272,8 @@ def clean_trace(
 
     et = ExecutionTrace()
     et.rootfs = rootfs_path
+    source_filenames = list(source_files.keys())
+    et.source_filenames.extend(source_filenames)
 
     # Make sure that no user files are using absolute paths;
     # That would ignore the sandbox because of os.path.join's behavior.
@@ -297,6 +336,8 @@ def clean_trace(
             stdin=stdin,
             registers=registers,
             get_flags_func=get_flags_func,
+            objdump_cmd=objdump_cmd,
+            source_filenames=source_filenames,
         )
 
         et.argv = " ".join(argv)
@@ -313,20 +354,29 @@ def clean_trace(
 
 
 if __name__ == "__main__":
-    from .arm64_linux import ARM64_REGISTERS, AS_CMD, LD_CMD, ROOTFS_PATH, get_nzcv
+    from .arm64_linux import (
+        ARM64_REGISTERS,
+        AS_CMD,
+        LD_CMD,
+        OBJDUMP_CMD,
+        ROOTFS_PATH,
+        get_nzcv,
+    )
 
     path = "/webassembliss/examples/arm64_linux/"
-    filename = "hello.S"
+    filename1 = "multiDriver.S"
+    filename2 = "sampleLib.S"
     # BUG: fileIO.S raises an exception with a very large number.
     # TODO: fix fileIO.S issue.
-    with open(join(path, filename)) as file_in:
+    with open(join(path, filename1)) as file_in, open(join(path, filename2)) as file_in2:
         et = clean_trace(
-            source_files={filename: file_in.read()},
+            source_files={filename1: file_in.read(), filename2: file_in2.read()},
             rootfs_path=ROOTFS_PATH,
             as_cmd=AS_CMD,
             ld_cmd=LD_CMD,
-            as_flags=["-o"],
+            as_flags=["-g -o"],
             ld_flags=["-o"],
+            objdump_cmd=OBJDUMP_CMD,
             stdin=BytesIO("test test".encode()),
             bin_name="hello.out",
             registers=ARM64_REGISTERS,
@@ -338,6 +388,7 @@ if __name__ == "__main__":
 
     print("Emulation info:")
     print(f"{et.rootfs=}")
+    print(f"{et.source_filenames=}")
     print(f"{et.assembled_ok=}")
     print(f"{et.linked_ok=}")
     print(f"{et.argv=}")

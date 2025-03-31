@@ -7,10 +7,17 @@ syntax = "proto3";
 // Then, assuming you have unzipped the appropriate file inside ./js/plugin, you can run:
 // protoc trace_info.proto --python_out=py --js_out=js --plugin=protoc-gen-js=./js/plugin/bin/protoc-gen-js
 
+// Message to hold information about the line that was executed;
+// It stores an index for the filename inside of ExecutionTrace.source_filenames, and the line number.
+message LineInfo {
+  int32 filename_index = 1;
+  int32 linenum = 2;
+}
+
 // Message to hold information about a single instruction execution.
 // It stores the differences in registers/memory/flags/output this instruction caused.
 message TraceStep {
-  string line_executed = 1;
+  LineInfo line_executed = 1;
   string stdout = 2;
   string stderr = 3;
   optional sint32 exit_code = 4;
@@ -23,13 +30,14 @@ message TraceStep {
 // It stores information about the architecture emulated and a list of TraceSteps.
 message ExecutionTrace {
   string rootfs = 1;
-  bool assembled_ok = 2;
-  bool linked_ok = 3;
-  string argv = 4;
-  optional sint32 exit_code = 5;
-  bool reached_max_steps = 6;
+  repeated string source_filenames = 2;
+  bool assembled_ok = 3;
+  bool linked_ok = 4;
+  string argv = 5;
+  optional sint32 exit_code = 6;
+  bool reached_max_steps = 7;
   // One entry for each separate memory area that is mapped for the user program;
   // Entries follow this format: start_address -> end_address
-  map<uint64, uint64> mapped_memory = 7;
-  repeated TraceStep steps = 8;
+  map<uint64, uint64> mapped_memory = 8;
+  repeated TraceStep steps = 9;
 }
