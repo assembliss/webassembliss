@@ -17,6 +17,7 @@ from .base_debugging import (
     debug_cmd,
 )
 from .base_emulation import EmulationResults, assemble, clean_emulation
+from .base_tracing import clean_trace
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
@@ -256,3 +257,39 @@ def send_debug_cmd(
         breakpoint_source=breakpoint_source,
         breakpoint_line=breakpoint_line,
     )
+
+def trace(
+    source_files: Dict[str, str],
+    as_flags: Optional[List[str]] = None,
+    ld_flags: Optional[List[str]] = None,
+    max_trace_steps: int = 200,
+    timeout: int = 5_000_000,  # 5 seconds
+    stdin: str = "",
+    bin_name: str = "usrCode.exe",
+    cl_args: str = "",
+    registers: Optional[List[str]] = None,
+) -> EmulationResults:
+    # Create default mutable values if needed.
+    if as_flags is None:
+        as_flags = ["-g -o"]
+    if ld_flags is None:
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
+        ld_flags = ["-o"]
+    if not registers:
+        registers = ARM64_REGISTERS
+    return clean_trace(
+            source_files=source_files,
+            rootfs_path=ROOTFS_PATH,
+            as_cmd=AS_CMD,
+            ld_cmd=LD_CMD,
+            as_flags=as_flags,
+            ld_flags=ld_flags,
+            objdump_cmd=OBJDUMP_CMD,
+            stdin=BytesIO(stdin.encode()),
+            bin_name=bin_name,
+            registers=ARM64_REGISTERS,
+            cl_args=cl_args.split(),
+            get_flags_func=get_nzcv,
+            timeout=timeout,
+            max_trace_steps=max_trace_steps,
+        )
