@@ -1,12 +1,12 @@
 from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
-from os.path import getsize, join
+from os.path import getsize, isabs, join
 from typing import Callable, Dict, List, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
-from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN  # type: ignore[import-untyped]
+from qiling.const import QL_VERBOSE  # type: ignore[import-untyped]
 from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
@@ -234,11 +234,14 @@ def clean_trace(
     et = ExecutionTrace()
     et.rootfs = rootfs_path
 
+    # Make sure that no user files are using absolute paths;
+    # That would ignore the sandbox because of os.path.join's behavior.
+    all_path_names = list(source_files.keys()) + [bin_name, workdir]
+    if any((isabs(pn) for pn in all_path_names)):
+        return et
+
     # Create a rootfs sandbox to run user code.
     with RootfsSandbox(rootfs_path) as rootfs_sandbox:
-        # BUG: join ignores all previous arguments if it encounters an absolute path;
-        #       This allows the user to go around the sandbox if workdir, bin_name,
-        #       or filename is an absolute path; could add asserts at top of method.
         workpath = join(rootfs_sandbox, workdir)
 
         # Create path names pointing inside the temp dir.

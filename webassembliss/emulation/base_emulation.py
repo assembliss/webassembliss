@@ -5,7 +5,7 @@ import tempfile
 from dataclasses import dataclass, field
 from io import BytesIO
 from os import PathLike
-from os.path import join
+from os.path import isabs, join
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
@@ -530,11 +530,15 @@ def clean_emulation(
     # Create a result object that will return the status of each step of the run process.
     er = EmulationResults(rootfs=rootfs_path, flags={})  # type: ignore[arg-type]
 
+    # Make sure that no user files are using absolute paths;
+    # That would ignore the sandbox because of os.path.join's behavior.
+    all_path_names = list(source_files.keys()) + [bin_name, workdir]
+    if any((isabs(pn) for pn in all_path_names)):
+        er.create_source_error = "You cannot use absolute path names for any files or workdir."
+        return er
+
     # Create a rootfs sandbox to run user code.
     with RootfsSandbox(rootfs_path) as rootfs_sandbox:
-        # BUG: join ignores all previous arguments if it encounters an absolute path;
-        #       This allows the user to go around the sandbox if workdir, bin_name,
-        #       or filename is an absolute path; could add asserts at top of method.
         workpath = join(rootfs_sandbox, workdir)
 
         # Create path names pointing inside the temp dir.
