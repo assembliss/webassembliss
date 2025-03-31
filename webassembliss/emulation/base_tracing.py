@@ -52,13 +52,15 @@ def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[str, int]:
     chunks = {}
 
     for s, mem_values in mem.items():
+        # TODO: pad mem_values so the loop below always has enough values.
         for i in range(0, len(mem_values), 4):
             new_chunk = 0
             
-            new_chunk |= (mem_values[i] << 24)
-            new_chunk |= (mem_values[i + 1] << 16)
-            new_chunk |= (mem_values[i + 2] << 8)
-            new_chunk |= (mem_values[i + 3])
+            # Little-endian so it's easier to process in js.
+            new_chunk |= (mem_values[i + 3] << 24)
+            new_chunk |= (mem_values[i + 2] << 16)
+            new_chunk |= (mem_values[i + 1] << 8)
+            new_chunk |= (mem_values[i])
             
             if new_chunk:
                 chunks[s + i] = new_chunk
