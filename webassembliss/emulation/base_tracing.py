@@ -48,7 +48,11 @@ def find_bin_exit_addr(ql: Qiling) -> int:
         size = getsize(ql.path)
     return base + size
 
-def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[str, int]:
+def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[int, int]:
+    """Go through the memory values and combine them into small chunks; only store the non-zero chunks."""
+    # TODO: play around with the chunksize, we might find a better size than 4 bytes;
+    #       in that case, this would likely be a Dict[int, bytes] so we're not limited by the size of integers in the proto (that would be bytes as well).
+
     chunks = {}
 
     for s, mem_values in mem.items():
@@ -67,7 +71,8 @@ def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[str, int]:
 
     return chunks
 
-def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]) -> Dict[str, int]:
+def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]) -> Dict[int, int]:
+    """Compare the chunks from the original memory with the modified one so we can store only the changes."""
     og_chunks = get_memory_chunks(original_mem)
     mod_chunks = get_memory_chunks(modified_mem)
 
@@ -77,6 +82,7 @@ def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, b
     return delta_chunks
 
 def create_linenum_map(obj_dump_cmd: str, bin_path: str, source_filenames: List[str]) -> Dict[int, Tuple[int, int]]:
+    """Create a dictonary that can translate an instruction memory address into a source code line number."""
     linenum_map = {}
 
     decode_lines_cmd = [obj_dump_cmd, "--dwarf=decodedline", bin_path]
