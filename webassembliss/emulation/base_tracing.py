@@ -225,11 +225,13 @@ def stepped_emulation(
         cur_reg_values = new_reg_values
         cur_flag_values = new_flag_values
 
-        # Add this step information to our step list.
+        # Get information about the line that was executed.
         line_executed = LineInfo()
         fi, ln = linenum_map[next_instr_addr]
         line_executed.filename_index = fi
         line_executed.linenum = ln
+
+        # Add this step information to our step list.
         steps.append(
             TraceStep(
                 line_executed=line_executed,
