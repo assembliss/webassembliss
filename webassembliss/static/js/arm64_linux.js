@@ -61,10 +61,12 @@ function changeUserStorageCounter(newValue) {
 
 function openTab(tabNum) {
 
+    let filenameTooltip;
+
     let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
     let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
 
-    if (currentTab.num == tabNum) {
+    if (currentTab.num == tabNum && !document.getElementById(`tab${currentTab.num}Rename`)) {
     // Tab renaming functionality
     // There might need to exist some sort of character check to make sure the filename isn't something illegal?
     // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
@@ -79,13 +81,22 @@ function openTab(tabNum) {
         renameTextBox.focus();
         renameTextBox.select();
 
+        document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
+            replaceTabRename();
+        });
+        document.getElementById(`tab${currentTab.num}Rename`).addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                replaceTabRename();
+            }
+        });
+
     function replaceTabRename() {
-        newTabName = renameTextBox.value;
+        let newTabName = renameTextBox.value;
         // Validate new tab names
         // Allowed file extensions in the editor
         const extensions = ['.S'];
         let tabNameHasExtension = false;
-        let tabNameIsAllowed = true;
+        let tabNameIsDuplicate = false;
 
         for (const extension of extensions) {
             if (newTabName.endsWith(extension)) {
@@ -94,53 +105,50 @@ function openTab(tabNum) {
             }
         }
 
-        // TODO: FETCH A LIST OF CURRENT TABS. Get their titles, and compare the new tab name to all of them. 
-        // If any are equal to the new tab name, set tabNameIsNotDuplicate to false.
+        const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
+        // To avoid naming conflictions, tabTitles is a list of input elements.
 
+        for (const tabTitle of tabTitles) {
+            if (tabTitle.value == newTabName) {
+                tabNameIsDuplicate = true;
+                break;
+            }
+        }
         
 
-        if (!tabNameHasExtension && tabNameIsNotDuplicate) {
-            tabNameIsAllowed = false;
-        }
-
-        if (tabNameIsAllowed) {
-            renamedTab = document.createElement('input');
+        if (tabNameHasExtension && !tabNameIsDuplicate) {
+            let renamedTab = document.createElement('input');
             renamedTab.type = "button";
             renamedTab.className = "activeTabBtn";
             renamedTab.id = `tab${currentTab.num}Btn`;
-            renamedTab.value = newTabName
+            renamedTab.value = newTabName;
             renamedTab.onclick = () => openTab(tabNum);
 
             renameTextBox.replaceWith(renamedTab);
 
             if (filenameTooltip) {
-                filenameTooltip.hide();
+                filenameTooltip.dispose();
             }
 
             // TODO: Update python side directly right here.
 
-        } else { // Tab name ISN'T allowed. Show tooltip showing what's wrong.
-            renameTextBox.setAttribute("data-bs-toggle", "popover");
+        } else {
+            renameTextBox.setAttribute("data-bs-toggle", "tooltip");
             renameTextBox.setAttribute("data-bs-placement", "top");
 
-            if (!tabNameHasExtension) {
-                renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");                
+            if (tabNameHasExtension == false) {
+                renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
+            }
+            
+            if (tabNameIsDuplicate == true) {
+                renameTextBox.setAttribute("data-bs-title", "Another tab already has this name. File names must be unique!");
             }
 
             filenameTooltip = new bootstrap.Tooltip(renameTextBox);
             filenameTooltip.show();
             renameTextBox.focus();
-        } 
-    }
-
-    document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
-        replaceTabRename();
-    });
-    document.getElementById(`tab${currentTab.num}Rename`).addEventListener("keydown", function (event) {
-        if (event.key === "Enter") {
-            replaceTabRename();
         }
-    });
+    }
 
     } else {
         // Save current tab contents
