@@ -366,13 +366,12 @@ if __name__ == "__main__":
     )
 
     path = "/webassembliss/examples/arm64_linux/"
-    filename1 = "multiDriver.S"
-    filename2 = "sampleLib.S"
-    # BUG: fileIO.S raises an exception with a very large number.
-    # TODO: fix fileIO.S issue.
-    with open(join(path, filename1)) as file_in, open(join(path, filename2)) as file_in2:
+    filename1 = "fileIO.S"
+    # filename1 = "multiDriver.S"
+    # filename2 = "sampleLib.S"
+    with open(join(path, filename1)) as file_in:#, open(join(path, filename2)) as file_in2:
         et = clean_trace(
-            source_files={filename1: file_in.read(), filename2: file_in2.read()},
+            source_files={filename1: file_in.read()},# filename2: file_in2.read()},
             rootfs_path=ROOTFS_PATH,
             as_cmd=AS_CMD,
             ld_cmd=LD_CMD,

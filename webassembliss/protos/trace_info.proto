@@ -21,7 +21,7 @@ message TraceStep {
   string stdout = 2;
   string stderr = 3;
   optional sint32 exit_code = 4;
-  map<string, sint64> register_delta = 5;
+  map<string, uint64> register_delta = 5;
   map<string, bool> flag_delta = 6;
   map<uint64, fixed64> memory_delta = 7;
 }
