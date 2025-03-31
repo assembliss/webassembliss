@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-// This file can be compiled with: protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js/plugin/bin/protoc-gen-js
+// This file can be compiled with: protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js-plugin/bin/protoc-gen-js
 // That will generate the trace_info_pb2.py file that we can import in the python backend, and appropriate .js files we can import in the frontend.
 
 // PS: You may need to download protoc-gen-js from github: https://github.com/protocolbuffers/protobuf-javascript/releases/
-// Then, assuming you have unzipped the appropriate file inside ./js/plugin, you can try running the command again:
-// protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js/plugin/bin/protoc-gen-js
+// Then, assuming you have unzipped the appropriate file inside ./js-plugin, you can try running the command again:
+// protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js-plugin/bin/protoc-gen-js
 // TODO: add protoc-gen-js plugin installation into the Dockerfile.
 
 // Message to hold information about the line that was executed;
@@ -24,7 +24,7 @@ message TraceStep {
   optional sint32 exit_code = 4;
   map<string, uint64> register_delta = 5;
   map<string, bool> flag_delta = 6;
-  map<uint64, fixed64> memory_delta = 7;
+  map<uint64, uint64> memory_delta = 7;
 }
 
 // Message to hold information about an entire emulation.

@@ -50,17 +50,21 @@ def find_bin_exit_addr(ql: Qiling) -> int:
 
 def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[int, int]:
     """Go through the memory values and combine them into small chunks; only store the non-zero chunks."""
-    # TODO: play around with the chunksize, we might find a better size than 4 bytes;
+    # TODO: play around with the chunksize, we might find a better size than 8 bytes;
     #       in that case, this would likely be a Dict[int, bytes] so we're not limited by the size of integers in the proto (that would be bytes as well).
 
     chunks = {}
 
     for s, mem_values in mem.items():
         # TODO: pad mem_values so the loop below always has enough values.
-        for i in range(0, len(mem_values), 4):
+        for i in range(0, len(mem_values), 8):
             new_chunk = 0
             
             # Little-endian so it's easier to process in js.
+            new_chunk |= (mem_values[i + 7] << 56)
+            new_chunk |= (mem_values[i + 6] << 48)
+            new_chunk |= (mem_values[i + 5] << 40)
+            new_chunk |= (mem_values[i + 4] << 32)
             new_chunk |= (mem_values[i + 3] << 24)
             new_chunk |= (mem_values[i + 2] << 16)
             new_chunk |= (mem_values[i + 1] << 8)

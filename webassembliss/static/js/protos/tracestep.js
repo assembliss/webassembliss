@@ -147,7 +147,7 @@ proto.TraceStep.deserializeBinaryFromReader = function(msg, reader) {
     case 7:
       var value = msg.getMemoryDeltaMap();
       reader.readMessage(value, function(message, reader) {
-        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint64, jspb.BinaryReader.prototype.readFixed64, null, 0, 0);
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readUint64, jspb.BinaryReader.prototype.readUint64, null, 0, 0);
          });
       break;
     default:
@@ -218,7 +218,7 @@ proto.TraceStep.serializeBinaryToWriter = function(message, writer) {
   }
   f = message.getMemoryDeltaMap(true);
   if (f && f.getLength() > 0) {
-    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeUint64, jspb.BinaryWriter.prototype.writeFixed64);
+    f.serializeBinary(7, writer, jspb.BinaryWriter.prototype.writeUint64, jspb.BinaryWriter.prototype.writeUint64);
   }
 };
 
@@ -379,7 +379,7 @@ proto.TraceStep.prototype.clearFlagDeltaMap = function() {
 
 
 /**
- * map<uint64, fixed64> memory_delta = 7;
+ * map<uint64, uint64> memory_delta = 7;
  * @param {boolean=} opt_noLazyCreate Do not create the map if
  * empty, instead returning `undefined`
  * @return {!jspb.Map<number,number>}
