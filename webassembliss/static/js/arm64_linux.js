@@ -581,10 +581,11 @@ const currentTraceStep = {
     stepNum: null,
     mem_changes: {},
     reg_changes: {},
+    stdout: [],
+    stderr: [],
 };
 
 function startTracing() {
-    console.log("TODO: setup initial values");
     // Clear any old information.
     clearOutput();
     // Create a floating message with a running message.
@@ -614,7 +615,6 @@ function startTracing() {
         .then(data => {
             // Parse the protobuf from the backend.
             window.lastTrace = window.ExecutionTrace.decode(new Uint8Array(data));
-            console.log(lastTrace);
         }).then(() => {
             // Update the GUI with execution information.
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
@@ -640,6 +640,32 @@ function startTracing() {
 function updateFlagIcon(flagName, set) {
     let flagIconID = flagName.toLowerCase() + "Flag";
     document.getElementById(flagIconID).innerHTML = set ? OK_SYMBOL : ERROR_SYMBOL;
+}
+
+const numEmojiMap = {
+    0: "0️⃣",
+    1: "1️⃣",
+    2: "2️⃣",
+    3: "3️⃣",
+    4: "4️⃣",
+    5: "5️⃣",
+    6: "6️⃣",
+    7: "7️⃣",
+    8: "8️⃣",
+    9: "9️⃣",
+}
+
+function getNumAsEmojis(num) {
+    if (!num) {
+        return numEmojiMap[0];
+    }
+    out = "";
+    while (num) {
+        digit = num % 10;
+        num = Math.floor(num / 10);
+        out = numEmojiMap[digit] + out
+    }
+    return out;
 }
 
 function advanceOneTraceStep() {
@@ -685,9 +711,20 @@ function advanceOneTraceStep() {
         currentTraceStep.mem_changes[mem].push(stepInfo.memoryDelta[mem]);
     }
 
-    // TODO: keep track of stdout changes.
-    // TODO: keep track of stderr changes.
-    // TODO: keep track of exit code.
+    // Keep track of any new data written to stdout.
+    if (stepInfo.stdout) {
+        currentTraceStep.stdout.push(stepInfo.stdout);
+    }
+
+    // Keep track of any new data written to stderr.
+    if (stepInfo.stderr) {
+        currentTraceStep.stderr.push(stepInfo.stderr);
+    }
+
+    // Update the program exit information if this step exits it.
+    if (stepInfo.exitCode !== null) {
+        document.getElementById("execStatus").innerHTML = getNumAsEmojis(stepInfo.exitCode);
+    }
 
     // Return true to indicate that the move worked.
     return true;
@@ -720,9 +757,20 @@ function reverseOneTraceStep() {
         currentTraceStep.mem_changes[mem].pop();
     }
 
-    // TODO: undo stdout changes.
-    // TODO: undo stderr changes.
-    // TODO: undo exit code changes.
+    // Delete any stdout information from this step.
+    if (stepInfo.stdout) {
+        currentTraceStep.stdout.pop();
+    }
+
+    // Delete any stderr information from this step.
+    if (stepInfo.stderr) {
+        currentTraceStep.stderr.pop();
+    }
+
+    // Reset program exit info since it will not have exited.
+    if (stepInfo.exitCode !== null) {
+        document.getElementById("execStatus").innerHTML = ERROR_SYMBOL;
+    }
 
     // Decrease the current step number.
     currentTraceStep.stepNum--;
@@ -732,8 +780,6 @@ function reverseOneTraceStep() {
 }
 
 function changeTracingStep(stepDelta) {
-    console.log("stepDelta: " + stepDelta);
-
     if (!stepDelta) {
         // If there is no delta to execute, stop early.
         return;
@@ -751,7 +797,6 @@ function changeTracingStep(stepDelta) {
 
     // Move one step at a time.
     while (stepDelta--) {
-        console.log("stepDelta: " + stepDelta);
         // Move one step and receive a boolean indicating whether that move worked.
         changeOk = changeFun();
         if (!changeOk) {
@@ -765,8 +810,6 @@ function changeTracingStep(stepDelta) {
 }
 
 function updateTraceGUI() {
-    console.log(JSON.stringify(currentTraceStep));
-
     // Clear old editor's highlights.
     removeAllHighlights();
 
@@ -824,6 +867,8 @@ function stopTracing() {
     currentTraceStep.stepNum = null;
     currentTraceStep.mem_changes = {};
     currentTraceStep.reg_changes = {};
+    currentTraceStep.stdout = [];
+    currentTraceStep.stderr = [];
 
     // Disable the controls.
     document.getElementById("curTraceStepNum").innerText = "StepNum";
