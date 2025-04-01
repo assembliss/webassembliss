@@ -588,6 +588,9 @@ const currentTraceStep = {
 function startTracing() {
     // Clear any old information.
     clearOutput();
+    // Show the trace menu information and hide the start tracing button.
+    document.getElementById("startTraceButtonDiv").classList.add("collapse");
+    document.getElementById("traceMenuDiv").classList.remove("collapse");
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
     removeAllHighlights();
@@ -883,6 +886,10 @@ function stopTracing() {
     document.getElementById("traceStart").disabled = false;
     document.getElementById("traceStop").disabled = true;
     document.getElementById("traceDownload").disabled = true;
+
+    // Hide the tracing menu and show the start tracing button again.
+    document.getElementById("traceMenuDiv").classList.add("collapse");
+    document.getElementById("startTraceButtonDiv").classList.remove("collapse");
 
     // Make editor writeable again.
     window.editor.updateOptions({ readOnly: false });
