@@ -398,9 +398,9 @@ function updateNextLine(line) {
     window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
         className: 'nextLineDecoration',
-        hoverMessage: [{ value: "Next line to execute" }],
+        hoverMessage: [{ value: "Next line to be executed" }],
         glyphMarginClassName: 'fa-solid fa-forward',
-        glyphMarginHoverMessage: [{ value: "Next line to execute" }],
+        glyphMarginHoverMessage: [{ value: "Next line to be executed" }],
 
     });
 }
@@ -648,22 +648,13 @@ function advanceOneTraceStep() {
         return false;
     }
 
-    // Clear old editor's highlights.
-    removeAllHighlights();
-    // Check if this is the initial step.
+    // Advance the current step by one.
     if (currentTraceStep.stepNum === null) {
+        // If this is the first step, initialize stepNum.
         currentTraceStep.stepNum = 0;
     } else {
-        // If it's not, advance to the next one and highlight the current line as last executed.
+        // If it's not, advance to the next.
         currentTraceStep.stepNum++;
-        // TODO: handle lines in different tabs.
-        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
-    }
-
-    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
-        // If it's not the last step, highlight the next line.
-        // TODO: handle lines in different tabs.
-        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
     }
 
     // Process the information for the current step.
@@ -682,7 +673,6 @@ function advanceOneTraceStep() {
             currentTraceStep.reg_changes[reg] = [];
         }
         currentTraceStep.reg_changes[reg].push(stepInfo.registerDelta[reg]);
-
     }
 
     // Go through memoryDelta and update the info.
@@ -695,22 +685,50 @@ function advanceOneTraceStep() {
         currentTraceStep.mem_changes[mem].push(stepInfo.memoryDelta[mem]);
     }
 
-    // Update the progress bar.
-    let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
-    document.getElementById("tracingProgressBar").style["width"] = pctComplete + "%";
-    document.getElementById("tracingProgressBarAria").setAttribute("aria-valuenow", pctComplete);
+    // TODO: keep track of stdout changes.
+    // TODO: keep track of stderr changes.
+    // TODO: keep track of exit code.
 
-    // Update the step number display button.
-    document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
-
+    // Return true to indicate that the move worked.
     return true;
 }
 
 function reverseOneTraceStep() {
-    console.log("TODO: move back one step");
-    console.log("TODO: pop last changes if this step has executed anything");
-    console.log("TODO: update next line to be current line");
-    console.log("TODO: update last line to be previous to last");
+    if (!currentTraceStep.stepNum) {
+        // Cannot move backwards from the initial step.
+        return false;
+    }
+
+    // Undo any changes from the current step.
+    let stepInfo = window.lastTrace.steps[currentTraceStep.stepNum];
+
+    // Go through flagDelta and undo any flags this step has updated.
+    for (let flag in stepInfo.flagDelta) {
+        // Use the flipped value so we have the flag value from before this step has executed.
+        updateFlagIcon(flag, !stepInfo.flagDelta[flag]);
+    }
+
+    // Go through registerDelta and update the info.
+    for (let reg in stepInfo.registerDelta) {
+        // Remove the value this step had pushed for each register.
+        currentTraceStep.reg_changes[reg].pop();
+    }
+
+    // Go through memoryDelta and update the info.
+    for (let mem in stepInfo.memoryDelta) {
+        // Remove the value this step had pushed for each memory chunk.
+        currentTraceStep.mem_changes[mem].pop();
+    }
+
+    // TODO: undo stdout changes.
+    // TODO: undo stderr changes.
+    // TODO: undo exit code changes.
+
+    // Decrease the current step number.
+    currentTraceStep.stepNum--;
+
+    // Return true to indicate that the move worked.
+    return true;
 }
 
 function changeTracingStep(stepDelta) {
@@ -743,10 +761,37 @@ function changeTracingStep(stepDelta) {
     }
 
     // Update the correct controls to show up.
-    updateTraceControls();
+    updateTraceGUI();
 }
 
-function updateTraceControls() {
+function updateTraceGUI() {
+    console.log(JSON.stringify(currentTraceStep));
+
+    // Clear old editor's highlights.
+    removeAllHighlights();
+
+    // Highlight the next line to be executed.
+    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
+        // If it's not the last step, highlight the next line.
+        // TODO: handle lines in different tabs.
+        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+    }
+
+    // Highlight the last line that was executed.
+    if (currentTraceStep.stepNum) {
+        // If it's not the first step, highlight the last line that was executed.
+        // TODO: handle lines in different tabs.
+        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+    }
+
+    // Update the progress bar.
+    let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
+    document.getElementById("tracingProgressBar").style["width"] = pctComplete + "%";
+    document.getElementById("tracingProgressBarAria").setAttribute("aria-valuenow", pctComplete);
+
+    // Update the step number display button.
+    document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
+
     // Disable all controls.
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
         el.classList.add("disabled");
@@ -773,21 +818,27 @@ function downloadTracing() {
 function stopTracing() {
     // Remove any markups on the editor.
     removeAllHighlights();
+
     // Delete old trace information.
     window.lastTrace = null;
     currentTraceStep.stepNum = null;
-    // TODO: clear the stack for the deltas.
+    currentTraceStep.mem_changes = {};
+    currentTraceStep.reg_changes = {};
+
     // Disable the controls.
     document.getElementById("curTraceStepNum").innerText = "StepNum";
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
         el.classList.add("disabled");
     });
+
     // Reset progress bar to zero.
     document.getElementById("tracingProgressBar").style["width"] = "0%";
+
     // Reset original button states.
     document.getElementById("traceStart").disabled = false;
     document.getElementById("traceStop").disabled = true;
     document.getElementById("traceDownload").disabled = true;
+
     // Make editor writeable again.
     window.editor.updateOptions({ readOnly: false });
 }
