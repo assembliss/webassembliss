@@ -11,7 +11,7 @@ from qiling.exception import QlErrorCoreHook  # type: ignore[import-untyped]
 from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untyped]
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
-from ..protos.py.trace_info_pb2 import ExecutionTrace, LineInfo, TraceStep
+from ..pyprotos.trace_info_pb2 import ExecutionTrace, LineInfo, TraceStep
 from .base_emulation import RootfsSandbox, assemble, create_source, link
 
 

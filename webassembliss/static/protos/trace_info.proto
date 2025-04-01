@@ -1,12 +1,7 @@
 syntax = "proto3";
 
-// This file can be compiled with: protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js-plugin/bin/protoc-gen-js
-// That will generate the trace_info_pb2.py file that we can import in the python backend, and appropriate .js files we can import in the frontend.
-
-// PS: You may need to download protoc-gen-js from github: https://github.com/protocolbuffers/protobuf-javascript/releases/
-// Then, assuming you have unzipped the appropriate file inside ./js-plugin, you can try running the command again:
-// protoc trace_info.proto --python_out=py --js_out=../static/js/protos --plugin=protoc-gen-js=./js-plugin/bin/protoc-gen-js
-// TODO: add protoc-gen-js plugin installation into the Dockerfile.
+// This file can be compiled with: protoc trace_info.proto --python_out=../../pyprotos
+// That will generate the trace_info_pb2.py file that we can import in the python backend.
 
 // Message to hold information about the line that was executed;
 // It stores an index for the filename inside of ExecutionTrace.source_filenames, and the line number.

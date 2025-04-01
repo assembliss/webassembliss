@@ -1,3 +1,14 @@
+protobuf.load("/static/protos/trace_info.proto").then(function (root) {
+    window.ExecutionTrace = root.lookupType("ExecutionTrace");
+});
+window.lastTrace = null;
+const currentTraceStep = {
+    stepNum: null,
+    mem_changes: {},
+    reg_changes: {},
+    flg_changes: {},
+};
+
 const WAITING_SYMBOL = "⭕";
 const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
@@ -394,10 +405,25 @@ function addErrorHighlight(line, messages) {
     });
 }
 
-function updateGdbLine(line) {
+function updateNextLine(line) {
     window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
-        className: 'gdbLineDecoration'
+        className: 'nextLineDecoration',
+        hoverMessage: [{ value: "Next line to execute" }],
+        glyphMarginClassName: 'fa-solid fa-forward',
+        glyphMarginHoverMessage: [{ value: "Next line to execute" }],
+
+    });
+}
+
+function updateLastLine(line) {
+    addHighlight(line, {
+        isWholeLine: true,
+        className: 'lastLineDecoration',
+        hoverMessage: [{ value: "Last line executed" }],
+        glyphMarginClassName: 'fa-solid fa-backward',
+        glyphMarginHoverMessage: [{ value: "Last line executed" }],
+
     });
 }
 
@@ -450,7 +476,7 @@ function updateDebuggingInfo(data) {
     document.getElementById("downloadButton").disabled = false;
     if (data.debugInfo.active) {
         removeAllHighlights();
-        updateGdbLine(data.debugInfo.next_line);
+        updateNextLine(data.debugInfo.next_line);
         for (const line of data.debugInfo.breakpoints) {
             // TODO: handle multiple sources here, would be in format 'source:line'.
             addBreakpointHighlight(parseInt(line));
@@ -555,6 +581,168 @@ function resetDebuggerControls() {
     document.getElementById("resetBtn").disabled = false;
     document.getElementById("saveBtn").disabled = false;
     // Make editor editable.
+    window.editor.updateOptions({ readOnly: false });
+}
+
+function startTracing() {
+    console.log("TODO: setup initial values");
+    // Clear any old information.
+    clearOutput();
+    // Create a floating message with a running message.
+    modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
+    removeAllHighlights();
+    document.getElementById("traceStart").disabled = true;
+    document.getElementById("traceStop").disabled = false;
+    window.editor.updateOptions({ readOnly: true });
+    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
+    let source_code = getSource();
+    let user_input = document.getElementById("inputBox").value;
+    let registers = document.getElementById("regsToShow").value;
+    document.getElementById("runStatus").innerHTML = "⏳";
+    document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
+    fetch('/arm64_linux/trace/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            source_code: source_code,
+            user_input: user_input,
+            cl_args: window.cl_args,
+            registers: registers
+        }),
+    }).then(response => response.arrayBuffer())
+        .then(data => {
+            // Parse the protobuf from the backend.
+            window.lastTrace = window.ExecutionTrace.decode(new Uint8Array(data));
+            console.log(lastTrace);
+        }).then(() => {
+            // Update the GUI with execution information.
+            document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+            document.getElementById("asStatus").innerHTML = window.lastTrace.assembledOk === null ? WAITING_SYMBOL : window.lastTrace.assembledOk ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("ldStatus").innerHTML = window.lastTrace.linkedOk === null ? WAITING_SYMBOL : window.lastTrace.linkedOk ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("execStatus").innerHTML = window.lastTrace.exitCode === 0 ? OK_SYMBOL : ERROR_SYMBOL;
+            // Allow tracing to be downloaded.
+            document.getElementById("traceDownload").disabled = false;
+            // Update the tracing information to show the initial state.
+            changeTracingStep(1);
+        }).then(() => {
+            // TODO: make sure this runs even if the fetch above fails.
+            hideLoading(modal);
+        });
+}
+
+function advanceOneTraceStep() {
+    if (currentTraceStep.stepNum + 1 >= window.lastTrace.steps.length) {
+        // At the last step, cannot move any further.
+        return false;
+    }
+
+    // Clear old editor's highlights.
+    removeAllHighlights();
+    // Check if this is the initial step.
+    if (currentTraceStep.stepNum === null) {
+        currentTraceStep.stepNum = 0;
+    } else {
+        // If it's not, advance to the next one and highlight the current line as last executed.
+        currentTraceStep.stepNum++;
+        // TODO: handle lines in different tabs.
+        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+    }
+
+    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
+        // If it's not the last step, highlight the next line.
+        // TODO: handle lines in different tabs.
+        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+    }
+
+    // Update the step number display button.
+    document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
+
+    return true;
+}
+
+function reverseOneTraceStep() {
+    console.log("TODO: move back one step");
+    console.log("TODO: pop last changes if this step has executed anything");
+    console.log("TODO: update next line to be current line");
+    console.log("TODO: update last line to be previous to last");
+}
+
+function changeTracingStep(stepDelta) {
+    console.log("stepDelta: " + stepDelta);
+
+    if (!stepDelta) {
+        // If there is no delta to execute, stop early.
+        return;
+    }
+
+    if (stepDelta > 0) {
+        // Set the move function to move forward.
+        changeFun = advanceOneTraceStep;
+    } else {
+        // Flip stepDelta so we can count down.
+        stepDelta = -stepDelta;
+        // Set the move function to move backward.
+        changeFun = reverseOneTraceStep;
+    }
+
+    // Move one step at a time.
+    while (stepDelta--) {
+        console.log("stepDelta: " + stepDelta);
+        // Move one step and receive a boolean indicating whether that move worked.
+        changeOk = changeFun();
+        if (!changeOk) {
+            // If the last change did not work, we have reached the end of the steps list.
+            break;
+        }
+    }
+
+    // Update the correct controls to show up.
+    updateTraceControls();
+}
+
+function updateTraceControls() {
+    // Disable all controls.
+    Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
+        el.classList.add("disabled");
+    });
+    if (currentTraceStep.stepNum) {
+        // After step 0, can go backwards.
+        Array.from(document.getElementsByClassName("trace-actions-back")).forEach((el) => {
+            el.classList.remove("disabled");
+        });
+    }
+    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
+        // Before last step, can go forward.
+        Array.from(document.getElementsByClassName("trace-actions-forward")).forEach((el) => {
+            el.classList.remove("disabled");
+        });
+    }
+}
+
+function downloadTracing() {
+    let json = window.ExecutionTrace.toObject(window.lastTrace);
+    download_file("execution_trace.json", JSON.stringify(json), "application/json");
+}
+
+function stopTracing() {
+    // Remove any markups on the editor.
+    removeAllHighlights();
+    // Delete old trace information.
+    window.lastTrace = null;
+    currentTraceStep.stepNum = null;
+    // TODO: clear the stack for the deltas.
+    // Disable the controls.
+    document.getElementById("curTraceStepNum").innerText = "StepNum";
+    Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
+        el.classList.add("disabled");
+    });
+    // Reset original button states.
+    document.getElementById("traceStart").disabled = false;
+    document.getElementById("traceStop").disabled = true;
+    document.getElementById("traceDownload").disabled = true;
+    // Make editor writeable again.
     window.editor.updateOptions({ readOnly: false });
 }
 
