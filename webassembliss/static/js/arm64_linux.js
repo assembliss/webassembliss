@@ -105,6 +105,10 @@ function openTab(tabNum) {
             }
         }
 
+        // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
+        // This should probably exclude the addTabButton and dataTracker number,
+        // but it currently isn't a problem because if you use the values of those elements, it doesn't include a file extension.
+        // Thus it becomes invalid for another reason. 
         const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
         // To avoid naming conflictions, tabTitles is a list of input elements.
 
@@ -116,6 +120,7 @@ function openTab(tabNum) {
         }
         
 
+        // If valid newTabName...
         if (tabNameHasExtension && !tabNameIsDuplicate) {
             let renamedTab = document.createElement('input');
             renamedTab.type = "button";
@@ -130,18 +135,33 @@ function openTab(tabNum) {
                 filenameTooltip.dispose();
             }
 
-            // TODO: Update python side directly right here.
+            // Update python side directly.
+            // WARNING: There exists no redundancy prevention. 
+            // If the filename is not changed after entering renaming mode, the alert returns "undefined". I'm not 100% sure what this implies.
+            // When I try to implement a redundancy prevention, either on JS or Python side, the alert returns "undefined" every time.
+            fetch('/tab_manager/' + currentTabBtn.value, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    new_filename: newTabName
+                })
+            }).then(response => response.json()).then(data => {
+                alert(data.message); // Temporary feedback message.
+            });
 
-        } else {
+
+        } else { // if invalid newTabName
             renameTextBox.setAttribute("data-bs-toggle", "tooltip");
             renameTextBox.setAttribute("data-bs-placement", "top");
-
-            if (tabNameHasExtension == false) {
-                renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
-            }
             
             if (tabNameIsDuplicate == true) {
                 renameTextBox.setAttribute("data-bs-title", "Another tab already has this name. File names must be unique!");
+            }
+
+            if (tabNameHasExtension == false) {
+                renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
             }
 
             filenameTooltip = new bootstrap.Tooltip(renameTextBox);

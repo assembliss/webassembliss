@@ -143,7 +143,7 @@ def arm64_linux_run():
     }
 
 
-@app.route("/tab_manager/<filename>/", methods=["POST", "GET", "DELETE"])
+@app.route("/tab_manager/<filename>/", methods=["POST", "GET", "DELETE", "PATCH"])
 def tab_manager(filename):
     if not filename:
         return jsonify({"error": "No filename provided"}), 400
@@ -160,6 +160,43 @@ def tab_manager(filename):
             ),
             200,
         )
+    
+    elif request.method == "PATCH":
+        # For PATCH method, save the same contents under a new filename
+        # Then delete the same contents under the old filename
+        # Validate first!
+        if "user_files" not in session or filename not in session["user_files"]:
+            return jsonify({"error": f"Could not find '{filename}'"}), 400
+        
+        if request.json is None:
+            return jsonify({"error": "No JSON data received"}), 400
+        
+        if "new_filename" not in request.json:
+            return jsonify({"error": "No new_filename in JSON data"}), 400
+        
+        old_file_content = session["user_files"][filename]
+        # New filename validation is on JS side.
+        new_filename = request.json["new_filename"]
+
+        # If this method is done differently, the follow paragraph describes a critical flaw. But the way it is done currently seems risky to me.
+        # ----------
+        # While the user is updating a tab name, and sets the tab to an invalid name, if they proceed to add edit text in the editor, and then set a valid tab name,
+        # They may be able to exceed the file size limit we have set via this method. Of course, we can add the limits into this method,
+        # but we wanted to avoid "double counting" the file size. Alternatively, we delete first, and then create the new file by setting a temp var. This is riskier.
+        # What if the file somehow fails to update? The old file will have been deleted and the new file will not exist.
+        # I ENDED UP DELETING FIRST. I'M UNSURE IF THIS WILL CAUSE ISSUES IN THE FUTURE.
+
+        # Delete old file
+        session["user_storage"] -= len(session["user_files"][filename])
+        del session["user_files"][filename]
+
+        # Create new file
+        session["user_files"][new_filename] = old_file_content
+    
+
+        return jsonify({"message": f"Updated file name from '{filename}' to '{new_filename}'"}), 200
+
+
 
     elif request.method == "DELETE":
         # For DELETE method, delete the saved contents of the given filename
