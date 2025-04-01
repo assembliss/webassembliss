@@ -1,14 +1,3 @@
-protobuf.load("/static/protos/trace_info.proto").then(function (root) {
-    window.ExecutionTrace = root.lookupType("ExecutionTrace");
-});
-window.lastTrace = null;
-const currentTraceStep = {
-    stepNum: null,
-    mem_changes: {},
-    reg_changes: {},
-    flg_changes: {},
-};
-
 const WAITING_SYMBOL = "⭕";
 const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
@@ -584,6 +573,16 @@ function resetDebuggerControls() {
     window.editor.updateOptions({ readOnly: false });
 }
 
+protobuf.load("/static/protos/trace_info.proto").then(function (root) {
+    window.ExecutionTrace = root.lookupType("ExecutionTrace");
+});
+window.lastTrace = null;
+const currentTraceStep = {
+    stepNum: null,
+    mem_changes: {},
+    reg_changes: {},
+};
+
 function startTracing() {
     console.log("TODO: setup initial values");
     // Clear any old information.
@@ -638,6 +637,11 @@ function startTracing() {
         });
 }
 
+function updateFlagIcon(flagName, set) {
+    let flagIconID = flagName.toLowerCase() + "Flag";
+    document.getElementById(flagIconID).innerHTML = set ? OK_SYMBOL : ERROR_SYMBOL;
+}
+
 function advanceOneTraceStep() {
     if (currentTraceStep.stepNum + 1 >= window.lastTrace.steps.length) {
         // At the last step, cannot move any further.
@@ -667,27 +671,29 @@ function advanceOneTraceStep() {
 
     // Go through flagDelta and update the info.
     for (let flag in stepInfo.flagDelta) {
-        let set = stepInfo.flagDelta[flag];
-        let flagID = flag.toLowerCase() + "Flag";
-        document.getElementById(flagID).innerHTML = set ? OK_SYMBOL : ERROR_SYMBOL;
+        updateFlagIcon(flag, stepInfo.flagDelta[flag]);
+    }
 
-        // Store flag changes into a stack so we can revert them.
-        console.log("flag: " + flag);
-        if (!(flag in currentTraceStep.flg_changes)) {
-            // Create a stack for the flag the first time we see it.
-            // TODO: we actually don't need a flag stack; it's only True/False, so we can just flip it.
-            //          Will remove this logic once I have implemented reg/mem stack.
-            console.log("first time for this flag");
-            currentTraceStep.flg_changes[flag] = [];
-            console.log("flag stack with new entry: " + JSON.stringify(currentTraceStep.flg_changes));
+    // Go through registerDelta and update the info.
+    for (let reg in stepInfo.registerDelta) {
+        // Store register changes into a stack so we can revert them.
+        if (!(reg in currentTraceStep.reg_changes)) {
+            // Create a stack for the register the first time we see it.
+            currentTraceStep.reg_changes[reg] = [];
         }
-        currentTraceStep.flg_changes[flag].push(set);
-        console.log("updated flag stack: " + JSON.stringify(currentTraceStep.flg_changes));
+        currentTraceStep.reg_changes[reg].push(stepInfo.registerDelta[reg]);
 
     }
 
-    // TODO: Process reg_delta
-    // TODO: Process mem_delta
+    // Go through memoryDelta and update the info.
+    for (let mem in stepInfo.memoryDelta) {
+        // Store memory changes into a stack so we can revert them.
+        if (!(mem in currentTraceStep.mem_changes)) {
+            // Create a stack for the memory address the first time we see it.
+            currentTraceStep.mem_changes[mem] = [];
+        }
+        currentTraceStep.mem_changes[mem].push(stepInfo.memoryDelta[mem]);
+    }
 
     // Update the progress bar.
     let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
