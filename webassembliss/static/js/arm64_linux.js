@@ -816,6 +816,36 @@ function updateTraceGUI() {
     // Clear old editor's highlights.
     removeAllHighlights();
 
+    // Show the combined stdout.
+    let combinedStdout = "";
+    for (let i in currentTraceStep.stdout) {
+        combinedStdout += currentTraceStep.stdout[i];
+    }
+    document.getElementById("outputBox").value = combinedStdout;
+
+    // Show the combined stderr.
+    let combinedStderr = "";
+    for (let i in currentTraceStep.stderr) {
+        combinedStderr += currentTraceStep.stderr[i];
+    }
+    document.getElementById("errorBox").value = combinedStderr;
+
+    // Show the register values.
+    let registerValues = "";
+    console.log(JSON.stringify(currentTraceStep.reg_changes));
+    for (let reg in currentTraceStep.reg_changes) {
+        // Get the stored values we have for this register.
+        let regValues = currentTraceStep.reg_changes[reg];
+        // Find the most recent one or use a default of 0 if we have none.
+        let lastValue = !regValues.length ? 0 : regValues[regValues.length - 1];
+        // TODO: pad these values, e.g., instead of 0x1, show 0x0000000000000001
+        // TODO: separate these values, e.g., instead of 0x0000000000000001, show 00_00_00_00_00_00_00_01
+        registerValues += reg + ": 0x" + lastValue.toString(16) + "\n";
+    }
+    document.getElementById("regValues").value = registerValues;
+
+    // TODO: show the memory values.
+
     // Highlight the next line to be executed.
     if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
         // If it's not the last step, highlight the next line.
