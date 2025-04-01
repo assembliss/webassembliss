@@ -137,8 +137,10 @@ function openTab(tabNum) {
 
             // Update python side directly.
             // WARNING: There exists no redundancy prevention. 
-            // If the filename is not changed after entering renaming mode, the alert returns "undefined". I'm not 100% sure what this implies.
             // When I try to implement a redundancy prevention, either on JS or Python side, the alert returns "undefined" every time.
+            // TESTING:
+            // - If the filename is not changed after entering renaming mode, the alert returns "undefined". I'm not 100% sure what this implies.
+            // - For some reason, changing Tab2.S to Tab4.S results in an alert of "undefined".
             fetch('/tab_manager/' + currentTabBtn.value, {
                 method: 'PATCH',
                 headers: {
