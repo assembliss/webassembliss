@@ -52,34 +52,36 @@
         <input type="button" id="traceStart" value="Trace this!" onclick="startTracing()" />
         <input type="button" id="traceDownload" value="Download Tracing Information" onclick="downloadTracing()" disabled="true" />
         <input type="button" id="traceStop" value="Stop tracing" onclick="stopTracing()" disabled="true" />
-        <div id="tracingProgressBarAria" class="progress" role="progressbar" aria-label="Emulation Tracing Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+        <div id="tracingProgressBarAria" class="progress" role="progressbar" aria-label="Emulation Tracing Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 800px;">
             <div id="tracingProgressBar" class="progress-bar bg-danger" style="width: 0%"></div>
         </div>
-        <nav aria-label="Execution Trace Navigation" class="disabled">
-            <ul class="pagination">
-                <li class="page-item trace-actions trace-actions-back disabled">
-                <a class="page-link" href="javascript:changeTracingStep(-Infinity)" aria-label="Beginning">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
-                </li>
-                <li class="page-item trace-actions trace-actions-back disabled">
-                <a class="page-link" href="javascript:changeTracingStep(-1)" aria-label="Previous Step">
-                    <span aria-hidden="true">&lt;</span>
-                </a>
-                </li>
-                <li class="page-item trace-actions trace-actions-jump disabled"><a id="curTraceStepNum" class="page-link" href="#"> StepNum </a></li>
-                <li class="page-item trace-actions trace-actions-forward disabled">
-                <a class="page-link" href="javascript:changeTracingStep(1)" aria-label="Next Step">
-                    <span aria-hidden="true">&gt;</span>
-                </a>
-                </li>
-                <li class="page-item trace-actions trace-actions-forward disabled">
-                <a class="page-link" href="javascript:changeTracingStep(Infinity)" aria-label="End">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
-                </li>
-            </ul>
-        </nav>
+        <div style="width: 800px;">
+            <nav aria-label="Execution Trace Navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item trace-actions trace-actions-back disabled">
+                    <a class="page-link" href="javascript:changeTracingStep(-Infinity)" aria-label="Beginning">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                    </li>
+                    <li class="page-item trace-actions trace-actions-back disabled">
+                    <a class="page-link" href="javascript:changeTracingStep(-1)" aria-label="Previous Step">
+                        <span aria-hidden="true">&lt;</span>
+                    </a>
+                    </li>
+                    <li class="page-item trace-actions trace-actions-jump disabled"><a id="curTraceStepNum" class="page-link" href="#"> StepNum </a></li>
+                    <li class="page-item trace-actions trace-actions-forward disabled">
+                    <a class="page-link" href="javascript:changeTracingStep(1)" aria-label="Next Step">
+                        <span aria-hidden="true">&gt;</span>
+                    </a>
+                    </li>
+                    <li class="page-item trace-actions trace-actions-forward disabled">
+                    <a class="page-link" href="javascript:changeTracingStep(Infinity)" aria-label="End">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
     </div>
     <br/>
     <table>

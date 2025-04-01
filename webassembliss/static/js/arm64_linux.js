@@ -621,7 +621,13 @@ function startTracing() {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
             document.getElementById("asStatus").innerHTML = window.lastTrace.assembledOk === null ? WAITING_SYMBOL : window.lastTrace.assembledOk ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = window.lastTrace.linkedOk === null ? WAITING_SYMBOL : window.lastTrace.linkedOk ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("execStatus").innerHTML = window.lastTrace.exitCode === 0 ? OK_SYMBOL : ERROR_SYMBOL;
+            // Initialize all flags as false.
+            document.getElementById("nFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("zFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("cFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("vFlag").innerHTML = ERROR_SYMBOL;
+            // Mark execution as not exited yet.
+            document.getElementById("execStatus").innerHTML = ERROR_SYMBOL;
             // Allow tracing to be downloaded.
             document.getElementById("traceDownload").disabled = false;
             // Update the tracing information to show the initial state.
@@ -655,6 +661,38 @@ function advanceOneTraceStep() {
         // TODO: handle lines in different tabs.
         updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
     }
+
+    // Process the information for the current step.
+    let stepInfo = window.lastTrace.steps[currentTraceStep.stepNum];
+
+    // Go through flagDelta and update the info.
+    for (let flag in stepInfo.flagDelta) {
+        let set = stepInfo.flagDelta[flag];
+        let flagID = flag.toLowerCase() + "Flag";
+        document.getElementById(flagID).innerHTML = set ? OK_SYMBOL : ERROR_SYMBOL;
+
+        // Store flag changes into a stack so we can revert them.
+        console.log("flag: " + flag);
+        if (!(flag in currentTraceStep.flg_changes)) {
+            // Create a stack for the flag the first time we see it.
+            // TODO: we actually don't need a flag stack; it's only True/False, so we can just flip it.
+            //          Will remove this logic once I have implemented reg/mem stack.
+            console.log("first time for this flag");
+            currentTraceStep.flg_changes[flag] = [];
+            console.log("flag stack with new entry: " + JSON.stringify(currentTraceStep.flg_changes));
+        }
+        currentTraceStep.flg_changes[flag].push(set);
+        console.log("updated flag stack: " + JSON.stringify(currentTraceStep.flg_changes));
+
+    }
+
+    // TODO: Process reg_delta
+    // TODO: Process mem_delta
+
+    // Update the progress bar.
+    let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
+    document.getElementById("tracingProgressBar").style["width"] = pctComplete + "%";
+    document.getElementById("tracingProgressBarAria").setAttribute("aria-valuenow", pctComplete);
 
     // Update the step number display button.
     document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
@@ -738,6 +776,8 @@ function stopTracing() {
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
         el.classList.add("disabled");
     });
+    // Reset progress bar to zero.
+    document.getElementById("tracingProgressBar").style["width"] = "0%";
     // Reset original button states.
     document.getElementById("traceStart").disabled = false;
     document.getElementById("traceStop").disabled = true;
