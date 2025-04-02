@@ -830,7 +830,17 @@ function intToHexBytes(value, bytesToPad, byteSep) {
     return hexValue;
 }
 
-function formatMemoryChunk(chunk, chunkShowLength, byteSep) {
+function asciiPrint(thisByte) {
+    // Check if the given byte should be displayed as ascii or hex.
+    if ((thisByte > 32) && (thisByte < 127)) {
+        // If it's printable, we want to display the ascii char.
+        return "'" + String.fromCharCode(thisByte) + "'";
+    }
+    // If it's not printable, return the hex value a space at the beginning for alignment.
+    return " " + intToHexBytes(thisByte, 1);
+}
+
+function formatMemoryChunk(chunk, chunkShowLength, byteSep, showAscii) {
     let chunkStr = "";
 
     // Convert each byte in this chunk to a hex value.
@@ -838,7 +848,11 @@ function formatMemoryChunk(chunk, chunkShowLength, byteSep) {
         if (i) {
             chunkStr += byteSep;
         }
-        chunkStr += intToHexBytes(chunk[i], 1);
+        if (!showAscii) {
+            chunkStr += intToHexBytes(chunk[i], 1);
+        } else {
+            chunkStr += asciiPrint(chunk[i]);
+        }
     }
 
     // Fill the chunk with 0-bytes if the chunk is shorter than expected.
@@ -888,7 +902,7 @@ function updateTraceGUI() {
         let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
         // Format the address and chunk values for display.
         let formattedMem = intToHexBytes(parseInt(mem));
-        let formattedValue = formatMemoryChunk(lastValue, 16, "  ");
+        let formattedValue = formatMemoryChunk(lastValue, 16, "  ", true);
         memoryValues += formattedMem + ":  " + formattedValue + "\n";
     }
     document.getElementById("memValues").value = memoryValues;
