@@ -824,7 +824,7 @@ function intToHexBytes(value, bytesToPad, byteSep) {
         for (let i = 0; i < hexValue.length; i += 2) {
             separatedBytes += hexValue[i] + hexValue[i + 1] + byteSep;
         }
-        hexValue = separatedBytes.slice(0, -1);
+        hexValue = separatedBytes.slice(0, -byteSep.length);
     }
 
     return hexValue;
@@ -875,7 +875,7 @@ function updateTraceGUI() {
         let regValues = currentTraceStep.reg_changes[reg];
         // Find the most recent one or use a default of 0 if we have none.
         let lastValue = !regValues.length ? 0 : regValues[regValues.length - 1];
-        registerValues += reg + ": " + intToHexBytes(lastValue, 8, "_") + "\n";
+        registerValues += reg.padStart(10, " ") + ":  " + intToHexBytes(lastValue, 8, "  ") + "\n";
     }
     document.getElementById("regValues").value = registerValues;
 
@@ -888,7 +888,7 @@ function updateTraceGUI() {
         let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
         // Format the address and chunk values for display.
         let formattedMem = intToHexBytes(parseInt(mem));
-        let formattedValue = formatMemoryChunk(lastValue, 16, "   ");
+        let formattedValue = formatMemoryChunk(lastValue, 16, "  ");
         memoryValues += formattedMem + ":  " + formattedValue + "\n";
     }
     document.getElementById("memValues").value = memoryValues;
