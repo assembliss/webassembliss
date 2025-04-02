@@ -19,7 +19,7 @@ message TraceStep {
   optional sint32 exit_code = 4;
   map<string, uint64> register_delta = 5;
   map<string, bool> flag_delta = 6;
-  map<uint64, uint64> memory_delta = 7;
+  map<uint64, bytes> memory_delta = 7;
 }
 
 // Message to hold information about an entire emulation.
