@@ -859,7 +859,16 @@ function updateTraceGUI() {
     }
     document.getElementById("regValues").value = registerValues;
 
-    // TODO: show the memory values.
+    // Show the memory values.
+    let memoryValues = "address -> values\n\n";
+    for (let mem in currentTraceStep.mem_changes) {
+        // Get the stored values we have for this register.
+        let memValues = currentTraceStep.mem_changes[mem];
+        // Find the most recent one or use a default of 0 if we have none.
+        let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
+        memoryValues += intToHexBytes(mem, 8, "_") + " -> " + intToHexBytes(lastValue, 8, "_") + "\n";
+    }
+    document.getElementById("memValues").value = memoryValues;
 
     // Highlight the next line to be executed.
     if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
