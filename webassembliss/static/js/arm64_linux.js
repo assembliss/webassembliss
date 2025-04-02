@@ -813,7 +813,7 @@ function changeTracingStep(stepDelta) {
 }
 
 function intToHexBytes(value, bytesToPad, byteSep) {
-    hexValue = value.toString(16);
+    let hexValue = value.toString(16);
 
     while (hexValue.length < bytesToPad * 2) {
         hexValue = "0" + hexValue;
@@ -828,6 +828,26 @@ function intToHexBytes(value, bytesToPad, byteSep) {
     }
 
     return hexValue;
+}
+
+function formatMemoryChunk(chunk, chunkShowLength, byteSep) {
+    let chunkStr = "";
+
+    // Convert each byte in this chunk to a hex value.
+    for (let i = 0; i < chunk.length; i++) {
+        if (i) {
+            chunkStr += byteSep;
+        }
+        chunkStr += intToHexBytes(chunk[i], 1);
+    }
+
+    // Fill the chunk with 0-bytes if the chunk is shorter than expected.
+    for (let i = 0; i < (chunkShowLength - chunk.length); i++) {
+        chunkStr += byteSep;
+        chunkStr += "00";
+    }
+
+    return chunkStr;
 }
 
 function updateTraceGUI() {
@@ -860,13 +880,16 @@ function updateTraceGUI() {
     document.getElementById("regValues").value = registerValues;
 
     // Show the memory values.
-    let memoryValues = "address -> values\n\n";
+    let memoryValues = "";
     for (let mem in currentTraceStep.mem_changes) {
         // Get the stored values we have for this register.
         let memValues = currentTraceStep.mem_changes[mem];
         // Find the most recent one or use a default of 0 if we have none.
         let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
-        memoryValues += intToHexBytes(mem, 8, "_") + " -> " + intToHexBytes(lastValue, 8, "_") + "\n";
+        // Format the address and chunk values for display.
+        let formattedMem = intToHexBytes(parseInt(mem));
+        let formattedValue = formatMemoryChunk(lastValue, 16, "   ");
+        memoryValues += formattedMem + ":  " + formattedValue + "\n";
     }
     document.getElementById("memValues").value = memoryValues;
 
