@@ -61,14 +61,14 @@ def get_memory_chunks(mem: Dict[int, bytearray]) -> Dict[int, int]:
             new_chunk = 0
             
             # Little-endian so it's easier to process in js.
-            new_chunk |= (mem_values[i + 7] << 56)
-            new_chunk |= (mem_values[i + 6] << 48)
-            new_chunk |= (mem_values[i + 5] << 40)
-            new_chunk |= (mem_values[i + 4] << 32)
-            new_chunk |= (mem_values[i + 3] << 24)
-            new_chunk |= (mem_values[i + 2] << 16)
-            new_chunk |= (mem_values[i + 1] << 8)
-            new_chunk |= (mem_values[i])
+            new_chunk |= (mem_values[i] << 56)
+            new_chunk |= (mem_values[i + 1] << 48)
+            new_chunk |= (mem_values[i + 2] << 40)
+            new_chunk |= (mem_values[i + 3] << 32)
+            new_chunk |= (mem_values[i + 4] << 24)
+            new_chunk |= (mem_values[i + 5] << 16)
+            new_chunk |= (mem_values[i + 6] << 8)
+            new_chunk |= (mem_values[i + 7])
             
             if new_chunk:
                 chunks[s + i] = new_chunk
@@ -388,7 +388,7 @@ if __name__ == "__main__":
             ld_flags=["-o"],
             objdump_cmd=OBJDUMP_CMD,
             stdin=BytesIO("test test".encode()),
-            bin_name="hello.out",
+            bin_name="multiDriver.out",
             registers=ARM64_REGISTERS,
             cl_args=[],
             get_flags_func=get_nzcv,
