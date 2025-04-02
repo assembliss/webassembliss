@@ -931,18 +931,18 @@ function updateTraceGUI() {
 
     // Disable all controls.
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
-        el.classList.add("disabled");
+        el.disabled = true;
     });
     if (currentTraceStep.stepNum) {
         // After step 0, can go backwards.
         Array.from(document.getElementsByClassName("trace-actions-back")).forEach((el) => {
-            el.classList.remove("disabled");
+            el.disabled = false;
         });
     }
     if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
         // Before last step, can go forward.
         Array.from(document.getElementsByClassName("trace-actions-forward")).forEach((el) => {
-            el.classList.remove("disabled");
+            el.disabled = false;
         });
     }
 }
@@ -967,7 +967,7 @@ function stopTracing() {
     // Disable the controls.
     document.getElementById("curTraceStepNum").innerText = "StepNum";
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
-        el.classList.add("disabled");
+        el.disabled = true;
     });
 
     // Reset progress bar to zero.
