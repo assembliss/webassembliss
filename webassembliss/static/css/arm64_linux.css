@@ -132,3 +132,12 @@ table {
     font-weight: bold;
     background: rgba(255, 70, 70, 0.125);
 }
+
+#memValues,
+#regValues,
+#outputBox,
+#inputBox,
+#errorBox,
+#emulationInfo {
+    font-family: monospace;
+}
