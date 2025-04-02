@@ -812,6 +812,24 @@ function changeTracingStep(stepDelta) {
     updateTraceGUI();
 }
 
+function intToHexBytes(value, bytesToPad, byteSep) {
+    hexValue = value.toString(16);
+
+    while (hexValue.length < bytesToPad * 2) {
+        hexValue = "0" + hexValue;
+    }
+
+    if (byteSep) {
+        let separatedBytes = "";
+        for (let i = 0; i < hexValue.length; i += 2) {
+            separatedBytes += hexValue[i] + hexValue[i + 1] + byteSep;
+        }
+        hexValue = separatedBytes.slice(0, -1);
+    }
+
+    return hexValue;
+}
+
 function updateTraceGUI() {
     // Clear old editor's highlights.
     removeAllHighlights();
@@ -832,15 +850,12 @@ function updateTraceGUI() {
 
     // Show the register values.
     let registerValues = "";
-    console.log(JSON.stringify(currentTraceStep.reg_changes));
     for (let reg in currentTraceStep.reg_changes) {
         // Get the stored values we have for this register.
         let regValues = currentTraceStep.reg_changes[reg];
         // Find the most recent one or use a default of 0 if we have none.
         let lastValue = !regValues.length ? 0 : regValues[regValues.length - 1];
-        // TODO: pad these values, e.g., instead of 0x1, show 0x0000000000000001
-        // TODO: separate these values, e.g., instead of 0x0000000000000001, show 00_00_00_00_00_00_00_01
-        registerValues += reg + ": 0x" + lastValue.toString(16) + "\n";
+        registerValues += reg + ": " + intToHexBytes(lastValue, 8, "_") + "\n";
     }
     document.getElementById("regValues").value = registerValues;
 
