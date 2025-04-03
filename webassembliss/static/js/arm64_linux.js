@@ -645,6 +645,8 @@ function startTracing() {
             document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
             // Allow tracing to be downloaded.
             document.getElementById("traceDownload").disabled = false;
+            // Allow user to jump to a specific step.
+            document.getElementById("curTraceStepNum").disabled = false;
             // Update the tracing information to show the initial state.
             changeTracingStep(1);
         }).then(() => {
@@ -830,6 +832,52 @@ function changeTracingStep(stepDelta) {
     updateTraceGUI();
 }
 
+
+function showTraceError(message) {
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = [
+        `<div class="alert alert-danger alert-dismissible" role="alert">`,
+        `   <div>${message}</div>`,
+        '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+        '</div>'
+    ].join('');
+    document.getElementById("traceErrorMessageDiv").append(wrapper);
+}
+
+function jumpToTracingStep() {
+    let stepNum = prompt("What step number do you want to jump to?", "");
+
+    // Check the user entered something.
+    if (!stepNum) {
+        showTraceError("Invalid step number; it cannot be empty.");
+        return;
+    }
+
+    // Check the user entered a number.
+    let intStepNum = parseInt(stepNum);
+    console.log("stepNum: " + stepNum);
+    console.log("intStepNum: " + intStepNum);
+    if (Number.isNaN(intStepNum)) {
+        console.log("here1");
+        showTraceError("Invalid step number; it must be a number.");
+        return;
+    }
+    console.log("here2");
+
+    // From 1-index to 0-index.
+    intStepNum--;
+    let maxStep = window.lastTrace.steps.length;
+
+    // Check the user entered a number in the valid range.
+    if (intStepNum < 0 || intStepNum >= maxStep) {
+        showTraceError("Invalid step number; it must be between 1 and " + maxStep + ".");
+        return;
+    }
+
+    // Move to appropriate step.
+    changeTracingStep(intStepNum - currentTraceStep.stepNum);
+}
+
 function intToHexBytes(value, bytesToPad, byteSep) {
     let hexValue = value.toString(16);
 
@@ -992,6 +1040,7 @@ function stopTracing() {
 
     // Disable the controls.
     document.getElementById("curTraceStepNum").innerText = "StepNum";
+    document.getElementById("curTraceStepNum").disabled = true;
     Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
         el.disabled = true;
     });
