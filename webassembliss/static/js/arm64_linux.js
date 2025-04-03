@@ -66,6 +66,31 @@ function openTab(tabNum) {
     let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
     let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
 
+
+    // Set up data save
+    let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
+    let currentTab_filename = currentTabBtn.value;
+    let currentTab_contents = window.editor.getValue();
+    let newTab_filename = newTabBtn.value;
+
+    // Preemptively save the tab's data. This protects against the edge case in which the current tab's data does not exist in storage when renaming occurs.
+    fetch('/tab_manager/' + currentTab_filename, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            contents: currentTab_contents,
+            return_file: newTab_filename
+        }),
+    }).then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                console.log("Error: " + data.error);
+                return;
+            }
+        });
+
     if (currentTab.num == tabNum && !document.getElementById(`tab${currentTab.num}Rename`)) {
     // Tab renaming functionality
     // There might need to exist some sort of character check to make sure the filename isn't something illegal?
@@ -136,28 +161,22 @@ function openTab(tabNum) {
             }
 
             // Update python side directly.
-            // WARNING: There exists no redundancy prevention (don't check if tab name wasn't changed. aka newTabName = old tab name) 
-            // When I try to implement a redundancy prevention, either on JS or Python side, the alert returns "undefined" every time.
-            // TESTING:
-            // - If the filename is not changed after entering renaming mode, the alert returns "undefined". I'm not 100% sure what this implies.
-            // - For some reason, changing Tab2.S to Tab4.S results in an alert of "undefined".
-            // - Most times, tab changing successfully fetches and then alerts the tab name change.
-            // I believe these undefined errors are the result of the initial tab not existing in storage. 
-            fetch('/tab_manager/' + currentTabBtn.value, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    new_filename: newTabName
-                })
-            }).then(response => response.json()).then(data => {
-                console.log("Response data:" + data);
-                alert(data.message); // Temporary feedback message.
-            }).catch(error => {
-                console.error("Error:" + error);
-            });
-
+            if (currentTabBtn.value != newTabName) {
+                fetch('/tab_manager/' + currentTabBtn.value, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        new_filename: newTabName
+                    })
+                }).then(response => response.json()).then(data => {
+                    console.log("Response data:" + data);
+                    alert(data.message); // Temporary feedback message.
+                }).catch(error => {
+                    console.error("Error:" + error);
+                });
+            }
 
         } else { // if invalid newTabName
             renameTextBox.setAttribute("data-bs-toggle", "tooltip");
@@ -179,14 +198,8 @@ function openTab(tabNum) {
 
     } else {
         // Save current tab contents
-
-        let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
+        // Other vars were set at the start of the opentab() function
         let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
-
-        let currentTab_filename = currentTabBtn.value;
-        let currentTab_contents = window.editor.getValue();
-
-        let newTab_filename = newTabBtn.value;
 
         // Make a post request that will save the contents of the current tab and return the contents of the new tab.
         fetch('/tab_manager/' + currentTab_filename, {
@@ -201,7 +214,7 @@ function openTab(tabNum) {
         }).then(response => response.json())
             .then(data => {
                 if (data.error) {
-                    alert(data.error);
+                    console.log("Error: " + data.error);
                     return;
                 }
                 // Update the editor contents.
