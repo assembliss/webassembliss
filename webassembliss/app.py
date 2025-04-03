@@ -192,7 +192,9 @@ def tab_manager(filename):
 
         # Create new file
         session["user_files"][new_filename] = old_file_content
-    
+        session["user_storage"] += len(old_file_content)
+
+        session.modified = True
 
         return jsonify({"message": f"Updated file name from '{filename}' to '{new_filename}'"}), 200
 

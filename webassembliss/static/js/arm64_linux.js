@@ -136,11 +136,13 @@ function openTab(tabNum) {
             }
 
             // Update python side directly.
-            // WARNING: There exists no redundancy prevention. 
+            // WARNING: There exists no redundancy prevention (don't check if tab name wasn't changed. aka newTabName = old tab name) 
             // When I try to implement a redundancy prevention, either on JS or Python side, the alert returns "undefined" every time.
             // TESTING:
             // - If the filename is not changed after entering renaming mode, the alert returns "undefined". I'm not 100% sure what this implies.
             // - For some reason, changing Tab2.S to Tab4.S results in an alert of "undefined".
+            // - Most times, tab changing successfully fetches and then alerts the tab name change.
+            // I believe these undefined errors are the result of the initial tab not existing in storage. 
             fetch('/tab_manager/' + currentTabBtn.value, {
                 method: 'PATCH',
                 headers: {
@@ -150,7 +152,10 @@ function openTab(tabNum) {
                     new_filename: newTabName
                 })
             }).then(response => response.json()).then(data => {
+                console.log("Response data:" + data);
                 alert(data.message); // Temporary feedback message.
+            }).catch(error => {
+                console.error("Error:" + error);
             });
 
 
