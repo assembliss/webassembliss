@@ -264,7 +264,7 @@ def clean_trace(
     bin_name: str,
     registers: List[str],
     cl_args: List[str],
-    timeout: int,  # seconds
+    timeout: int,  # microseconds
     max_trace_steps: int,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
