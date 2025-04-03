@@ -834,6 +834,7 @@ function changeTracingStep(stepDelta) {
 
 
 function showTraceError(message) {
+    // Ref: https://getbootstrap.com/docs/5.3/components/alerts/#live-example
     const wrapper = document.createElement('div');
     wrapper.innerHTML = [
         `<div class="alert alert-danger alert-dismissible" role="alert">`,
