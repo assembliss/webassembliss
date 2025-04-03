@@ -937,8 +937,16 @@ function updateTraceGUI() {
 
     // Update the progress bar.
     let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
-    document.getElementById("tracingProgressBar").style["width"] = pctComplete + "%";
     document.getElementById("tracingProgressBarAria").setAttribute("aria-valuenow", pctComplete);
+    let progressBar = document.getElementById("tracingProgressBar");
+    progressBar.style["width"] = pctComplete + "%";
+    if (pctComplete < 100) {
+        progressBar.classList.add("progress-bar-striped");
+        progressBar.classList.remove("bg-success");
+    } else {
+        progressBar.classList.remove("progress-bar-striped");
+        progressBar.classList.add("bg-success");
+    }
 
     // Update the step number display button.
     document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
