@@ -262,7 +262,7 @@ def trace(
     source_files: Dict[str, str],
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
-    max_trace_steps: int = 200,
+    max_trace_steps: int = 500,
     timeout: int = 5_000_000,  # 5 seconds
     stdin: str = "",
     bin_name: str = "usrCode.exe",
