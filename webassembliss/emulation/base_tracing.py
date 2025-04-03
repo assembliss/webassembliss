@@ -264,10 +264,10 @@ def clean_trace(
     bin_name: str,
     registers: List[str],
     cl_args: List[str],
-    get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
-    workdir: Union[str, PathLike] = "userprograms",
     timeout: int,  # seconds
     max_trace_steps: int,
+    get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
+    workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
     """Emulates the given code step by step and return the execution trace."""
     # TODO: add tests to make sure this function works as expected.
