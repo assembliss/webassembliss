@@ -79,17 +79,17 @@
             <div class="text-center">
                 <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with buttons to interact with the tracing visualization">
                     <div class="btn-group" role="group" aria-label="Button to download the trace data">
-                        <button type="button" id="traceDownload" class="btn btn-warning" onclick="downloadTracing()" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Download the trace data as a json file" disabled="true">Download Trace</button>
+                        <button type="button" id="traceDownload" class="btn btn-warning" onclick="downloadTracing()" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Download the trace data as a json file" disabled="true">Download Trace <i class="fa-solid fa-download"></i></button>
                     </div>
                     <div class="btn-group" role="group" aria-label="Controls to step forward or back in the trace">
-                        <button type="button" class="btn btn-secondary trace-actions trace-actions-back" onclick="changeTracingStep(-Infinity)" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Go back to start of trace" disabled="true">Reset</button>
-                        <button type="button" class="btn btn-secondary trace-actions trace-actions-back" onclick="changeTracingStep(-1)" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Go back one step" disabled="true">Back</button>
+                        <button type="button" class="btn btn-secondary trace-actions trace-actions-back" onclick="changeTracingStep(-Infinity)" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Go back to start of trace" disabled="true"><i class="fa-solid fa-backward-fast"></i> Reset</button>
+                        <button type="button" class="btn btn-secondary trace-actions trace-actions-back" onclick="changeTracingStep(-1)" data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="Go back one step" disabled="true"><i class="fa-solid fa-backward"></i> Back</button>
                         <button type="button" id="curTraceStepNum" class="btn btn-outline" disabled="true">Cur</button>
-                        <button type="button" class="btn btn-primary trace-actions trace-actions-forward" onclick="changeTracingStep(1)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Advance one step" disabled="true">Next</button>
-                        <button type="button" class="btn btn-primary trace-actions trace-actions-forward" onclick="changeTracingStep(Infinity)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Advance to end of trace" disabled="true">Last</button>
+                        <button type="button" class="btn btn-primary trace-actions trace-actions-forward" onclick="changeTracingStep(1)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Advance one step" disabled="true">Next <i class="fa-solid fa-forward"></i></button>
+                        <button type="button" class="btn btn-primary trace-actions trace-actions-forward" onclick="changeTracingStep(Infinity)" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Advance to end of trace" disabled="true">Last <i class="fa-solid fa-forward-fast"></i></button>
                     </div>
                     <div class="btn-group" role="group" aria-label="Button to stop tracing">
-                        <button type="button" id="traceStop" class="btn btn-danger" onclick="stopTracing()" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="End this tracing session and allow code to be edited" disabled="true">Stop Tracing</button>
+                        <button type="button" id="traceStop" class="btn btn-danger" onclick="stopTracing()" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="End this tracing session and allow code to be edited" disabled="true">Stop Tracing <i class="fa-regular fa-circle-xmark"></i></button>
                     </div>
                 </div>
             </div>
