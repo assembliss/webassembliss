@@ -46,23 +46,26 @@
         <input type="button" id="debugBreakpoint" value="breakpoint" onclick="toggleBreakpoint()" disabled="true" />
         <input type="button" id="debugStop" value="stop" onclick="stopDebugger()"disabled="true" />
     </div>
-    <table>
-        <tr>
-            <th>Run Status</th>
-            <td>Done: <span id="runStatus">⭕</span></td>
-            <td>Assembled: <span id="asStatus">⭕</span></td>
-            <td>Linked: <span id="ldStatus">⭕</span></td>
-            <td>Exited: <span id="execStatus">⭕</span></td>
-            <td>Debugging: <span id="debugStatus">⭕</span></td>
-        </tr>
-        <tr>
-            <th>Status Flags</th>
-            <td>N: <span id="nFlag">⭕</span></td>
-            <td>Z: <span id="zFlag">⭕</span></td>
-            <td>C: <span id="cFlag">⭕</span></td>
-            <td>V: <span id="vFlag">⭕</span></td>
-        </tr>
-    </table> 
+    <div style="width: 800px;">
+        <table style=" margin-left: auto; margin-right: auto;">
+            <tr>
+                <th>Run Status</th>
+                <td>Done: <span id="runStatus">⭕</span></td>
+                <td>Assembled: <span id="asStatus">⭕</span></td>
+                <td>Linked: <span id="ldStatus">⭕</span></td>
+                <td>Timed Out: <span id="timeOut">⭕</span></td>
+                <td>Exit Code: <span id="exitCode">⭕</span></td>
+                <td>GDB: <span id="debugStatus">⭕</span></td>
+            </tr>
+            <tr id="statusFlagsDisplay" class="collapse">
+                <th>Status Flags</th>
+                <td>N: <span id="nFlag">⭕</span></td>
+                <td>Z: <span id="zFlag">⭕</span></td>
+                <td>C: <span id="cFlag">⭕</span></td>
+                <td>V: <span id="vFlag">⭕</span></td>
+            </tr>
+        </table> 
+    </div>
 
     <div style="width: 800px;">
         <div id="startTraceButtonDiv" class="text-center">

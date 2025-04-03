@@ -276,7 +276,8 @@ function clearOutput() {
     document.getElementById("runStatus").innerHTML = WAITING_SYMBOL;
     document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
     document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
-    document.getElementById("execStatus").innerHTML = WAITING_SYMBOL;
+    document.getElementById("timeOut").innerHTML = WAITING_SYMBOL;
+    document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
     document.getElementById("nFlag").innerHTML = WAITING_SYMBOL;
     document.getElementById("zFlag").innerHTML = WAITING_SYMBOL;
     document.getElementById("cFlag").innerHTML = WAITING_SYMBOL;
@@ -339,7 +340,8 @@ function runCode() {
             document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("execStatus").innerHTML = data.ran_ok === null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("timeOut").innerHTML = data.timed_out === null ? WAITING_SYMBOL : data.timed_out ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("exitCode").innerHTML = exitCodeToEmoji(data.exit_code);
             document.getElementById("nFlag").innerHTML = "N" in data.flags ? data.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
             document.getElementById("zFlag").innerHTML = "Z" in data.flags ? data.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
             document.getElementById("cFlag").innerHTML = "C" in data.flags ? data.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
@@ -444,7 +446,11 @@ function updateDebuggingInfo(data) {
     }
 
     if (data.ran_ok !== null) {
-        document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+        document.getElementById("exitCode").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+    }
+
+    if (data.ran_ok !== null) {
+        document.getElementById("timeOut").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
     }
 
     if (data.debugInfo.active !== null) {
@@ -591,6 +597,7 @@ function startTracing() {
     // Show the trace menu information and hide the start tracing button.
     document.getElementById("startTraceButtonDiv").classList.add("collapse");
     document.getElementById("traceMenuDiv").classList.remove("collapse");
+    document.getElementById("statusFlagsDisplay").classList.remove("collapse");
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
     removeAllHighlights();
@@ -629,7 +636,9 @@ function startTracing() {
             document.getElementById("cFlag").innerHTML = ERROR_SYMBOL;
             document.getElementById("vFlag").innerHTML = ERROR_SYMBOL;
             // Mark execution as not exited yet.
-            document.getElementById("execStatus").innerHTML = ERROR_SYMBOL;
+            document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
+            // Use the timeout indication to show if the trace reached maximum number of steps.
+            document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
             // Allow tracing to be downloaded.
             document.getElementById("traceDownload").disabled = false;
             // Update the tracing information to show the initial state.
@@ -669,6 +678,13 @@ function getNumAsEmojis(num) {
         out = numEmojiMap[digit] + out
     }
     return out;
+}
+
+function exitCodeToEmoji(exitCode) {
+    if (exitCode === null) {
+        return WAITING_SYMBOL;
+    }
+    return getNumAsEmojis(exitCode);
 }
 
 function advanceOneTraceStep() {
@@ -725,9 +741,7 @@ function advanceOneTraceStep() {
     }
 
     // Update the program exit information if this step exits it.
-    if (stepInfo.exitCode !== null) {
-        document.getElementById("execStatus").innerHTML = getNumAsEmojis(stepInfo.exitCode);
-    }
+    document.getElementById("exitCode").innerHTML = exitCodeToEmoji(stepInfo.exitCode);
 
     // Return true to indicate that the move worked.
     return true;
@@ -772,7 +786,7 @@ function reverseOneTraceStep() {
 
     // Reset program exit info since it will not have exited.
     if (stepInfo.exitCode !== null) {
-        document.getElementById("execStatus").innerHTML = ERROR_SYMBOL;
+        document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
     }
 
     // Decrease the current step number.
@@ -980,6 +994,7 @@ function stopTracing() {
 
     // Hide the tracing menu and show the start tracing button again.
     document.getElementById("traceMenuDiv").classList.add("collapse");
+    document.getElementById("statusFlagsDisplay").classList.add("collapse");
     document.getElementById("startTraceButtonDiv").classList.remove("collapse");
 
     // Make editor writeable again.

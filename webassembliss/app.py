@@ -224,6 +224,8 @@ def arm64_linux_run():
         ),
         "memory": emu_results.print_memory(show_ascii=True),
         "flags": emu_results.flags,
+        "exit_code": emu_results.run_exit_code,
+        "timed_out": emu_results.run_timeout,
         "all_info": emu_results.print(),
         "info_obj": emu_results,
     }
