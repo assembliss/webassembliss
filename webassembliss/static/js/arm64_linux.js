@@ -855,14 +855,10 @@ function jumpToTracingStep() {
 
     // Check the user entered a number.
     let intStepNum = parseInt(stepNum);
-    console.log("stepNum: " + stepNum);
-    console.log("intStepNum: " + intStepNum);
     if (Number.isNaN(intStepNum)) {
-        console.log("here1");
         showTraceError("Invalid step number; it must be a number.");
         return;
     }
-    console.log("here2");
 
     // From 1-index to 0-index.
     intStepNum--;
