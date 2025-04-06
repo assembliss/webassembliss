@@ -323,7 +323,7 @@ const tabs = {
             openTab(tabNum);
             setTimeout(() => {
                 openTab(tabNum);
-            }, 50); // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
+            }, 100); // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
     }
 };
