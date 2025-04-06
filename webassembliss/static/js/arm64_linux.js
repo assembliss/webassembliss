@@ -219,7 +219,6 @@ function openTab(tabNum) {
                     filenameTooltip.dispose();
                     filenameTooltip = null;
                 }
-                // Remove the handler after it's been used
                 renameTextBox.removeEventListener("input", handleInput);
             }
         }
@@ -288,30 +287,44 @@ function closeTab(tabNum) {
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
 const tabs = {
-    // Start at tab #2. Tab #1 already exists when the webpage is opened
     count: document.getElementsByClassName("tabBtn").length + 1,
     addTab() {
-        let tabNum = this.count;
-        let newTab = document.createElement("input");
-        newTab.type = "button";
-        newTab.className = "tabBtn";
-        newTab.value = `Tab${tabNum}.S`;
-        newTab.id = `tab${tabNum}Btn`;
-        newTab.onclick = () => openTab(tabNum);
+        let tabList = document.querySelectorAll('#tabsDiv input:not([id$="X"])'); 
+        let unnamedTabExists = false;
 
-        let newTabX = document.createElement("input");
-        newTabX.type = "button";
-        newTabX.className = "tabBtnX";
-        newTabX.value = "x";
-        newTabX.id = `tab${tabNum}BtnX`;
-        newTabX.onclick = () => closeTab(tabNum);
+        for (const tab of tabList) {
+            if (tab.value == "New Tab") {
+                unnamedTabExists = true;
+                break;
+            }
+        }
+
+        if (!unnamedTabExists) {
+            let tabNum = this.count;
+            let newTab = document.createElement("input");
+            newTab.type = "button";
+            newTab.className = "tabBtn";
+            newTab.value = `New Tab`;
+            newTab.id = `tab${tabNum}Btn`;
+            newTab.onclick = () => openTab(tabNum);
+
+            let newTabX = document.createElement("input");
+            newTabX.type = "button";
+            newTabX.className = "tabBtnX";
+            newTabX.value = "x";
+            newTabX.id = `tab${tabNum}BtnX`;
+            newTabX.onclick = () => closeTab(tabNum);
 
 
-        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
-        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
-        this.count++;
-        console.log("added tab")
-        openTab(tabNum);
+            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+            this.count++;
+            console.log("added tab");
+            openTab(tabNum);
+            setTimeout(() => {
+                openTab(tabNum);
+            }, 50); // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
+        }
     }
 };
 
