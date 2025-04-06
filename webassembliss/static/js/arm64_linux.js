@@ -61,7 +61,7 @@ function changeUserStorageCounter(newValue) {
 
 function openTab(tabNum) {
 
-    let filenameTooltip;
+    let filenameTooltip = null;
 
     let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
     let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
@@ -95,7 +95,7 @@ function openTab(tabNum) {
     // Tab renaming functionality
     // There might need to exist some sort of character check to make sure the filename isn't something illegal?
     // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
-        renameTextBox = document.createElement('input');
+        let renameTextBox = document.createElement('input');
         renameTextBox.type = "text";
         renameTextBox.className = "activeTabBtn";
         renameTextBox.id = `tab${tabNum}Rename`;
@@ -106,22 +106,41 @@ function openTab(tabNum) {
         renameTextBox.focus();
         renameTextBox.select();
 
+        // Prevent redundant running of replaceTabRename() by carefully running only 1 instance of the function.
+        let lastKeydownTimestamp = 0;
+
+        // Only run if "Enter" wasn't pressed in the last 50ms.
         document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
+            if (Date.now() - lastKeydownTimestamp > 50) {
             replaceTabRename();
+            }
         });
         document.getElementById(`tab${currentTab.num}Rename`).addEventListener("keydown", function (event) {
             if (event.key === "Enter") {
+                lastKeydownTimestamp = Date.now();
                 replaceTabRename();
             }
         });
 
     function replaceTabRename() {
+
+        if (filenameTooltip) {
+            try {
+                filenameTooltip.hide();
+                filenameTooltip.dispose();
+            } catch (error) {
+                console.error("Error disposing tooltip:", error);
+            }
+            filenameTooltip = null;
+        }
+
         let newTabName = renameTextBox.value;
         // Validate new tab names
         // Allowed file extensions in the editor
-        const extensions = ['.S'];
+        const extensions = ['.S','.s'];
         let tabNameHasExtension = false;
         let tabNameIsDuplicate = false;
+        let tabNameIsExtension = false;
 
         for (const extension of extensions) {
             if (newTabName.endsWith(extension)) {
@@ -129,11 +148,13 @@ function openTab(tabNum) {
                 break;
             }
         }
-
+        for (const extension of extensions) {
+            if (newTabName == extension) {
+                tabNameIsExtension = true;
+                break;
+            }
+        }
         // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
-        // This should probably exclude the addTabButton and dataTracker number,
-        // but it currently isn't a problem because if you use the values of those elements, it doesn't include a file extension.
-        // Thus it becomes invalid for another reason. 
         const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
         // To avoid naming conflictions, tabTitles is a list of input elements.
 
@@ -146,7 +167,7 @@ function openTab(tabNum) {
         
 
         // If valid newTabName...
-        if (tabNameHasExtension && !tabNameIsDuplicate) {
+        if (tabNameHasExtension && !tabNameIsDuplicate && !tabNameIsExtension) {
             let renamedTab = document.createElement('input');
             renamedTab.type = "button";
             renamedTab.className = "activeTabBtn";
@@ -155,10 +176,6 @@ function openTab(tabNum) {
             renamedTab.onclick = () => openTab(tabNum);
 
             renameTextBox.replaceWith(renamedTab);
-
-            if (filenameTooltip) {
-                filenameTooltip.dispose();
-            }
 
             // Update python side directly.
             if (currentTabBtn.value != newTabName) {
@@ -172,7 +189,6 @@ function openTab(tabNum) {
                     })
                 }).then(response => response.json()).then(data => {
                     console.log("Response data:" + data);
-                    alert(data.message); // Temporary feedback message.
                 }).catch(error => {
                     console.error("Error:" + error);
                 });
@@ -182,17 +198,30 @@ function openTab(tabNum) {
             renameTextBox.setAttribute("data-bs-toggle", "tooltip");
             renameTextBox.setAttribute("data-bs-placement", "top");
             
-            if (tabNameIsDuplicate == true) {
+                   if (tabNameIsDuplicate) {
                 renameTextBox.setAttribute("data-bs-title", "Another tab already has this name. File names must be unique!");
-            }
-
-            if (tabNameHasExtension == false) {
+            } else if (!tabNameHasExtension) {
                 renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
+            } else if (tabNameIsExtension) {
+                renameTextBox.setAttribute("data-bs-title", "File must have a name beyond an extension!");
             }
 
             filenameTooltip = new bootstrap.Tooltip(renameTextBox);
             filenameTooltip.show();
             renameTextBox.focus();
+
+            renameTextBox.removeEventListener("input", handleInput);
+            renameTextBox.addEventListener("input", handleInput);
+
+            function handleInput() {
+                if (filenameTooltip) {
+                    filenameTooltip.hide();
+                    filenameTooltip.dispose();
+                    filenameTooltip = null;
+                }
+                // Remove the handler after it's been used
+                renameTextBox.removeEventListener("input", handleInput);
+            }
         }
     }
 

@@ -178,14 +178,6 @@ def tab_manager(filename):
         # New filename validation is on JS side.
         new_filename = request.json["new_filename"]
 
-        # If this method is done differently, the follow paragraph describes a critical flaw. But the way it is done currently seems risky to me.
-        # ----------
-        # While the user is updating a tab name, and sets the tab to an invalid name, if they proceed to add edit text in the editor, and then set a valid tab name,
-        # They may be able to exceed the file size limit we have set via this method. Of course, we can add the limits into this method,
-        # but we wanted to avoid "double counting" the file size. Alternatively, we delete first, and then create the new file by setting a temp var. This is riskier.
-        # What if the file somehow fails to update? The old file will have been deleted and the new file will not exist.
-        # I ENDED UP DELETING FIRST. I'M UNSURE IF THIS WILL CAUSE ISSUES IN THE FUTURE.
-
         # Delete old file
         session["user_storage"] -= len(session["user_files"][filename])
         del session["user_files"][filename]
