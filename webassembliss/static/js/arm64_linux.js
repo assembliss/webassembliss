@@ -289,7 +289,7 @@ function closeTab(tabNum) {
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
 const tabs = {
     // Start at tab #2. Tab #1 already exists when the webpage is opened
-    count: 2,
+    count: document.getElementsByClassName("tabBtn").length + 1,
     addTab() {
         let tabNum = this.count;
         let newTab = document.createElement("input");

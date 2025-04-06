@@ -93,14 +93,22 @@ def debugdbvalues(keys):
 @app.route("/arm64_linux/")
 def arm64_linux_index():
     # If the user has run or debugged code, we have it saved in their session; reload it.
-    if "source_code" in session:
+    storage_remaining = MAX_TOTAL_FILE_SIZE - session.get("user_storage", 0)
+    if "user_files" in session:
+        saved_files = sorted(session["user_files"])
         return render_template(
-            "arm64_linux.html.j2", default_code=session["source_code"].split("\n")
+            "arm64_linux.html.j2",
+            default_code=session["user_files"][saved_files[0]].split("\n"),
+            tab_names=saved_files,
+            storage_remaining=storage_remaining,
         )
     # If no code for this user, read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
         return render_template(
-            "arm64_linux.html.j2", default_code=file_in.read().split("\n")
+            "arm64_linux.html.j2",
+            default_code=file_in.read().split("\n"),
+            tab_names=["hello.S"],
+            storage_remaining=storage_remaining,
         )
 
 
@@ -154,26 +162,28 @@ def tab_manager(filename):
             return jsonify({"error": f"Could not find '{filename}'"}), 400
         return (
             jsonify(
-                {"filename": filename, 
-                 "contents": session["user_files"][filename],
-                 "user_storage": session["user_storage"]}
+                {
+                    "filename": filename,
+                    "contents": session["user_files"][filename],
+                    "user_storage": session["user_storage"],
+                }
             ),
             200,
         )
-    
+
     elif request.method == "PATCH":
         # For PATCH method, save the same contents under a new filename
         # Then delete the same contents under the old filename
         # Validate first!
         if "user_files" not in session or filename not in session["user_files"]:
             return jsonify({"error": f"Could not find '{filename}'"}), 400
-        
+
         if request.json is None:
             return jsonify({"error": "No JSON data received"}), 400
-        
+
         if "new_filename" not in request.json:
             return jsonify({"error": "No new_filename in JSON data"}), 400
-        
+
         old_file_content = session["user_files"][filename]
         # New filename validation is on JS side.
         new_filename = request.json["new_filename"]
@@ -188,9 +198,12 @@ def tab_manager(filename):
 
         session.modified = True
 
-        return jsonify({"message": f"Updated file name from '{filename}' to '{new_filename}'"}), 200
-
-
+        return (
+            jsonify(
+                {"message": f"Updated file name from '{filename}' to '{new_filename}'"}
+            ),
+            200,
+        )
 
     elif request.method == "DELETE":
         # For DELETE method, delete the saved contents of the given filename
@@ -198,8 +211,15 @@ def tab_manager(filename):
             return jsonify({"error": f"Could not find '{filename}'"}), 400
         session["user_storage"] -= len(session["user_files"][filename])
         del session["user_files"][filename]
-        return jsonify({"message": f"Deleted '{filename}' from the server",
-                        "user_storage": session["user_storage"]}), 200
+        return (
+            jsonify(
+                {
+                    "message": f"Deleted '{filename}' from the server",
+                    "user_storage": session["user_storage"],
+                }
+            ),
+            200,
+        )
 
     elif request.method == "POST":
         # For POST method, store the given contents in the filename passed in the url
@@ -244,7 +264,7 @@ def tab_manager(filename):
             resp["return_file"] = {
                 "filename": return_filename,
                 "contents": session["user_files"].get(return_filename, ""),
-                "user_storage": session["user_storage"]
+                "user_storage": session["user_storage"],
             }
 
         # Return the final response.

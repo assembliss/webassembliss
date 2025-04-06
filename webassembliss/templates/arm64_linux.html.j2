@@ -32,9 +32,16 @@
     <br/>
     <div id="tabsDiv" style="display: flex">
     {# This value on the userStorageCounter is temporary and changes on the next tab change. Though it would be nice if it was accurate when opened. #}
-        <input class="tabBtn" type="text" id="userStorageCounter" value="101665 bytes remaining" disabled="true"/> 
-        <input class="activeTabBtn" type="button" id="tab1Btn" value="Tab1.S" onclick="openTab(1)"/>
-        <input class="activeTabBtnX" type="button" id="tab1BtnX" value="x" onclick="closeTab(1)" disabled="true" hidden="hidden"/>
+        <input class="tabBtn" type="text" id="userStorageCounter" value="{{ storage_remaining }} bytes remaining" disabled="true"/> 
+        {% for i in range(tab_names | length) %}
+            {% if i == 0 %}
+                <input class="activeTabBtn" type="button" id="tab{{ i + 1 }}Btn" value="{{ tab_names[i] }}" onclick="openTab({{ i + 1 }})"/>
+                <input class="activeTabBtnX" type="button" id="tab{{ i + 1 }}BtnX" value="x" onclick="closeTab({{ i + 1 }})" disabled="true" hidden="hidden"/>
+            {% else %}
+                <input class="tabBtn" type="button" id="tab{{ i + 1 }}Btn" value="{{ tab_names[i] }}" onclick="openTab({{ i + 1 }})"/>
+                <input class="tabBtnX" type="button" id="tab{{ i + 1 }}BtnX" value="x" onclick="closeTab({{ i + 1 }})"/>
+            {% endif %}
+        {% endfor %}
         <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
     </div>
     
