@@ -1,13 +1,9 @@
-/* This file exemplifies how to use multiple sources. It needs to be linked with 'multipleTwo'. */
-.data
-
-/* Defines a printf template to show the subroutine return value. */
-retMsg:    .asciz   "Return value from last call: %d\n"
+/* This file exemplifies how to use multiple sources. It needs to be linked with 'sampleLib'. */
 
 .text
 
 /* Lets us call routines from other source files. */
-.extern _exampleRoutine, printf
+.extern _exampleRoutine
 
 /* Our application's entry point. */
 .global _start
@@ -20,12 +16,6 @@ _start:
     mov     x3, #4
     bl      _exampleRoutine
     ldp     x29, x30, [sp]
-    /* Output return value. */
-    stp     x29, x30, [sp, #-16]!
-    mov     x1, x0
-    adr     x0, retMsg
-    bl      printf
-    ldp     x29, x30, [sp]
     /* Call subroutine with (9,18,29,36) should receive 92. */
     stp     x29, x30, [sp, #-16]!
     mov     x0, #9
@@ -33,12 +23,6 @@ _start:
     mov     x2, #29
     mov     x3, #36
     bl      _exampleRoutine
-    ldp     x29, x30, [sp]
-    /* Output return value. */
-    stp     x29, x30, [sp, #-16]!
-    mov     x1, x0
-    adr     x0, retMsg
-    bl      printf
     ldp     x29, x30, [sp]
     /* syscall exit(int status) */
     mov     x0, #0      /* status := 0 */

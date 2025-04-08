@@ -1,13 +1,24 @@
+from io import BytesIO
 from os import environ
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import Flask, abort, current_app, jsonify, render_template, request, session
+from flask import (
+    Flask,
+    abort,
+    current_app,
+    jsonify,
+    render_template,
+    request,
+    send_file,
+    session,
+)
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
 
 from .emulation.arm64_linux import emulate as arm64_linux_emulation
 from .emulation.arm64_linux import send_debug_cmd as arm64_linux_gdb_cmd
 from .emulation.arm64_linux import start_debugger as arm64_linux_gdb_start
+from .emulation.arm64_linux import trace as arm64_linux_trace
 from .grader.single_student import grade_form_submission
 
 app = Flask(__name__)
@@ -213,9 +224,32 @@ def arm64_linux_run():
         ),
         "memory": emu_results.print_memory(show_ascii=True),
         "flags": emu_results.flags,
+        "exit_code": emu_results.run_exit_code,
+        "timed_out": emu_results.run_timeout,
         "all_info": emu_results.print(),
         "info_obj": emu_results,
     }
+
+@app.route("/arm64_linux/trace/", methods=["POST"])
+def arm64_linux_trace_route():
+    if request.json is None:
+        return "No JSON data received", 400
+    if "source_code" not in request.json:
+        return "No source_code in JSON data", 400
+    if "user_input" not in request.json:
+        return "No user_input in JSON data", 400
+
+    session["source_code"] = {"usrCode.S": request.json["source_code"]}
+    session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json.get("cl_args", "")
+    session["registers"] = request.json.get("registers", "")
+
+    emulation_trace = arm64_linux_trace(source_files=session["source_code"], stdin=session["user_input"], cl_args=session["cl_args"], registers=session["registers"])
+    return send_file(
+        BytesIO(emulation_trace.SerializeToString()),
+        mimetype="application/x-protobuf",
+    )
+
 
 
 @app.route("/arm64_linux/debug/", methods=["POST"])
