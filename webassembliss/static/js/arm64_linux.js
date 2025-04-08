@@ -323,7 +323,8 @@ const tabs = {
             openTab(tabNum);
             setTimeout(() => {
                 openTab(tabNum);
-            }, 100); // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
+            }, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
+            // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
     }
 };
