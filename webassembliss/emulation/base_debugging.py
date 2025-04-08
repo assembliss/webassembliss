@@ -1,5 +1,4 @@
 import subprocess
-import tempfile
 import threading
 from dataclasses import dataclass, field
 from enum import Enum
@@ -90,8 +89,7 @@ class DebuggingOptions(Enum):
 
     CONTINUE = 1
     STEP = 2
-    BREAKPOINT = 3
-    QUIT = 4
+    QUIT = 3
 
 
 def _run_gdb_server(
@@ -463,7 +461,6 @@ def create_debugging_session(
         bin_path=dr.bin_path,
         reg_num_bits=dr.reg_num_bits,
         little_endian="yes" if dr.little_endian else "no",
-        breakpoints=[],
         mapped_memory=mapped_memory,
     )
 
@@ -484,8 +481,7 @@ def debug_cmd(
     *,
     user_signature: str,
     cmd: DebuggingOptions,
-    breakpoint_source: str = "",
-    breakpoint_line: int = 0,
+    breakpoints: List[str],
     extraInfo: List[DebuggingInfo] = [LineNum_DI],
 ) -> DebuggingResults:
     """Interact with an active debugging session."""
@@ -498,6 +494,14 @@ def debug_cmd(
     #       5. all of the above? (likely)
     #       Should probably profile and optimize the slowest one.
 
+    # BUG: there is a bug somewhere with using breakpoints; to reproduce:
+    #   1. start debugging session with the fileIO.S example;
+    #   2. set a breakpoint on line 92 (first line of exit block);
+    #   3. continue, it should stop at the breakpoint;
+    #   4. step, the session will end.
+    #   More info; it seems that after this breakpoint gdb just continues even though we asked to step;
+    #   If you add a breakpoint on lines 93 & 94 as well, both step and continue will work as expected.
+
     dr = DebuggingResults(flags={})
     data = db.get_user_info(user_signature=user_signature)
     dr.gdb_port = data.get("port", 0)
@@ -506,7 +510,7 @@ def debug_cmd(
     dr.bin_path = data.get("bin_path", "")
     dr.reg_num_bits = data.get("reg_num_bits", 0)
     dr.little_endian = data.get("little_endian", "no") == "yes"
-    dr.breakpoints = data.get("breakpoints", [])
+    dr.breakpoints = breakpoints
     dr.active = dr.linked_ok = dr.assembled_ok = True
     mapped_memory = data.get("mapped_memory", [])
 
@@ -534,46 +538,12 @@ def debug_cmd(
         while db.get_instr_count(port=dr.gdb_port) == old_intr_count:
             sleep(0.01)
 
-    elif cmd == DebuggingOptions.BREAKPOINT:
-        assert breakpoint_line, "Line number needs to be provided to add a breakpoint."
-
-        # BUG: there is a bug somewhere with using breakpoints; to reproduce:
-        #   1. start debugging session with the fileIO.S example;
-        #   2. set a breakpoint on line 92 (first line of exit block);
-        #   3. continue, it should stop at the breakpoint;
-        #   4. step, the session will end.
-        # Idea: keep breakpoints only on javascript side.
-
-        new_breakpoint = (
-            f"{breakpoint_source}:{breakpoint_line}"
-            if breakpoint_source
-            else f"{breakpoint_line}"
-        )
-        # Check if the breakpoint already exists.
-        if new_breakpoint in dr.breakpoints:
-            # If it does, remove it.
-            dr.breakpoints.remove(new_breakpoint)
-        else:
-            # If it doesn't, add it.
-            dr.breakpoints.append(new_breakpoint)
-
-        # Update the list of breakpoints for this session.
-        db.update_session_info(
-            user_signature=user_signature,
-            port=dr.gdb_port,
-            bin_path=dr.bin_path,
-            reg_num_bits=dr.reg_num_bits,
-            little_endian="yes" if dr.little_endian else "no",
-            breakpoints=dr.breakpoints,
-            mapped_memory=mapped_memory,
-        )
-
     elif cmd == DebuggingOptions.QUIT:
         _send_cmds_via_gdbmultiarch(
             port=dr.gdb_port,
             bin_path=dr.bin_path,
             commands=["kill"],
-            breakpoints=dr.breakpoints,
+            breakpoints=[],
         )
         dr.active = False
 
@@ -592,7 +562,7 @@ def debug_cmd(
             port=dr.gdb_port,
             bin_path=dr.bin_path,
             commands=["kill"],
-            breakpoints=dr.breakpoints,
+            breakpoints=[],
         )
 
     # Check if the debugging session has ended.

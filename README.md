@@ -29,6 +29,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] show user output of a specific file they create/modify with their code
+- [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [ ] handle multiple architectures
  	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
 	- [ ] [x8664_linux](https://github.com/qilingframework/rootfs/tree/master/x8664_linux_glibc2.39)
