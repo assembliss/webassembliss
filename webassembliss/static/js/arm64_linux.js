@@ -344,7 +344,6 @@ function runCode() {
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("timeOut").innerHTML = data.timed_out === null ? WAITING_SYMBOL : data.timed_out ? OK_SYMBOL : ERROR_SYMBOL;
@@ -448,176 +447,6 @@ function removeAllHighlights() {
     decorations.clear();
 }
 
-function showDebuggingHighlights() {
-    removeAllHighlights();
-    addCurrentTabBreakpointsHighlights();
-    showGDBNextLine();
-}
-
-function updateDebuggingInfo(data) {
-    // TODO: only update values if they're not null, e.g., after program quits we probably want to display last memory values read.
-    //          - this could also be done python-side.
-
-    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-
-    if (data.debugInfo.as_ok !== null) {
-        document.getElementById("asStatus").innerHTML = data.debugInfo.assembled_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.ld_ok !== null) {
-        document.getElementById("ldStatus").innerHTML = data.debugInfo.linked_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.ran_ok !== null) {
-        document.getElementById("exitCode").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.ran_ok !== null) {
-        document.getElementById("timeOut").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.active !== null) {
-        document.getElementById("debugStatus").innerHTML = data.debugInfo.active ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    document.getElementById("nFlag").innerHTML = "N" in data.debugInfo.flags ? data.debugInfo.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("zFlag").innerHTML = "Z" in data.debugInfo.flags ? data.debugInfo.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("cFlag").innerHTML = "C" in data.debugInfo.flags ? data.debugInfo.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("vFlag").innerHTML = "V" in data.debugInfo.flags ? data.debugInfo.flags.V ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-
-    document.getElementById("outputBox").value = data.stdout;
-    document.getElementById("errorBox").value = data.stderr;
-    document.getElementById("regValues").value = data.registers;
-    document.getElementById("memValues").value = data.memory;
-    document.getElementById("emulationInfo").value = data.all_info;
-    lastRunInfo = data.debugInfo;
-    document.getElementById("downloadButton").disabled = false;
-    if (data.debugInfo.active) {
-        removeAllHighlights();
-        updateNextLine(data.debugInfo.next_line);
-        for (const line of data.debugInfo.breakpoints) {
-            // TODO: handle multiple sources here, would be in format 'source:line'.
-            addBreakpointHighlight(parseInt(line));
-        }
-    } else {
-        window.nextGDBLine = null;
-        resetDebuggerControls();
-    }
-}
-
-function startDebugger() {
-    // Clear any old information.
-    clearOutput();
-    modal = showLoading('Debugger', 'Please wait for a debugging session to be created.', 'Starting...');
-    // Enable active debugger buttons.
-    document.getElementById("debugStop").disabled = false;
-    document.getElementById("debugBreakpoint").disabled = false;
-    document.getElementById("debugContinue").disabled = false;
-    document.getElementById("debugStep").disabled = false;
-    // Disable regular buttons.
-    document.getElementById("debugStart").disabled = true;
-    document.getElementById("runBtn").disabled = true;
-    document.getElementById("resetBtn").disabled = true;
-    document.getElementById("saveBtn").disabled = true;
-    // Make editor read-only.
-    window.editor.updateOptions({ readOnly: true });
-
-    let source_code = getSource();
-    let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
-    document.getElementById("runStatus").innerHTML = "⏳";
-    fetch('/arm64_linux/debug/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true }, registers: registers }),
-    }).then(response => response.json())
-        .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
-}
-
-function debuggerCommand(cmdNum, modal) {
-    let source_code = getSource();
-    let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
-
-    fetch('/arm64_linux/debug/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, debug: { command: cmdNum, breakpoints: createBreakpointList() }, registers: registers }),
-    }).then(response => response.json())
-        .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
-}
-
-function createBreakpointList() {
-    bpList = [];
-    for (const [tabNum, breakpointInfo] of Object.entries(activeBreakpoints)) {
-        for (const [line, active] of Object.entries(breakpointInfo)) {
-            // TODO: this should generate a list of source_name:line_num eventually; we would need to know what is the filename for tabNum.
-            if (active) {
-                bpList.push(line);
-            }
-        }
-    }
-    return bpList
-}
-
-function continueDebug() {
-    modal = showLoading('Debugger', 'Please wait while we continue until the next breakpoint.', 'Continuing...');
-    debuggerCommand(1, modal);
-}
-
-function stepDebug() {
-    modal = showLoading('Debugger', 'Please wait while we step over this instruction.', 'Stepping...');
-    debuggerCommand(2, modal);
-}
-
-function toggleBreakpoint() {
-    // TODO: handle multiple source files eventually.
-    let lineNum = prompt("Line number to toggle breakpoint:", "");
-    if (lineNum) {
-        if (!(currentTab.num in activeBreakpoints)) {
-            activeBreakpoints[currentTab.num] = {};
-        }
-        activeBreakpoints[currentTab.num][lineNum] = !activeBreakpoints[currentTab.num][lineNum];
-    }
-    showDebuggingHighlights();
-}
-
-function stopDebugger() {
-    // Stop debugging session.
-    debuggerCommand(3, null);
-}
-
-function resetDebuggerControls() {
-    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
-    removeAllHighlights();
-    // Disable active debugger buttons.
-    document.getElementById("debugStop").disabled = true;
-    document.getElementById("debugBreakpoint").disabled = true;
-    document.getElementById("debugContinue").disabled = true;
-    document.getElementById("debugStep").disabled = true;
-    // Enable regular buttons.
-    document.getElementById("debugStart").disabled = false;
-    document.getElementById("runBtn").disabled = false;
-    document.getElementById("resetBtn").disabled = false;
-    document.getElementById("saveBtn").disabled = false;
-    // Make editor editable.
-    window.editor.updateOptions({ readOnly: false });
-}
-
 protobuf.load("/static/protos/trace_info.proto").then(function (root) {
     window.ExecutionTrace = root.lookupType("ExecutionTrace");
 });
@@ -648,7 +477,6 @@ function startTracing() {
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
-    document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
     fetch('/arm64_linux/trace/', {
         method: 'POST',
         headers: {

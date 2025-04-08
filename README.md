@@ -2,7 +2,7 @@
 
 Work in progress...
 
-The goal is to have a webapp that allows users to edit, run, and debug ARM64 assembly code.
+The goal is to have a webapp that allows users to edit, run, and trace ARM64 assembly code.
 
 ## Get started
 1. install [docker](https://www.docker.com/get-started/);
@@ -21,10 +21,12 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [x] allow user to debug code (continue, step, set breakpoint, see memory)
+	- [x] solved with tracing
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
+	- [x] solved with tracing
 - [x] created a sandbox for each user emulation
-	- [ ] fix sandbox vulnerability with absolute paths
+	- [x] fix sandbox vulnerability with absolute paths
 - [ ] allow multiple sources to work together
 	- [x] backend is able to handle it
 	- [ ] process all sources from frontend
@@ -71,7 +73,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
 	- might need to adapt [rocher](https://github.com/julien-duponchelle/rocher/blob/main/rocher/flask.py)?
-- [ ] make debugging route and methods async
+- [ ] make run and trace routes and methods async
 	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
 	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
 - [ ] find best gunicorn config
@@ -91,12 +93,6 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to change timeout
 - [x] allow user to change registers shown
 - [ ] allow user to change memory area shown
-- [ ] give user option to delete old debugging session and start a new one
-- [ ] handle no available ports for a new debugger session
-	- maybe a timer and try again in a minute?
-- [ ] handle already active session for user
-	- maybe a popup and ask if they want to quit the old one?
 - [ ] have a toggle for ascii vs non ascii memory view
-- [ ] speedup/optimize steps in debug-mode
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)
