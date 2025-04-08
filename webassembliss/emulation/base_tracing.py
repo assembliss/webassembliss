@@ -12,7 +12,7 @@ from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untype
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 from ..pyprotos.trace_info_pb2 import ExecutionTrace, LineInfo, TraceStep
-from .base_emulation import RootfsSandbox, assemble, create_source, link
+from .base_emulation import RootfsSandbox, assemble, create_object, create_source, link
 
 
 def find_next_addr(ql: Qiling) -> int:
@@ -96,8 +96,13 @@ def create_linenum_map(
 
     for block in stdout.decode().split("Stmt")[1:]:
 
-        filename = block.strip().split()[0]
-        file_index = source_filenames.index(filename)
+        try:
+            filename = block.strip().split()[0]
+            file_index = source_filenames.index(filename)
+        except ValueError:
+            # Will get value error if filename is not in source_filenames;
+            # This can happen if we receive a pre-assembled object that has debugging information.
+            continue
 
         for line in block.split("\n"):
 
@@ -244,10 +249,13 @@ def stepped_emulation(
         cur_flag_values = new_flag_values
 
         # Get information about the line that was executed.
-        line_executed = LineInfo()
-        fi, ln = linenum_map[next_instr_addr]
-        line_executed.filename_index = fi
-        line_executed.linenum = ln
+        line_executed = None
+        fi, ln = linenum_map.get(next_instr_addr, (-1, -1))
+        # If we do not have line information, e.g., pre-assembled object, do not add anything.
+        if fi >= 0 and ln >= 0:
+            line_executed = LineInfo()
+            line_executed.filename_index = fi
+            line_executed.linenum = ln
 
         # Add this step information to our step list.
         steps.append(
@@ -272,6 +280,7 @@ def stepped_emulation(
 def clean_trace(
     *,  # force naming arguments
     source_files: Dict[str, str],
+    object_files: Dict[str, bytes],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
@@ -316,9 +325,7 @@ def clean_trace(
             obj_paths.append(obj_path)
 
             # Create a source file in the temp dir and go through the steps to emulate it.
-            create_source_ok, create_source_error = create_source(
-                src_path, source_files[filename]
-            )
+            create_source_ok, _ = create_source(src_path, source_files[filename])
             if not create_source_ok:
                 return et
 
@@ -333,8 +340,13 @@ def clean_trace(
 
         et.assembled_ok = True
 
-        # Try linking the generated object.
-        # TODO: add the option to receive already created objects.
+        # Create all the pre-assembled object files that were given.
+        for filename in object_files:
+            obj_path = join(workpath, filename)
+            obj_paths.append(obj_path)
+            create_object(obj_path, object_files[filename])
+
+        # Try linking all objects into a single binary.
         et.linked_ok, *_ = link(ld_cmd, obj_paths, ld_flags, bin_path)
         if not et.linked_ok:
             return et
@@ -391,6 +403,7 @@ if __name__ == "__main__":
     ) as file_in2:
         et = clean_trace(
             source_files={filename1: file_in.read(), filename2: file_in2.read()},
+            object_files={},
             rootfs_path=ROOTFS_PATH,
             as_cmd=AS_CMD,
             ld_cmd=LD_CMD,

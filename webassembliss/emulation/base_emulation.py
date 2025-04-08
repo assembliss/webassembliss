@@ -233,6 +233,12 @@ def create_source(path: Union[str, PathLike], code: str) -> Tuple[bool, str]:
         return False, f"{e}"
 
 
+def create_object(path: Union[PathLike, str], contents: bytes) -> None:
+    """Store the given binary contents into the given path."""
+    with open(path, "wb") as file_out:
+        file_out.write(contents)
+
+
 def assemble(
     as_cmd: str,
     src_path: Union[str, PathLike],
@@ -508,6 +514,7 @@ class RootfsSandbox:
 def clean_emulation(
     *,  # force naming arguments
     source_files: Dict[str, str],
+    object_files: Dict[str, bytes],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
@@ -534,7 +541,9 @@ def clean_emulation(
     # That would ignore the sandbox because of os.path.join's behavior.
     all_path_names = list(source_files.keys()) + [bin_name, workdir]
     if any((isabs(pn) for pn in all_path_names)):
-        er.create_source_error = "You cannot use absolute path names for any files or workdir."
+        er.create_source_error = (
+            "You cannot use absolute path names for any files or workdir."
+        )
         return er
 
     # Create a rootfs sandbox to run user code.
@@ -575,8 +584,13 @@ def clean_emulation(
             # Count the number of instructions in the source code.
             er.num_instructions[filename] = count_instructions_func(src_path)
 
-        # Try linking the generated object.
-        # TODO: add the option to receive already created objects.
+        # Create all the pre-assembled object files that were given.
+        for filename in object_files:
+            obj_path = join(workpath, filename)
+            obj_paths.append(obj_path)
+            create_object(obj_path, object_files[filename])
+
+        # Try linking all objects into a single binary.
         er.linked_ok, er.ld_args, er.ld_out, er.ld_err = link(
             ld_cmd, obj_paths, ld_flags, bin_path
         )

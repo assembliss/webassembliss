@@ -26,8 +26,11 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] created a sandbox for each user emulation
 	- [ ] fix sandbox vulnerability with absolute paths
 - [ ] allow multiple sources to work together
-	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
+	- [x] backend is able to handle it
+	- [ ] process all sources from frontend
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
+	- [x] backend is able to handle it
+	- [ ] allow user to upload objects
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [ ] handle multiple architectures
@@ -44,6 +47,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] measure executed instructions
 - [x] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
+	- [ ] pre-assembled object files are done... but printf output does not show for some reason.
 - [x] create config file that has provided source(s), object(s), and tests
 - [x] allow user to upload config file and run tests with their code
 - [x] generate a results file containing user info, test results, efficiency metrics
