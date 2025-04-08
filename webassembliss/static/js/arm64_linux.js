@@ -306,29 +306,28 @@ const tabs = {
         }
 
         if (!unnamedTabExists) {
-            let tabName = this.count; // FIND A REPLACEMENT FOR this.count tabNum WAS CHANGED HERE
             let newTab = document.createElement("input");
             newTab.type = "button";
             newTab.className = "tabBtn";
             newTab.value = `New Tab`;
-            newTab.id = `tab${tabName}Btn`;
-            newTab.onclick = () => openTab(tabName);
+            newTab.id = `tabNewTabBtn`;
+            newTab.onclick = () => openTab("New Tab");
 
             let newTabX = document.createElement("input");
             newTabX.type = "button";
             newTabX.className = "tabBtnX";
             newTabX.value = "x";
-            newTabX.id = `tab${tabName}BtnX`;
-            newTabX.onclick = () => closeTab(tabName);
+            newTabX.id = `tabNew TabBtnX`;
+            newTabX.onclick = () => closeTab("New Tab");
 
 
             document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
             document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
             this.count++;
             console.log("added tab");
-            openTab(tabName);
+            openTab("New Tab");
             setTimeout(() => {
-                openTab(tabName);
+                openTab("New Tab");
             }, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
             // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
