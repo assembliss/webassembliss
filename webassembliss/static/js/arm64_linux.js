@@ -42,14 +42,14 @@ document.getElementById("fileUpload").addEventListener("change", function () {
 
 
 const currentTab = {
-    num: 1,
+    name: document.querySelector('.activeTabBtn:not([value="X"])'),
     change(target) {
-        this.num = target;
+        this.name = target;
     }
 };
 
 function downloadCurrentTab() {
-    let currentTab_filename = document.getElementById(`tab${currentTab.num}Btn`).value;
+    let currentTab_filename = document.getElementById(`tab${currentTab.name}Btn`).value;
     download_file(currentTab_filename, getSource(), "text/plain");
 }
 
@@ -59,16 +59,22 @@ function changeUserStorageCounter(newValue) {
     document.getElementById("userStorageCounter").value = `${MAX_TOTAL_FILE_SIZE - newValue} bytes remaining`;
 }
 
-function openTab(tabNum) {
+function openTab(tabName) {
+
+    // tabNum input has been CHANGED to tabName
+
+    // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
+    const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
+    // To avoid naming conflictions, tabTitles is a list of input elements.
 
     let filenameTooltip = null;
 
-    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-    let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+    let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
+    let currentTabBtnX = document.getElementById(`tab${currentTab.name}BtnX`);
 
 
     // Set up data save
-    let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
+    let newTabBtn = document.getElementById(`tab${tabName}Btn`);
     let currentTab_filename = currentTabBtn.value;
     let currentTab_contents = window.editor.getValue();
     let newTab_filename = newTabBtn.value;
@@ -91,14 +97,14 @@ function openTab(tabNum) {
             }
         });
 
-    if (currentTab.num == tabNum && !document.getElementById(`tab${currentTab.num}Rename`)) {
+    if (currentTab.name == tabName && !document.getElementById(`tab${currentTab.name}Rename`)) {
     // Tab renaming functionality
     // There might need to exist some sort of character check to make sure the filename isn't something illegal?
     // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
         let renameTextBox = document.createElement('input');
         renameTextBox.type = "text";
         renameTextBox.className = "activeTabBtn";
-        renameTextBox.id = `tab${tabNum}Rename`;
+        renameTextBox.id = `tab${tabName}Rename`;
         renameTextBox.value = currentTabBtn.value;
         renameTextBox.setAttribute("autocomplete", "off");
 
@@ -110,12 +116,12 @@ function openTab(tabNum) {
         let lastKeydownTimestamp = 0;
 
         // Only run if "Enter" wasn't pressed in the last 50ms.
-        document.getElementById(`tab${currentTab.num}Rename`).addEventListener("blur", function () {
+        document.getElementById(`tab${currentTab.name}Rename`).addEventListener("blur", function () {
             if (Date.now() - lastKeydownTimestamp > 50) {
             replaceTabRename();
             }
         });
-        document.getElementById(`tab${currentTab.num}Rename`).addEventListener("keydown", function (event) {
+        document.getElementById(`tab${currentTab.name}Rename`).addEventListener("keydown", function (event) {
             if (event.key === "Enter") {
                 lastKeydownTimestamp = Date.now();
                 replaceTabRename();
@@ -142,22 +148,22 @@ function openTab(tabNum) {
         let tabNameIsDuplicate = false;
         let tabNameIsExtension = false;
 
+        // Make sure newTabName ends with a file extension.
         for (const extension of extensions) {
             if (newTabName.endsWith(extension)) {
                 tabNameHasExtension = true;
                 break;
             }
         }
+        // Check if newTabName is just an extension.
         for (const extension of extensions) {
             if (newTabName == extension) {
                 tabNameIsExtension = true;
                 break;
             }
         }
-        // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
-        const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
-        // To avoid naming conflictions, tabTitles is a list of input elements.
 
+        // Make sure newTabName is unique (not the same value as another existing tab name).
         for (const tabTitle of tabTitles) {
             if (tabTitle.value == newTabName) {
                 tabNameIsDuplicate = true;
@@ -171,9 +177,9 @@ function openTab(tabNum) {
             let renamedTab = document.createElement('input');
             renamedTab.type = "button";
             renamedTab.className = "activeTabBtn";
-            renamedTab.id = `tab${currentTab.num}Btn`;
+            renamedTab.id = `tab${currentTab.name}Btn`;
             renamedTab.value = newTabName;
-            renamedTab.onclick = () => openTab(tabNum);
+            renamedTab.onclick = () => openTab(tabName);
 
             renameTextBox.replaceWith(renamedTab);
 
@@ -227,7 +233,7 @@ function openTab(tabNum) {
     } else {
         // Save current tab contents
         // Other vars were set at the start of the opentab() function
-        let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
+        let newTabBtnX = document.getElementById(`tab${tabName}BtnX`);
 
         // Make a post request that will save the contents of the current tab and return the contents of the new tab.
         fetch('/tab_manager/' + currentTab_filename, {
@@ -259,7 +265,7 @@ function openTab(tabNum) {
                 newTabBtnX.disabled = true;
                 newTabBtnX.setAttribute("hidden", "hidden");
                 // Update active tab number.
-                currentTab.change(tabNum);
+                currentTab.change(tabName);
                 changeUserStorageCounter(data.return_file.user_storage);
             });
     }
@@ -267,18 +273,18 @@ function openTab(tabNum) {
 
 /* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
  */
-function closeTab(tabNum) {
-    if (currentTab.num == tabNum) {
+function closeTab(tabName) {
+    if (currentTab.name == tabName) {
         // TODO: if current tab is open when this function is ran, swap to another tab.
         // Meanwhile, we just prevent that from happening... this is probably fine behavior.
         return;
     }
-    let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
+    let toBeClosed_filename = document.getElementById(`tab${tabName}Btn`).value;
     fetch('/tab_manager/' + toBeClosed_filename, {
         method: 'DELETE',
     }).then(data => {
-        document.getElementById(`tab${tabNum}Btn`).remove();
-        document.getElementById(`tab${tabNum}BtnX`).remove();
+        document.getElementById(`tab${tabName}Btn`).remove();
+        document.getElementById(`tab${tabName}BtnX`).remove();
         // this doesn't quite work
         changeUserStorageCounter(data.return_file.user_storage);
 
@@ -300,29 +306,29 @@ const tabs = {
         }
 
         if (!unnamedTabExists) {
-            let tabNum = this.count;
+            let tabName = this.count; // FIND A REPLACEMENT FOR this.count tabNum WAS CHANGED HERE
             let newTab = document.createElement("input");
             newTab.type = "button";
             newTab.className = "tabBtn";
             newTab.value = `New Tab`;
-            newTab.id = `tab${tabNum}Btn`;
-            newTab.onclick = () => openTab(tabNum);
+            newTab.id = `tab${tabName}Btn`;
+            newTab.onclick = () => openTab(tabName);
 
             let newTabX = document.createElement("input");
             newTabX.type = "button";
             newTabX.className = "tabBtnX";
             newTabX.value = "x";
-            newTabX.id = `tab${tabNum}BtnX`;
-            newTabX.onclick = () => closeTab(tabNum);
+            newTabX.id = `tab${tabName}BtnX`;
+            newTabX.onclick = () => closeTab(tabName);
 
 
             document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
             document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
             this.count++;
             console.log("added tab");
-            openTab(tabNum);
+            openTab(tabName);
             setTimeout(() => {
-                openTab(tabNum);
+                openTab(tabName);
             }, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
             // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
@@ -498,7 +504,7 @@ function runCode() {
     // To make runcode() update the server cookies, something like this needs to happen, but this doesn't work.    
 
     
-    fetch('/tab_manager/' + document.getElementById(`tab${currentTab.num}Btn`).value, {
+    fetch('/tab_manager/' + document.getElementById(`tab${currentTab.name}Btn`).value, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
