@@ -147,14 +147,12 @@ const tabs = {
         document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
         document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
         this.count++;
-        console.log("added tab")
         openTab(tabNum);
     }
 };
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
-    console.log(file);
 
     if (!file) {
         return;

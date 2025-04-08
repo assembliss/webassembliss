@@ -22,14 +22,14 @@ class EmulationResults:
 
     rootfs: str = None  # type: ignore[assignment]
     all_ok: bool = False
-    create_source_ok: bool = None  # type: ignore[assignment]
-    source_code: str = ""
-    create_source_error: str = ""
-    assembled_ok: bool = None  # type: ignore[assignment]
-    as_args: str = ""
+    create_source_ok: Dict[str, bool] = field(default_factory=dict)  # type: ignore[assignment]
+    source_code: Dict[str, str] = field(default_factory=dict)
+    create_source_error: Dict[str, str] = field(default_factory=dict)
+    assembled_ok: Dict[str, bool] = field(default_factory=dict)  # type: ignore[assignment]
+    as_args: Dict[str, str] = field(default_factory=dict)
     as_out: str = ""
     as_err: str = ""
-    num_instructions: Optional[int] = None
+    num_instructions: Dict[str, Optional[int]] = field(default_factory=dict)
     linked_ok: bool = None  # type: ignore[assignment]
     ld_args: str = ""
     ld_out: str = ""
@@ -76,6 +76,29 @@ class EmulationResults:
                 out += tokens[i]
         else:
             out += empty
+        return out
+
+    def _multi_file_prep_output(
+        self,
+        msgs: Dict[str, Union[str, bytes]],
+        empty: str,
+        left_padding: str = "\t",
+        split_char="\n",
+        line_num_format: str = "[Line {:>02}]: ",
+        keep_empty_tokens: bool = False,
+    ) -> str:
+        out = ""
+
+        for filename in msgs:
+            out += f"Output for {filename}: " + self._prep_output(
+                msgs[filename],
+                empty,
+                left_padding,
+                split_char,
+                line_num_format,
+                keep_empty_tokens,
+            )
+
         return out
 
     def print_stderr(self) -> str:
@@ -177,8 +200,8 @@ Linker errors:
         out += f"Timeout detected: {'yes' if self.run_timeout else 'no'}\n"
         out += f"rootfs: {self.rootfs}\n"
         out += f"argv: {self.argv}\n"
-        out += f"User source code:\n{self._prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
-        out += f"File creation errors:\n{self._prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
+        out += f"User source code:\n{self._multi_file_prep_output(self.source_code, '<<< no code provided >>>', keep_empty_tokens=True)}\n"
+        out += f"File creation errors:\n{self._multi_file_prep_output(self.create_source_error, '<<< no reported errors >>>')}\n"
         out += f"Assembler command: '{self.as_args}'\n"
         out += f"Assembler output:\n{self._prep_output(self.as_out, '<<< no output >>>')}\n"
         out += f"Assembler errors:\n{self._prep_output(self.as_err, '<<< no reported errors >>>')}\n"
@@ -242,10 +265,10 @@ def assemble(
 
 def link(
     ld_cmd: str,
-    obj_path: Union[str, PathLike],
+    obj_paths: List[str],
     flags: List[str],
     bin_path: Union[str, PathLike],
-    ld_cmd_format: str = "{ld_cmd} {obj_path} {joined_flags} {bin_path}",
+    ld_cmd_format: str = "{ld_cmd} {obj_paths} {joined_flags} {bin_path}",
 ) -> Tuple[bool, str, str, str]:
     """Use the given linker command to process the object file and create a binary."""
     # TODO: add tests to make sure this function works as expected.
@@ -253,7 +276,7 @@ def link(
     # Combine the different pieces into a complete linking command.
     ld_full_cmd = ld_cmd_format.format(
         ld_cmd=ld_cmd,
-        obj_path=obj_path,
+        obj_paths=" ".join(obj_paths),
         joined_flags=" ".join(flags),
         bin_path=bin_path,
     ).split()
@@ -484,15 +507,13 @@ class RootfsSandbox:
 
 def clean_emulation(
     *,  # force naming arguments
-    code: str,
+    source_files: Dict[str, str],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
     as_flags: List[str],
     ld_flags: List[str],
     stdin: BytesIO,
-    source_name: str,
-    obj_name: str,
     bin_name: str,
     registers: List[str],
     cl_args: List[str],
@@ -514,32 +535,43 @@ def clean_emulation(
         workpath = join(rootfs_sandbox, workdir)
 
         # Create path names pointing inside the temp dir.
-        src_path = join(workpath, source_name)
-        obj_path = join(workpath, obj_name)
         bin_path = join(workpath, bin_name)
+        obj_paths = []
 
-        # Create a source file in the temp dir and go through the steps to emulate it.
-        er.source_code = code
-        er.create_source_ok, er.create_source_error = create_source(src_path, code)
-        if not er.create_source_ok:
-            return er
+        for filename in source_files:
+            # Create path names pointing inside the temp dir.
+            src_path = join(workpath, filename)
+            obj_path = src_path + ".o"
+            obj_paths.append(obj_path)
 
-        # Try assembling the created source.
-        # TODO: add the option to assemble multiple sources.
-        er.assembled_ok, er.as_args, er.as_out, er.as_err = assemble(
-            as_cmd, src_path, as_flags, obj_path
-        )
-        if not er.assembled_ok:
-            return er
+            # Create a source file in the temp dir and go through the steps to emulate it.
+            er.source_code[filename] = source_files[filename]
+            er.create_source_ok[filename], er.create_source_error[filename] = (
+                create_source(src_path, source_files[filename])
+            )
+            if not er.create_source_ok[filename]:
+                return er
 
-        # Count the number of instructions in the source code.
-        er.num_instructions = count_instructions_func(src_path)
+            # Try assembling the created source.
+            (
+                er.assembled_ok[filename],
+                er.as_args[filename],
+                as_out_temp,
+                as_err_temp,
+            ) = assemble(as_cmd, src_path, as_flags, obj_path)
+
+            er.as_err += f"Output for {filename}: {as_err_temp}\n"
+            er.as_out += f"Output for {filename}: {as_out_temp}\n"
+            if not er.assembled_ok[filename]:
+                return er
+
+            # Count the number of instructions in the source code.
+            er.num_instructions[filename] = count_instructions_func(src_path)
 
         # Try linking the generated object.
-        # TODO: add the option to link multiple objects.
         # TODO: add the option to receive already created objects.
         er.linked_ok, er.ld_args, er.ld_out, er.ld_err = link(
-            ld_cmd, obj_path, ld_flags, bin_path
+            ld_cmd, obj_paths, ld_flags, bin_path
         )
         if not er.linked_ok:
             return er

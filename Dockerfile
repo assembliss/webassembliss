@@ -48,4 +48,4 @@ WORKDIR /
 # ENV FLASK_DEBUG=1
 
 # Container command to serve flask app
-CMD [ "gunicorn", "--config" , "webassembliss/gunicorn_config.py", "webassembliss.app:app"]
+CMD ["gunicorn", "--config" , "webassembliss/gunicorn_config.py", "webassembliss.app:app"]

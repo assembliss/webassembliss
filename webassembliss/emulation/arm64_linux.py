@@ -100,13 +100,11 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
 
 
 def emulate(
-    code: str,
+    source_files: Dict[str, str],
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
     stdin: str = "",
-    source_name: str = "usrCode.S",
-    obj_name: str = "usrCode.o",
     bin_name: str = "usrCode.exe",
     cl_args: str = "",
     registers: Optional[List[str]] = None,
@@ -122,7 +120,7 @@ def emulate(
 
     # Run the emulation and return its status and results.
     return clean_emulation(
-        code=code,
+        source_files=source_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,
@@ -130,8 +128,6 @@ def emulate(
         ld_flags=ld_flags,
         timeout=timeout,
         stdin=BytesIO(stdin.encode()),
-        source_name=source_name,
-        obj_name=obj_name,
         bin_name=bin_name,
         registers=registers,
         cl_args=cl_args.split(),
