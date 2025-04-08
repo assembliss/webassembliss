@@ -38,14 +38,6 @@
     
     <div id="monaco-container" style="width:800px;height:600px;border:1px solid grey;border-top: 0px"></div>
     
-    <div>
-        <b>Debug Menu:</b>
-        <input type="button" id="debugStart" value="start" onclick="startDebugger()" />
-        <input type="button" id="debugContinue" value="continue" onclick="continueDebug()" disabled="true" />
-        <input type="button" id="debugStep" value="step" onclick="stepDebug()" disabled="true" />
-        <input type="button" id="debugBreakpoint" value="breakpoint" onclick="toggleBreakpoint()" disabled="true" />
-        <input type="button" id="debugStop" value="stop" onclick="stopDebugger()"disabled="true" />
-    </div>
     <div style="width: 800px;">
         <table style=" margin-left: auto; margin-right: auto;">
             <tr>
@@ -55,7 +47,6 @@
                 <td>Linked: <span id="ldStatus">⭕</span></td>
                 <td>Timed Out: <span id="timeOut">⭕</span></td>
                 <td>Exit Code: <span id="exitCode">⭕</span></td>
-                <td>GDB: <span id="debugStatus">⭕</span></td>
             </tr>
             <tr id="statusFlagsDisplay" class="collapse">
                 <th>Status Flags</th>
