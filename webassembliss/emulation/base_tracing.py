@@ -48,7 +48,10 @@ def find_bin_exit_addr(ql: Qiling) -> int:
         size = getsize(ql.path)
     return base + size
 
-def get_memory_chunks(mem: Dict[int, bytearray], chunk_size: int = 16) -> Dict[int, bytes]:
+
+def get_memory_chunks(
+    mem: Dict[int, bytearray], chunk_size: int = 16
+) -> Dict[int, bytes]:
     """Go through the memory values and combine them into small chunks; only store the non-zero chunks."""
     # TODO: play around with the chunksize, we might find a better size than 16 bytes;
     #       in that case, this would likely be a Dict[int, bytes] so we're not limited by the size of integers in the proto (that would be bytes as well).
@@ -58,24 +61,32 @@ def get_memory_chunks(mem: Dict[int, bytearray], chunk_size: int = 16) -> Dict[i
     for s, mem_values in mem.items():
         for i in range(0, len(mem_values), chunk_size):
             # Create a new chunk of the specified size.
-            new_chunk = mem_values[i: i + chunk_size]
+            new_chunk = mem_values[i : i + chunk_size]
             # If there is a non-zero byte in this chunk, store it.
             if any(new_chunk):
                 chunks[s + i] = bytes(new_chunk)
 
     return chunks
 
-def find_mem_delta(original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]) -> Dict[int, int]:
+
+def find_mem_delta(
+    original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]
+) -> Dict[int, int]:
     """Compare the chunks from the original memory with the modified one so we can store only the changes."""
     og_chunks = get_memory_chunks(original_mem)
     mod_chunks = get_memory_chunks(modified_mem)
 
-    delta_chunks = {addr: val for addr, val in mod_chunks.items() if val != og_chunks.get(addr, 0)}
+    delta_chunks = {
+        addr: val for addr, val in mod_chunks.items() if val != og_chunks.get(addr, 0)
+    }
     delta_chunks.update({addr: 0 for addr in og_chunks if addr not in mod_chunks})
 
     return delta_chunks
 
-def create_linenum_map(obj_dump_cmd: str, bin_path: str, source_filenames: List[str]) -> Dict[int, Tuple[int, int]]:
+
+def create_linenum_map(
+    obj_dump_cmd: str, bin_path: str, source_filenames: List[str]
+) -> Dict[int, Tuple[int, int]]:
     """Create a dictonary that can translate an instruction memory address into a source code line number."""
     linenum_map = {}
 
@@ -84,16 +95,16 @@ def create_linenum_map(obj_dump_cmd: str, bin_path: str, source_filenames: List[
         stdout, _ = process.communicate()
 
     for block in stdout.decode().split("Stmt")[1:]:
-        
+
         filename = block.strip().split()[0]
         file_index = source_filenames.index(filename)
 
         for line in block.split("\n"):
-            
+
             if not line:
                 # Ignore empty lines.
                 continue
-            
+
             tokens = line.split()
             if not tokens[-1] == "x":
                 # Ignore non-statements.
@@ -102,6 +113,7 @@ def create_linenum_map(obj_dump_cmd: str, bin_path: str, source_filenames: List[
             linenum_map[int(tokens[2], 16)] = (file_index, int(tokens[1]))
 
     return linenum_map
+
 
 def stepped_emulation(
     rootfs_path: Union[str, PathLike],
@@ -117,7 +129,13 @@ def stepped_emulation(
     source_filenames: List[str],
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
-    str, str, bool, List[TraceStep], Dict[int, int]  # argv  # exit_code  # reached_max_steps  # steps  # mapped memory areas
+    str,
+    str,
+    bool,
+    List[TraceStep],
+    Dict[
+        int, int
+    ],  # argv  # exit_code  # reached_max_steps  # steps  # mapped memory areas
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
@@ -214,7 +232,7 @@ def stepped_emulation(
         new_flag_values = get_flags_func(ql)
 
         # Compare the new values with the old ones and only save the changed entries into our Step.
-        mem_delta=find_mem_delta(cur_mem_values, new_mem_values)
+        mem_delta = find_mem_delta(cur_mem_values, new_mem_values)
         reg_delta = {r: v for r, v in new_reg_values.items() if cur_reg_values[r] != v}
         flag_delta = {
             f: v for f, v in new_flag_values.items() if cur_flag_values[f] != v
@@ -368,7 +386,9 @@ if __name__ == "__main__":
     path = "/webassembliss/examples/arm64_linux/"
     filename1 = "multiDriver.S"
     filename2 = "sampleLib.S"
-    with open(join(path, filename1)) as file_in, open(join(path, filename2)) as file_in2:
+    with open(join(path, filename1)) as file_in, open(
+        join(path, filename2)
+    ) as file_in2:
         et = clean_trace(
             source_files={filename1: file_in.read(), filename2: file_in2.read()},
             rootfs_path=ROOTFS_PATH,

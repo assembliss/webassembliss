@@ -256,6 +256,7 @@ def send_debug_cmd(
         breakpoints=breakpoints,
     )
 
+
 def trace(
     source_files: Dict[str, str],
     as_flags: Optional[List[str]] = None,
@@ -276,18 +277,18 @@ def trace(
     if not registers:
         registers = ARM64_REGISTERS
     return clean_trace(
-            source_files=source_files,
-            rootfs_path=ROOTFS_PATH,
-            as_cmd=AS_CMD,
-            ld_cmd=LD_CMD,
-            as_flags=as_flags,
-            ld_flags=ld_flags,
-            objdump_cmd=OBJDUMP_CMD,
-            stdin=BytesIO(stdin.encode()),
-            bin_name=bin_name,
-            registers=ARM64_REGISTERS,
-            cl_args=cl_args.split(),
-            get_flags_func=get_nzcv,
-            timeout=timeout,
-            max_trace_steps=max_trace_steps,
-        )
+        source_files=source_files,
+        rootfs_path=ROOTFS_PATH,
+        as_cmd=AS_CMD,
+        ld_cmd=LD_CMD,
+        as_flags=as_flags,
+        ld_flags=ld_flags,
+        objdump_cmd=OBJDUMP_CMD,
+        stdin=BytesIO(stdin.encode()),
+        bin_name=bin_name,
+        registers=ARM64_REGISTERS,
+        cl_args=cl_args.split(),
+        get_flags_func=get_nzcv,
+        timeout=timeout,
+        max_trace_steps=max_trace_steps,
+    )
