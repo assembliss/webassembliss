@@ -58,6 +58,8 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [x] allow user to upload config file and run tests with their code
 - [x] generate a results file containing user info, test results, efficiency metrics
 - [x] script to validate that results were generated with correct project config
+- [ ] create a GUI app to generate project configs
+- [ ] move grader protos to the same folder as the tracing ones
 
 ### Project Setup
 - [x] generate object and binaries in a temp folder inside rootfs
