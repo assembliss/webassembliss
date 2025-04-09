@@ -21,6 +21,8 @@ RUN apt update && \
     apt install -y \
     # arm64 toolchain (assemble/link arm64 assembly code)
     make gcc-aarch64-linux-gnu\
+    # riscv64 toolchain (assemble/link riscv64 assembly code)
+    make gcc-riscv64-linux-gnu\
     # gdb-multiarch (for user debugging sessions)
     gdb-multiarch\
     # tmux (for dev debugging in container)
