@@ -252,6 +252,10 @@ def riscv64_linux_index():
 
 @app.route("/riscv64_linux/run/", methods=["POST"])
 def riscv64_linux_run():
+    session["source_code"] = {"usrCode.S": request.json["source_code"]}
+    session["user_input"] = request.json["user_input"]
+    session["cl_args"] = request.json.get("cl_args", "")
+    session["registers"] = request.json.get("registers", "")
     emu_results = riscv64_linux_emulation(
         session["source_code"],
         stdin=session["user_input"],

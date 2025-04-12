@@ -330,7 +330,6 @@ function runCode() {
         cl_args: window.cl_args,
         registers: registers
     }));
-    console.log("here1");
     fetch('/riscv64_linux/run/', {
         method: 'POST',
         headers: {
@@ -344,9 +343,7 @@ function runCode() {
         }),
     }).then(response => response.json())
         .then(data => {
-            console.log("here2");
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("execStatus").innerHTML = data.ran_ok === null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
@@ -426,149 +423,6 @@ function addBreakpointHighlight(line) {
 
 function removeAllHighlights() {
     decorations.clear();
-}
-
-function updateDebuggingInfo(data) {
-    // TODO: only update values if they're not null, e.g., after program quits we probably want to display last memory values read.
-    //          - this could also be done python-side.
-
-    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-
-    if (data.debugInfo.as_ok !== null) {
-        document.getElementById("asStatus").innerHTML = data.debugInfo.assembled_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.ld_ok !== null) {
-        document.getElementById("ldStatus").innerHTML = data.debugInfo.linked_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.ran_ok !== null) {
-        document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.active !== null) {
-        document.getElementById("debugStatus").innerHTML = data.debugInfo.active ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    document.getElementById("nFlag").innerHTML = "N" in data.debugInfo.flags ? data.debugInfo.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("zFlag").innerHTML = "Z" in data.debugInfo.flags ? data.debugInfo.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("cFlag").innerHTML = "C" in data.debugInfo.flags ? data.debugInfo.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("vFlag").innerHTML = "V" in data.debugInfo.flags ? data.debugInfo.flags.V ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-
-    document.getElementById("outputBox").value = data.stdout;
-    document.getElementById("errorBox").value = data.stderr;
-    document.getElementById("regValues").value = data.registers;
-    document.getElementById("memValues").value = data.memory;
-    document.getElementById("emulationInfo").value = data.all_info;
-    lastRunInfo = data.debugInfo;
-    document.getElementById("downloadButton").disabled = false;
-    if (data.debugInfo.active) {
-        removeAllHighlights();
-        updateGdbLine(data.debugInfo.next_line);
-        for (const line of data.debugInfo.breakpoints) {
-            // TODO: handle multiple sources here, would be in format 'source:line'.
-            addBreakpointHighlight(parseInt(line));
-        }
-    } else {
-        stopDebugger();
-    }
-}
-
-function startDebugger() {
-    // Clear any old information.
-    clearOutput();
-    modal = showLoading('Debugger', 'Please wait for a debugging session to be created.', 'Starting...');
-    // Enable active debugger buttons.
-    document.getElementById("debugStop").disabled = false;
-    document.getElementById("debugBreakpoint").disabled = false;
-    document.getElementById("debugContinue").disabled = false;
-    document.getElementById("debugStep").disabled = false;
-    // Disable regular buttons.
-    document.getElementById("debugStart").disabled = true;
-    document.getElementById("runBtn").disabled = true;
-    document.getElementById("resetBtn").disabled = true;
-    document.getElementById("saveBtn").disabled = true;
-    document.getElementById("loadBtn").disabled = true;
-    // Make editor read-only.
-    window.editor.updateOptions({ readOnly: true });
-
-    // TODO: actually start a debugging session.
-    let source_code = getSource();
-    let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
-    document.getElementById("runStatus").innerHTML = "⏳";
-    fetch('/riscv64_linux/debug/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true }, registers: registers }),
-    }).then(response => response.json())
-        .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
-}
-
-function debuggerCommand(commands, modal) {
-    let source_code = getSource();
-    let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
-    fetch('/riscv64_linux/debug/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands, registers: registers }),
-    }).then(response => response.json())
-        .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
-}
-
-function continueDebug() {
-    modal = showLoading('Debugger', 'Please wait while we continue until the next breakpoint.', 'Continuing...');
-    debuggerCommand({ "command": 1 }, modal);
-}
-
-function stepDebug() {
-    modal = showLoading('Debugger', 'Please wait while we step over this instruction.', 'Stepping...');
-    debuggerCommand({ "command": 2 }, modal);
-}
-
-function toggleBreakpoint() {
-    // TODO: handle multiple source files eventually.
-    let lineNum = prompt("Line number to toggle breakpoint:", "");
-    if (lineNum) {
-        modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
-        lineNum = parseInt(lineNum);
-        debuggerCommand({ "command": 3, "breakpoint_line": lineNum }, modal);
-    }
-}
-
-function stopDebugger() {
-    // Stop debugging session.
-    debuggerCommand({ "command": 4 }, null);
-    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
-    removeAllHighlights();
-    // Disable active debugger buttons.
-    document.getElementById("debugStop").disabled = true;
-    document.getElementById("debugBreakpoint").disabled = true;
-    document.getElementById("debugContinue").disabled = true;
-    document.getElementById("debugStep").disabled = true;
-    // Enable regular buttons.
-    document.getElementById("debugStart").disabled = false;
-    document.getElementById("runBtn").disabled = false;
-    document.getElementById("resetBtn").disabled = false;
-    document.getElementById("saveBtn").disabled = false;
-    document.getElementById("loadBtn").disabled = false;
-    // Make editor editable.
-    window.editor.updateOptions({ readOnly: false });
 }
 
 function getSyntaxHighlighting() {

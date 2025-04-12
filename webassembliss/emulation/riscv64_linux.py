@@ -62,7 +62,8 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
     return instruction_count
 
 def emulate(
-    code: Dict[str, str],
+    source_files: Dict[str, str],
+    object_files: Optional[Dict[str, bytes]] = None,
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
@@ -72,6 +73,8 @@ def emulate(
     registers: Optional[List[str]] = None,
 ) -> EmulationResults:
     # Create default mutable values if needed.
+    if object_files is None:
+        object_files = {}
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
@@ -82,7 +85,8 @@ def emulate(
 
     # Run the emulation and return its status and results.
     return clean_emulation(
-        code=code,
+        source_files=source_files,
+        object_files=object_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,
