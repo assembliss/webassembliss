@@ -40,7 +40,7 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 	- [ ] [limit the max request size a user can send](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/#improving-uploads)
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
-- [ ] refactor backend to have a single run/trace route that receives the arch as parameter
+- [x] refactor backend to have a single run/trace route that receives the arch as parameter
 - [ ] refactor the frontend so the editor is generic and new archs only need to provide the syntax highlighting and help links
 - [ ] handle multiple architectures
  	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)

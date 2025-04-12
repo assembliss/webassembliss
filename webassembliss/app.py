@@ -15,10 +15,8 @@ from flask import (
 from flask_session import Session  # type: ignore[import-untyped]
 from redis import Redis
 
-from .emulation.arm64_linux import emulate as arm64_linux_emulation
-from .emulation.arm64_linux import trace as arm64_linux_trace
-from .emulation.riscv64_linux import emulate as riscv64_linux_emulation
 from .grader.single_student import grade_form_submission
+from .utils import ARCH_MAP
 
 app = Flask(__name__)
 
@@ -155,37 +153,47 @@ def grader():
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
 
+@app.route("/editor/<arch>/")
+def editor_page(arch):
+    arch_info = ARCH_MAP.get(arch)
+    if arch_info is None:
+        return f"Invalid architecture config for editor; valid options are {ARCH_MAP.keys()}", 400
+    
+    # Retrieve any user code we have stored already.
+    source_code = session.get("source_code", {}).get("usrCode.S")
+    if source_code is None:
+        # If no code for this user, read the default example for the architecture to display.
+        with open(arch_info.example_path) as file_in:
+            source_code = file_in.read()
+    
+    # Return the template with the appropriate code to display.
+    return render_template(
+        arch_info.template_path,
+        default_code=session["source_code"]["usrCode.S"].split("\n"),
+    )
+    
 
-@app.route("/arm64_linux/")
-def arm64_linux_index():
-    # If the user has run or traced code, we have it saved in their session; reload it.
-    if "source_code" in session:
-        return render_template(
-            "arm64_linux.html.j2",
-            default_code=session["source_code"]["usrCode.S"].split("\n"),
-        )
-    # If no code for this user, read the hello world example to use it as the default code in the editor.
-    with open("/webassembliss/examples/arm64_linux/hello.S") as file_in:
-        return render_template(
-            "arm64_linux.html.j2", default_code=file_in.read().split("\n")
-        )
-
-
-@app.route("/arm64_linux/run/", methods=["POST"])
-def arm64_linux_run():
+@app.route("/run/", methods=["POST"])
+def code_run():
     if request.json is None:
         return "No JSON data received", 400
+    if "arch" not in request.json:
+        return "No architecture config in JSON data", 400
     if "source_code" not in request.json:
         return "No source_code in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
+    
+    arch_info = ARCH_MAP.get(request.json["arch"])
+    if arch_info is None:
+        return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
 
     session["source_code"] = {"usrCode.S": request.json["source_code"]}
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
     session["registers"] = request.json.get("registers", "")
 
-    emu_results = arm64_linux_emulation(
+    emu_results = arch_info.emulate(
         session["source_code"],
         stdin=session["user_input"],
         cl_args=session["cl_args"],
@@ -212,20 +220,26 @@ def arm64_linux_run():
     }
 
 
-@app.route("/arm64_linux/trace/", methods=["POST"])
-def arm64_linux_trace_route():
+@app.route("/trace/", methods=["POST"])
+def code_trace():
     if request.json is None:
         return "No JSON data received", 400
+    if "arch" not in request.json:
+        return "No architecture config in JSON data", 400
     if "source_code" not in request.json:
         return "No source_code in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
 
+    arch_info = ARCH_MAP.get(request.json["arch"])
+    if arch_info is None:
+        return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
+
     session["source_code"] = {"usrCode.S": request.json["source_code"]}
     session["user_input"] = request.json["user_input"]
     session["cl_args"] = request.json.get("cl_args", "")
     session["registers"] = request.json.get("registers", "")
-    emulation_trace = arm64_linux_trace(
+    emulation_trace = arch_info.trace(
         source_files=session["source_code"],
         stdin=session["user_input"],
         cl_args=session["cl_args"],
@@ -235,50 +249,6 @@ def arm64_linux_trace_route():
         BytesIO(emulation_trace.SerializeToString()),
         mimetype="application/x-protobuf",
     )
-
-@app.route("/riscv64_linux/")
-def riscv64_linux_index():
-    # If the user has run or debugged code, we have it saved in their session; reload it.
-    if "source_code" in session:
-        return render_template(
-            "riscv64_linux.html.j2", default_code=session["source_code"]["usrCode.S"].split("\n")
-        )
-    # If no code for this user, read the hello world example to use it as the default code in the editor.
-    with open("/webassembliss/examples/riscv64_linux/hello.S") as file_in:
-        return render_template(
-            "riscv64_linux.html.j2", default_code=file_in.read().split("\n")
-        )
-    
-
-@app.route("/riscv64_linux/run/", methods=["POST"])
-def riscv64_linux_run():
-    session["source_code"] = {"usrCode.S": request.json["source_code"]}
-    session["user_input"] = request.json["user_input"]
-    session["cl_args"] = request.json.get("cl_args", "")
-    session["registers"] = request.json.get("registers", "")
-    emu_results = riscv64_linux_emulation(
-        session["source_code"],
-        stdin=session["user_input"],
-        cl_args=session["cl_args"],
-        registers=session["registers"].split(),
-    )
-
-    # TODO: return simply emu_results and do parsing of results on javascript side;
-    #        would make it easier/cleaner to add new archs later on in the app.py.
-    return {
-        "stdout": emu_results.run_stdout,
-        "stderr": emu_results.print_stderr(),
-        "as_ok": emu_results.assembled_ok,
-        "ld_ok": emu_results.linked_ok,
-        "ran_ok": emu_results.run_ok,
-        "registers": emu_results.print_registers(
-            change_token=" <--- changed", byte_split_token="_"
-        ),
-        "memory": emu_results.print_memory(show_ascii=True),
-        "flags": emu_results.flags,
-        "all_info": emu_results.print(),
-        "info_obj": emu_results,
-    }
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")

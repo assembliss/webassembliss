@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Union
 import qiling.arch.riscv_const  # type: ignore[import-untyped]
 
 from .base_emulation import EmulationResults, assemble, clean_emulation
+from .base_tracing import clean_trace
 
 ROOTFS_PATH = "/webassembliss/rootfs/riscv64_linux"
 AS_CMD = "riscv64-linux-gnu-as"
@@ -76,7 +77,7 @@ def emulate(
     if object_files is None:
         object_files = {}
     if as_flags is None:
-        as_flags = ["-o"]
+        as_flags = ["-g -o"]
     if ld_flags is None:
         # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
@@ -98,4 +99,43 @@ def emulate(
         registers=registers,
         cl_args=cl_args.split(),
         count_instructions_func=count_source_instructions,
+    )
+
+def trace(
+    source_files: Dict[str, str],
+    object_files: Optional[Dict[str, bytes]] = None,
+    as_flags: Optional[List[str]] = None,
+    ld_flags: Optional[List[str]] = None,
+    max_trace_steps: int = 500,
+    timeout: int = 5_000_000,  # 5 seconds
+    stdin: str = "",
+    bin_name: str = "usrCode.exe",
+    cl_args: str = "",
+    registers: Optional[List[str]] = None,
+) -> EmulationResults:
+    # Create default mutable values if needed.
+    if object_files is None:
+        object_files = {}
+    if as_flags is None:
+        as_flags = ["-g -o"]
+    if ld_flags is None:
+        # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
+        ld_flags = ["-o"]
+    if not registers:
+        registers = RISCV64_REGISTERS
+    return clean_trace(
+        source_files=source_files,
+        object_files=object_files,
+        rootfs_path=ROOTFS_PATH,
+        as_cmd=AS_CMD,
+        ld_cmd=LD_CMD,
+        as_flags=as_flags,
+        ld_flags=ld_flags,
+        objdump_cmd=OBJDUMP_CMD,
+        stdin=BytesIO(stdin.encode()),
+        bin_name=bin_name,
+        registers=registers,
+        cl_args=cl_args.split(),
+        timeout=timeout,
+        max_trace_steps=max_trace_steps,
     )

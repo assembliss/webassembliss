@@ -165,7 +165,7 @@ def trace(
         objdump_cmd=OBJDUMP_CMD,
         stdin=BytesIO(stdin.encode()),
         bin_name=bin_name,
-        registers=ARM64_REGISTERS,
+        registers=registers,
         cl_args=cl_args.split(),
         get_flags_func=get_nzcv,
         timeout=timeout,
