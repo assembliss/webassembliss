@@ -33,7 +33,8 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 	- [x] backend is able to handle it
 	- [ ] allow user to upload objects
-- [ ] remove as/ld and just use gcc for arm64
+- [ ] remove as/ld and just use gcc
+	- have to consider all pros (e.g., can throw sources and objects at it) and cons (some archs might need separate commands)
 - [ ] remove flask-session
 	- [ ] store everything client-side with [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
 	- [ ] receive all files in the request json body
