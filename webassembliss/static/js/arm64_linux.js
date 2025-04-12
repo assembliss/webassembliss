@@ -5,6 +5,9 @@ window.lastRunInfo = null;
 window.decorations = null;
 window.gdb_line_decoration = null;
 window.cl_args = "";
+window.nextGDBLine = null;
+
+const activeBreakpoints = {};
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -19,6 +22,10 @@ for (i = 0; i < coll.length; i++) {
         }
     });
 }
+
+// Initialize tooltips.
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
 
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -144,14 +151,12 @@ const tabs = {
         document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
         document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
         this.count++;
-        console.log("added tab")
         openTab(tabNum);
     }
 };
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
-    console.log(file);
 
     if (!file) {
         return;
@@ -278,7 +283,8 @@ function clearOutput() {
     document.getElementById("runStatus").innerHTML = WAITING_SYMBOL;
     document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
     document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
-    document.getElementById("execStatus").innerHTML = WAITING_SYMBOL;
+    document.getElementById("timeOut").innerHTML = WAITING_SYMBOL;
+    document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
     document.getElementById("nFlag").innerHTML = WAITING_SYMBOL;
     document.getElementById("zFlag").innerHTML = WAITING_SYMBOL;
     document.getElementById("cFlag").innerHTML = WAITING_SYMBOL;
@@ -324,7 +330,6 @@ function runCode() {
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
-    console.log("here1");
     fetch('/arm64_linux/run/', {
         method: 'POST',
         headers: {
@@ -338,12 +343,11 @@ function runCode() {
         }),
     }).then(response => response.json())
         .then(data => {
-            console.log("here2");
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            document.getElementById("debugStatus").innerHTML = ERROR_SYMBOL;
             document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("execStatus").innerHTML = data.ran_ok === null ? WAITING_SYMBOL : data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("timeOut").innerHTML = data.timed_out === null ? WAITING_SYMBOL : data.timed_out ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("exitCode").innerHTML = exitCodeToEmoji(data.exit_code);
             document.getElementById("nFlag").innerHTML = "N" in data.flags ? data.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
             document.getElementById("zFlag").innerHTML = "Z" in data.flags ? data.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
             document.getElementById("cFlag").innerHTML = "C" in data.flags ? data.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
@@ -356,7 +360,6 @@ function runCode() {
             lastRunInfo = data.info_obj;
             // Make sure to highlight detection AFTER lastRunInfo is updated!
             detectAndHighlightErrors();
-            console.log("here3");
             document.getElementById("downloadButton").disabled = false;
             window.editor.updateOptions({ readOnly: false });
         }).then(() =>
@@ -399,13 +402,25 @@ function addErrorHighlight(line, messages) {
     });
 }
 
-function updateGdbLine(line) {
-    if (window.gdb_line_decoration) {
-        // TODO: remove old line decoration so only the updated next one appears.
-    }
+function updateNextLine(line) {
     window.gdb_line_decoration = addHighlight(line, {
         isWholeLine: true,
-        className: 'gdbLineDecoration'
+        className: 'nextLineDecoration',
+        hoverMessage: [{ value: "Next line to be executed" }],
+        glyphMarginClassName: 'fa-solid fa-forward',
+        glyphMarginHoverMessage: [{ value: "Next line to be executed" }],
+
+    });
+}
+
+function updateLastLine(line) {
+    addHighlight(line, {
+        isWholeLine: true,
+        className: 'lastLineDecoration',
+        hoverMessage: [{ value: "Last line executed" }],
+        glyphMarginClassName: 'fa-solid fa-backward',
+        glyphMarginHoverMessage: [{ value: "Last line executed" }],
+
     });
 }
 
@@ -418,150 +433,492 @@ function addBreakpointHighlight(line) {
     });
 }
 
+function addCurrentTabBreakpointsHighlights() {
+    if (currentTab.num in activeBreakpoints) {
+        for (const [line, active] of Object.entries(activeBreakpoints[currentTab.num])) {
+            if (active) {
+                addBreakpointHighlight(parseInt(line));
+            }
+        }
+    }
+}
+
 function removeAllHighlights() {
     decorations.clear();
 }
 
-function updateDebuggingInfo(data) {
-    // TODO: only update values if they're not null, e.g., after program quits we probably want to display last memory values read.
-    //          - this could also be done python-side.
+protobuf.load("/static/protos/trace_info.proto").then(function (root) {
+    window.ExecutionTrace = root.lookupType("ExecutionTrace");
+});
+window.lastTrace = null;
+const currentTraceStep = {
+    stepNum: null,
+    mem_changes: {},
+    reg_changes: {},
+    stdout: [],
+    stderr: [],
+};
 
-    document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-
-    if (data.debugInfo.as_ok !== null) {
-        document.getElementById("asStatus").innerHTML = data.debugInfo.assembled_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.ld_ok !== null) {
-        document.getElementById("ldStatus").innerHTML = data.debugInfo.linked_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.ran_ok !== null) {
-        document.getElementById("execStatus").innerHTML = data.ran_ok ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    if (data.debugInfo.active !== null) {
-        document.getElementById("debugStatus").innerHTML = data.debugInfo.active ? OK_SYMBOL : ERROR_SYMBOL;
-    }
-
-    document.getElementById("nFlag").innerHTML = "N" in data.debugInfo.flags ? data.debugInfo.flags.N ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("zFlag").innerHTML = "Z" in data.debugInfo.flags ? data.debugInfo.flags.Z ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("cFlag").innerHTML = "C" in data.debugInfo.flags ? data.debugInfo.flags.C ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-    document.getElementById("vFlag").innerHTML = "V" in data.debugInfo.flags ? data.debugInfo.flags.V ? OK_SYMBOL : ERROR_SYMBOL : WAITING_SYMBOL;
-
-    document.getElementById("outputBox").value = data.stdout;
-    document.getElementById("errorBox").value = data.stderr;
-    document.getElementById("regValues").value = data.registers;
-    document.getElementById("memValues").value = data.memory;
-    document.getElementById("emulationInfo").value = data.all_info;
-    lastRunInfo = data.debugInfo;
-    document.getElementById("downloadButton").disabled = false;
-    if (data.debugInfo.active) {
-        removeAllHighlights();
-        updateGdbLine(data.debugInfo.next_line);
-        for (const line of data.debugInfo.breakpoints) {
-            // TODO: handle multiple sources here, would be in format 'source:line'.
-            addBreakpointHighlight(parseInt(line));
-        }
-    } else {
-        stopDebugger();
-    }
-}
-
-function startDebugger() {
+function startTracing() {
     // Clear any old information.
     clearOutput();
-    modal = showLoading('Debugger', 'Please wait for a debugging session to be created.', 'Starting...');
-    // Enable active debugger buttons.
-    document.getElementById("debugStop").disabled = false;
-    document.getElementById("debugBreakpoint").disabled = false;
-    document.getElementById("debugContinue").disabled = false;
-    document.getElementById("debugStep").disabled = false;
-    // Disable regular buttons.
-    document.getElementById("debugStart").disabled = true;
-    document.getElementById("runBtn").disabled = true;
-    document.getElementById("resetBtn").disabled = true;
-    document.getElementById("saveBtn").disabled = true;
-    document.getElementById("loadBtn").disabled = true;
-    // Make editor read-only.
+    // Show the trace menu information and hide the start tracing button.
+    document.getElementById("startTraceButtonDiv").classList.add("collapse");
+    document.getElementById("traceMenuDiv").classList.remove("collapse");
+    document.getElementById("statusFlagsDisplay").classList.remove("collapse");
+    // Create a floating message with a running message.
+    modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
+    removeAllHighlights();
+    document.getElementById("traceStart").disabled = true;
+    document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
-
-    // TODO: actually start a debugging session.
+    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     let source_code = getSource();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
-    fetch('/arm64_linux/debug/', {
+    fetch('/arm64_linux/trace/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, cl_args: window.cl_args, "debug": { "start": true }, registers: registers }),
-    }).then(response => response.json())
+        body: JSON.stringify({
+            source_code: source_code,
+            user_input: user_input,
+            cl_args: window.cl_args,
+            registers: registers
+        }),
+    }).then(response => response.arrayBuffer())
         .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
+            // Parse the protobuf from the backend.
+            window.lastTrace = window.ExecutionTrace.decode(new Uint8Array(data));
+        }).then(() => {
+            // Update the GUI with execution information.
+            document.getElementById("runStatus").innerHTML = OK_SYMBOL;
+            document.getElementById("asStatus").innerHTML = window.lastTrace.assembledOk === null ? WAITING_SYMBOL : window.lastTrace.assembledOk ? OK_SYMBOL : ERROR_SYMBOL;
+            document.getElementById("ldStatus").innerHTML = window.lastTrace.linkedOk === null ? WAITING_SYMBOL : window.lastTrace.linkedOk ? OK_SYMBOL : ERROR_SYMBOL;
+            // Initialize all flags as false.
+            document.getElementById("nFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("zFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("cFlag").innerHTML = ERROR_SYMBOL;
+            document.getElementById("vFlag").innerHTML = ERROR_SYMBOL;
+            // Mark execution as not exited yet.
+            document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
+            // Use the timeout indication to show if the trace reached maximum number of steps.
+            document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
+            // Allow tracing to be downloaded.
+            document.getElementById("traceDownload").disabled = false;
+            // Allow user to jump to a specific step.
+            document.getElementById("curTraceStepNum").disabled = false;
+            // Update the tracing information to show the initial state.
+            changeTracingStep(1);
+        }).then(() => {
             // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
+            hideLoading(modal);
+        });
 }
 
-function debuggerCommand(commands, modal) {
-    let source_code = getSource();
-    let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
-    fetch('/arm64_linux/debug/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ source_code: source_code, user_input: user_input, "debug": commands, registers: registers }),
-    }).then(response => response.json())
-        .then(data => {
-            updateDebuggingInfo(data);
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
+function updateFlagIcon(flagName, set) {
+    let flagIconID = flagName.toLowerCase() + "Flag";
+    document.getElementById(flagIconID).innerHTML = set ? OK_SYMBOL : ERROR_SYMBOL;
 }
 
-function continueDebug() {
-    modal = showLoading('Debugger', 'Please wait while we continue until the next breakpoint.', 'Continuing...');
-    debuggerCommand({ "command": 1 }, modal);
+const numEmojiMap = {
+    0: "0️⃣",
+    1: "1️⃣",
+    2: "2️⃣",
+    3: "3️⃣",
+    4: "4️⃣",
+    5: "5️⃣",
+    6: "6️⃣",
+    7: "7️⃣",
+    8: "8️⃣",
+    9: "9️⃣",
 }
 
-function stepDebug() {
-    modal = showLoading('Debugger', 'Please wait while we step over this instruction.', 'Stepping...');
-    debuggerCommand({ "command": 2 }, modal);
+function getNumAsEmojis(num) {
+    if (!num) {
+        return numEmojiMap[0];
+    }
+    out = "";
+    while (num) {
+        digit = num % 10;
+        num = Math.floor(num / 10);
+        out = numEmojiMap[digit] + out
+    }
+    return out;
 }
 
-function toggleBreakpoint() {
-    // TODO: handle multiple source files eventually.
-    let lineNum = prompt("Line number to toggle breakpoint:", "");
-    if (lineNum) {
-        modal = showLoading('Debugger', 'Please wait while we toggle a breakpoint on line ' + lineNum, 'Toggling breakpoint...');
-        lineNum = parseInt(lineNum);
-        debuggerCommand({ "command": 3, "breakpoint_line": lineNum }, modal);
+function exitCodeToEmoji(exitCode) {
+    if (exitCode === null) {
+        return WAITING_SYMBOL;
+    }
+    return getNumAsEmojis(exitCode);
+}
+
+function advanceOneTraceStep() {
+    if (currentTraceStep.stepNum + 1 >= window.lastTrace.steps.length) {
+        // At the last step, cannot move any further.
+        return false;
+    }
+
+    // Advance the current step by one.
+    if (currentTraceStep.stepNum === null) {
+        // If this is the first step, initialize stepNum.
+        currentTraceStep.stepNum = 0;
+    } else {
+        // If it's not, advance to the next.
+        currentTraceStep.stepNum++;
+    }
+
+    // Process the information for the current step.
+    let stepInfo = window.lastTrace.steps[currentTraceStep.stepNum];
+
+    // Go through flagDelta and update the info.
+    for (let flag in stepInfo.flagDelta) {
+        updateFlagIcon(flag, stepInfo.flagDelta[flag]);
+    }
+
+    // Go through registerDelta and update the info.
+    for (let reg in stepInfo.registerDelta) {
+        // Store register changes into a stack so we can revert them.
+        if (!(reg in currentTraceStep.reg_changes)) {
+            // Create a stack for the register the first time we see it.
+            currentTraceStep.reg_changes[reg] = [];
+        }
+        currentTraceStep.reg_changes[reg].push(stepInfo.registerDelta[reg]);
+    }
+
+    // Go through memoryDelta and update the info.
+    for (let mem in stepInfo.memoryDelta) {
+        // Store memory changes into a stack so we can revert them.
+        if (!(mem in currentTraceStep.mem_changes)) {
+            // Create a stack for the memory address the first time we see it.
+            currentTraceStep.mem_changes[mem] = [];
+        }
+        currentTraceStep.mem_changes[mem].push(stepInfo.memoryDelta[mem]);
+    }
+
+    // Keep track of any new data written to stdout.
+    if (stepInfo.stdout) {
+        currentTraceStep.stdout.push(stepInfo.stdout);
+    }
+
+    // Keep track of any new data written to stderr.
+    if (stepInfo.stderr) {
+        currentTraceStep.stderr.push(stepInfo.stderr);
+    }
+
+    // Update the program exit information if this step exits it.
+    document.getElementById("exitCode").innerHTML = exitCodeToEmoji(stepInfo.exitCode);
+
+    // Return true to indicate that the move worked.
+    return true;
+}
+
+function reverseOneTraceStep() {
+    if (!currentTraceStep.stepNum) {
+        // Cannot move backwards from the initial step.
+        return false;
+    }
+
+    // Undo any changes from the current step.
+    let stepInfo = window.lastTrace.steps[currentTraceStep.stepNum];
+
+    // Go through flagDelta and undo any flags this step has updated.
+    for (let flag in stepInfo.flagDelta) {
+        // Use the flipped value so we have the flag value from before this step has executed.
+        updateFlagIcon(flag, !stepInfo.flagDelta[flag]);
+    }
+
+    // Go through registerDelta and update the info.
+    for (let reg in stepInfo.registerDelta) {
+        // Remove the value this step had pushed for each register.
+        currentTraceStep.reg_changes[reg].pop();
+    }
+
+    // Go through memoryDelta and update the info.
+    for (let mem in stepInfo.memoryDelta) {
+        // Remove the value this step had pushed for each memory chunk.
+        currentTraceStep.mem_changes[mem].pop();
+    }
+
+    // Delete any stdout information from this step.
+    if (stepInfo.stdout) {
+        currentTraceStep.stdout.pop();
+    }
+
+    // Delete any stderr information from this step.
+    if (stepInfo.stderr) {
+        currentTraceStep.stderr.pop();
+    }
+
+    // Reset program exit info since it will not have exited.
+    if (stepInfo.exitCode !== null) {
+        document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
+    }
+
+    // Decrease the current step number.
+    currentTraceStep.stepNum--;
+
+    // Return true to indicate that the move worked.
+    return true;
+}
+
+function changeTracingStep(stepDelta) {
+    if (!stepDelta) {
+        // If there is no delta to execute, stop early.
+        return;
+    }
+
+    if (stepDelta > 0) {
+        // Set the move function to move forward.
+        changeFun = advanceOneTraceStep;
+    } else {
+        // Flip stepDelta so we can count down.
+        stepDelta = -stepDelta;
+        // Set the move function to move backward.
+        changeFun = reverseOneTraceStep;
+    }
+
+    // Move one step at a time.
+    while (stepDelta--) {
+        // Move one step and receive a boolean indicating whether that move worked.
+        changeOk = changeFun();
+        if (!changeOk) {
+            // If the last change did not work, we have reached the end of the steps list.
+            break;
+        }
+    }
+
+    // Update the correct controls to show up.
+    updateTraceGUI();
+}
+
+
+function showTraceError(message) {
+    // Ref: https://getbootstrap.com/docs/5.3/components/alerts/#live-example
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = [
+        `<div class="alert alert-danger alert-dismissible" role="alert">`,
+        `   <div>${message}</div>`,
+        '   <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>',
+        '</div>'
+    ].join('');
+    document.getElementById("traceErrorMessageDiv").append(wrapper);
+}
+
+function jumpToTracingStep() {
+    let stepNum = prompt("What step number do you want to jump to?", "");
+
+    // Check the user entered something.
+    if (!stepNum) {
+        showTraceError("Invalid step number; it cannot be empty.");
+        return;
+    }
+
+    // Check the user entered a number.
+    let intStepNum = parseInt(stepNum);
+    if (Number.isNaN(intStepNum)) {
+        showTraceError("Invalid step number; it must be a number.");
+        return;
+    }
+
+    // From 1-index to 0-index.
+    intStepNum--;
+    let maxStep = window.lastTrace.steps.length;
+
+    // Check the user entered a number in the valid range.
+    if (intStepNum < 0 || intStepNum >= maxStep) {
+        showTraceError("Invalid step number; it must be between 1 and " + maxStep + ".");
+        return;
+    }
+
+    // Move to appropriate step.
+    changeTracingStep(intStepNum - currentTraceStep.stepNum);
+}
+
+function intToHexBytes(value, bytesToPad, byteSep) {
+    let hexValue = value.toString(16);
+
+    while (hexValue.length < bytesToPad * 2) {
+        hexValue = "0" + hexValue;
+    }
+
+    if (byteSep) {
+        let separatedBytes = "";
+        for (let i = 0; i < hexValue.length; i += 2) {
+            separatedBytes += hexValue[i] + hexValue[i + 1] + byteSep;
+        }
+        hexValue = separatedBytes.slice(0, -byteSep.length);
+    }
+
+    return hexValue;
+}
+
+function asciiPrint(thisByte) {
+    // Check if the given byte should be displayed as ascii or hex.
+    if ((thisByte > 32) && (thisByte < 127)) {
+        // If it's printable, we want to display the ascii char.
+        return "'" + String.fromCharCode(thisByte) + "'";
+    }
+    // If it's not printable, return the hex value a space at the beginning for alignment.
+    return " " + intToHexBytes(thisByte, 1);
+}
+
+function formatMemoryChunk(chunk, chunkShowLength, byteSep, showAscii) {
+    let chunkStr = "";
+
+    // Convert each byte in this chunk to a hex value.
+    for (let i = 0; i < chunk.length; i++) {
+        if (i) {
+            chunkStr += byteSep;
+        }
+        if (!showAscii) {
+            chunkStr += intToHexBytes(chunk[i], 1);
+        } else {
+            chunkStr += asciiPrint(chunk[i]);
+        }
+    }
+
+    // Fill the chunk with 0-bytes if the chunk is shorter than expected.
+    for (let i = 0; i < (chunkShowLength - chunk.length); i++) {
+        chunkStr += byteSep;
+        chunkStr += "00";
+    }
+
+    return chunkStr;
+}
+
+function updateTraceGUI() {
+    // Clear old editor's highlights.
+    removeAllHighlights();
+
+    // Show the combined stdout.
+    let combinedStdout = "";
+    for (let i in currentTraceStep.stdout) {
+        combinedStdout += currentTraceStep.stdout[i];
+    }
+    document.getElementById("outputBox").value = combinedStdout;
+
+    // Show the combined stderr.
+    let combinedStderr = "";
+    for (let i in currentTraceStep.stderr) {
+        combinedStderr += currentTraceStep.stderr[i];
+    }
+    document.getElementById("errorBox").value = combinedStderr;
+
+    // Show the register values.
+    let registerValues = "";
+    for (let reg in currentTraceStep.reg_changes) {
+        // Get the stored values we have for this register.
+        let regValues = currentTraceStep.reg_changes[reg];
+        // Find the most recent one or use a default of 0 if we have none.
+        let lastValue = !regValues.length ? 0 : regValues[regValues.length - 1];
+        registerValues += reg.padStart(10, " ") + ":  " + intToHexBytes(lastValue, 8, "  ") + "\n";
+    }
+    document.getElementById("regValues").value = registerValues;
+
+    // Show the memory values.
+    let memoryValues = "";
+    for (let mem in currentTraceStep.mem_changes) {
+        // Get the stored values we have for this register.
+        let memValues = currentTraceStep.mem_changes[mem];
+        // Find the most recent one or use a default of 0 if we have none.
+        let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
+        // Format the address and chunk values for display.
+        let formattedMem = intToHexBytes(parseInt(mem));
+        let formattedValue = formatMemoryChunk(lastValue, 16, "  ", true);
+        memoryValues += formattedMem + ":  " + formattedValue + "\n";
+    }
+    document.getElementById("memValues").value = memoryValues;
+
+    // Highlight the next line to be executed.
+    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
+        // If it's not the last step, highlight the next line.
+        // TODO: handle lines in different tabs.
+        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+    }
+
+    // Highlight the last line that was executed.
+    if (currentTraceStep.stepNum) {
+        // If it's not the first step, highlight the last line that was executed.
+        // TODO: handle lines in different tabs.
+        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+    }
+
+    // Update the progress bar.
+    let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
+    document.getElementById("tracingProgressBarAria").setAttribute("aria-valuenow", pctComplete);
+    let progressBar = document.getElementById("tracingProgressBar");
+    progressBar.style["width"] = pctComplete + "%";
+    if (pctComplete < 100) {
+        progressBar.classList.add("progress-bar-striped");
+        progressBar.classList.remove("bg-success");
+    } else {
+        progressBar.classList.remove("progress-bar-striped");
+        progressBar.classList.add("bg-success");
+    }
+
+    // Update the step number display button.
+    document.getElementById("curTraceStepNum").innerText = "Step " + (currentTraceStep.stepNum + 1) + " / " + window.lastTrace.steps.length;
+
+    // Disable all controls.
+    Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
+        el.disabled = true;
+    });
+    if (currentTraceStep.stepNum) {
+        // After step 0, can go backwards.
+        Array.from(document.getElementsByClassName("trace-actions-back")).forEach((el) => {
+            el.disabled = false;
+        });
+    }
+    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
+        // Before last step, can go forward.
+        Array.from(document.getElementsByClassName("trace-actions-forward")).forEach((el) => {
+            el.disabled = false;
+        });
     }
 }
 
-function stopDebugger() {
-    // Stop debugging session.
-    debuggerCommand({ "command": 4 }, null);
-    // Remove any decorations we had added to the editor (i.e., next line, breakpoints).
+function downloadTracing() {
+    let json = window.ExecutionTrace.toObject(window.lastTrace);
+    download_file("execution_trace.json", JSON.stringify(json), "application/json");
+}
+
+function stopTracing() {
+    // Remove any markups on the editor.
     removeAllHighlights();
-    // Disable active debugger buttons.
-    document.getElementById("debugStop").disabled = true;
-    document.getElementById("debugBreakpoint").disabled = true;
-    document.getElementById("debugContinue").disabled = true;
-    document.getElementById("debugStep").disabled = true;
-    // Enable regular buttons.
-    document.getElementById("debugStart").disabled = false;
-    document.getElementById("runBtn").disabled = false;
-    document.getElementById("resetBtn").disabled = false;
-    document.getElementById("saveBtn").disabled = false;
-    document.getElementById("loadBtn").disabled = false;
-    // Make editor editable.
+
+    // Delete old trace information.
+    window.lastTrace = null;
+    currentTraceStep.stepNum = null;
+    currentTraceStep.mem_changes = {};
+    currentTraceStep.reg_changes = {};
+    currentTraceStep.stdout = [];
+    currentTraceStep.stderr = [];
+
+    // Disable the controls.
+    document.getElementById("curTraceStepNum").innerText = "StepNum";
+    document.getElementById("curTraceStepNum").disabled = true;
+    Array.from(document.getElementsByClassName("trace-actions")).forEach((el) => {
+        el.disabled = true;
+    });
+
+    // Reset progress bar to zero.
+    document.getElementById("tracingProgressBar").style["width"] = "0%";
+
+    // Reset original button states.
+    document.getElementById("traceStart").disabled = false;
+    document.getElementById("traceStop").disabled = true;
+    document.getElementById("traceDownload").disabled = true;
+
+    // Hide the tracing menu and show the start tracing button again.
+    document.getElementById("traceMenuDiv").classList.add("collapse");
+    document.getElementById("statusFlagsDisplay").classList.add("collapse");
+    document.getElementById("startTraceButtonDiv").classList.remove("collapse");
+
+    // Make editor writeable again.
     window.editor.updateOptions({ readOnly: false });
 }
 

@@ -121,8 +121,23 @@ table {
     ;
 }
 
-.gdbLineDecoration {
+.nextLineDecoration {
     text-decoration: underline;
     font-weight: bold;
     background: rgba(255, 255, 70, 0.25);
+}
+
+.lastLineDecoration {
+    text-decoration: underline;
+    font-weight: bold;
+    background: rgba(255, 70, 70, 0.125);
+}
+
+#memValues,
+#regValues,
+#outputBox,
+#inputBox,
+#errorBox,
+#emulationInfo {
+    font-family: monospace;
 }

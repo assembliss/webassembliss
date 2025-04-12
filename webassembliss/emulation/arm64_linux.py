@@ -7,16 +7,8 @@ import qiling.arch.arm64_const  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 from unicorn.arm64_const import UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
 
-from .base_debugging import (
-    DebuggingInfo,
-    DebuggingOptions,
-    DebuggingResults,
-    LineNum_DI,
-    clean_gdb_output,
-    create_debugging_session,
-    debug_cmd,
-)
 from .base_emulation import EmulationResults, assemble, clean_emulation
+from .base_tracing import clean_trace
 
 ROOTFS_PATH = "/webassembliss/rootfs/arm64_linux"
 AS_CMD = "aarch64-linux-gnu-as"
@@ -100,7 +92,8 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
 
 
 def emulate(
-    code: Dict[str, str],
+    source_files: Dict[str, str],
+    object_files: Optional[Dict[str, bytes]] = None,
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
@@ -110,6 +103,8 @@ def emulate(
     registers: Optional[List[str]] = None,
 ) -> EmulationResults:
     # Create default mutable values if needed.
+    if object_files is None:
+        object_files = {}
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
@@ -120,7 +115,8 @@ def emulate(
 
     # Run the emulation and return its status and results.
     return clean_emulation(
-        code=code,
+        source_files=source_files,
+        object_files=object_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,
@@ -136,123 +132,42 @@ def emulate(
     )
 
 
-def _parse_gdb_registers(
-    gdb_output: bytes, *, first_register: str, last_register: Optional[str] = None
-) -> Dict[str, Tuple[int, bool]]:
-    """Parses the result of an 'info regiters' command sent to an arm64 gdb session."""
-    # Clean the gdb interaction and only keep the register values.
-    lines = clean_gdb_output(
-        gdb_output=gdb_output,
-        first_line_token=f"(gdb) {first_register}",
-        last_line_token="(gdb) Detaching" if last_register is None else last_register,
-    )
-    # Remove the '(gdb) ' prompt from the first relevant output line.
-    lines[0] = lines[0][len("(gdb) ") :]
-    # return {r.strip(): (int(v.strip(), 16), False) for r, v in }
-    out = {}
-    # Process next lines similarly without having to worry about the gdb prompt.
-    for l in lines:
-        reg, value, *_ = l.split()
-        out[reg.strip()] = int(value.strip(), 16), False
-
-    return out
-
-
-def create_registers_DI(registers: Optional[List[str]]) -> DebuggingInfo:
-    """Create a DebuggingInfo object to retrieve the value of the given registers; if registers is None, retrieve all registers."""
-    if registers is None:
-        registers = []
-    return DebuggingInfo(
-        key="registers",
-        cmds=[f"info registers {' '.join(registers)}"],
-        postprocess=lambda x: _parse_gdb_registers(
-            x[0],
-            first_register=registers[0] if registers else "x0",
-            last_register=None if registers else "fpsr",
-        ),
-    )
-
-
-ARM64Flags_DI = DebuggingInfo(
-    key="flags",
-    cmds=["info register cpsr"],
-    postprocess=lambda x: _parse_nzcv_from_cpsr(
-        # Parsing the output of 'info register cpsr' from gdb to get only the value of the register.
-        _parse_gdb_registers(x[0], first_register="cpsr")["cpsr"][0]
-    ),
-)
-
-
-def start_debugger(
-    *,
-    user_signature: str,
-    code: str,
-    rootfs_path: Union[str, PathLike] = ROOTFS_PATH,
-    as_cmd: str = AS_CMD,
-    ld_cmd: str = LD_CMD,
+def trace(
+    source_files: Dict[str, str],
+    object_files: Optional[Dict[str, bytes]] = None,
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
-    user_input: str = "",
-    source_name: str = "usrCode.S",
-    obj_name: str = "usrCode.o",
+    max_trace_steps: int = 500,
+    timeout: int = 5_000_000,  # 5 seconds
+    stdin: str = "",
     bin_name: str = "usrCode.exe",
     cl_args: str = "",
-    max_queue_size: int = 20,
-    extraInfo: Optional[List[DebuggingInfo]] = None,
-    workdir: Union[str, PathLike] = "userprograms",
-    registers_to_show: Optional[List[str]] = None,
-) -> DebuggingResults:
-    """Create a new debugging session with the given parameters."""
-
+    registers: Optional[List[str]] = None,
+) -> EmulationResults:
     # Create default mutable values if needed.
+    if object_files is None:
+        object_files = {}
     if as_flags is None:
-        as_flags = ["-g --gdwarf-5 -o"]
+        as_flags = ["-g -o"]
     if ld_flags is None:
         # TODO: allow user to switch flags if they want, e.g., add -lc to allow printf.
         ld_flags = ["-o"]
-    if extraInfo is None:
-        extraInfo = [LineNum_DI, create_registers_DI(registers_to_show), ARM64Flags_DI]
-
-    # Create a session and return its information.
-    return create_debugging_session(
-        user_signature=user_signature,
-        code=code,
-        rootfs_path=rootfs_path,
-        as_cmd=as_cmd,
+    if not registers:
+        registers = ARM64_REGISTERS
+    return clean_trace(
+        source_files=source_files,
+        object_files=object_files,
+        rootfs_path=ROOTFS_PATH,
+        as_cmd=AS_CMD,
+        ld_cmd=LD_CMD,
         as_flags=as_flags,
-        ld_cmd=ld_cmd,
         ld_flags=ld_flags,
-        user_input=user_input,
-        source_name=source_name,
-        obj_name=obj_name,
+        objdump_cmd=OBJDUMP_CMD,
+        stdin=BytesIO(stdin.encode()),
         bin_name=bin_name,
-        max_queue_size=max_queue_size,
-        extraInfo=extraInfo,
-        workdir=workdir,
+        registers=ARM64_REGISTERS,
         cl_args=cl_args.split(),
-    )
-
-
-def send_debug_cmd(
-    *,
-    user_signature: str,
-    cmd: int,
-    breakpoint_source: str = "",
-    breakpoint_line: int = 0,
-    extraInfo: Optional[List[DebuggingInfo]] = None,
-    registers_to_show: Optional[List[str]] = None,
-) -> DebuggingResults:
-    """Create a new debugging session with the given parameters."""
-
-    # Create default mutable values if needed.
-    if extraInfo is None:
-        extraInfo = [LineNum_DI, create_registers_DI(registers_to_show), ARM64Flags_DI]
-
-    # Send command with its arguments and return execution information.
-    return debug_cmd(
-        user_signature=user_signature,
-        cmd=DebuggingOptions(cmd),
-        extraInfo=extraInfo,
-        breakpoint_source=breakpoint_source,
-        breakpoint_line=breakpoint_line,
+        get_flags_func=get_nzcv,
+        timeout=timeout,
+        max_trace_steps=max_trace_steps,
     )

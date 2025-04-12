@@ -2,7 +2,7 @@
 
 Work in progress...
 
-The goal is to have a webapp that allows users to edit, run, and debug ARM64 assembly code.
+The goal is to have a webapp that allows users to edit, run, and trace ARM64 assembly code.
 
 ## Get started
 1. install [docker](https://www.docker.com/get-started/);
@@ -21,18 +21,34 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] show condition codes / status bits
 - [x] handle qiling exception (`qiling.exception.QlErrorCoreHook: _hook_intr_cb : not handled`) when code does not exit or timeout 
 - [x] allow user to debug code (continue, step, set breakpoint, see memory)
+	- [x] solved with tracing
 - [x] make sure app works with multiple users accessing concurrently
 - [x] make sure debugging works with multiple users accessing concurrently
-- [ ] ensure that user code cannot modify rootfs base files
-	- [x] well, they actually can modify things
-	- [ ] create a sandbox for each user emulation
+	- [x] solved with tracing
+- [x] created a sandbox for each user emulation
+	- [x] fix sandbox vulnerability with absolute paths
 - [ ] allow multiple sources to work together
-	- [maybe helpful?](https://github.com/microsoft/monaco-editor/issues/604#issuecomment-344214706)
+	- [x] backend is able to handle it
+	- [ ] process all sources from frontend
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
+	- [x] backend is able to handle it
+	- [ ] allow user to upload objects
+- [ ] remove as/ld and just use gcc for arm64
+- [ ] remove flask-session
+	- [ ] store everything client-side with [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+	- [ ] receive all files in the request json body
+	- [ ] [limit the max request size a user can send](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/#improving-uploads)
 - [ ] show user output of a specific file they create/modify with their code
-- [ ] handle multiple architectures
+- [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [ ] refactor backend to have a single run/trace route that receives the arch as parameter
 - [ ] refactor the frontend so the editor is generic and new archs only need to provide the syntax highlighting and help links
+- [ ] handle multiple architectures
+ 	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
+	- [ ] [x8664_linux](https://github.com/qilingframework/rootfs/tree/master/x8664_linux_glibc2.39)
+ 	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
+	- [ ] [mips](https://github.com/qilingframework/rootfs/tree/master/mips32el_linux)
+	- [x] [riscv](https://github.com/qilingframework/rootfs/tree/master/riscv64_linux)
+	- [ ] [armv7](https://github.com/qilingframework/rootfs/tree/master/arm_linux)
 
 ### Grading Workflow
 - [x] allow testing of code (given input, expected output)
@@ -40,10 +56,13 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [x] measure executed instructions
 - [x] measure documentation level
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
+	- [ ] pre-assembled object files are done... but printf output does not show for some reason.
 - [x] create config file that has provided source(s), object(s), and tests
 - [x] allow user to upload config file and run tests with their code
 - [x] generate a results file containing user info, test results, efficiency metrics
 - [x] script to validate that results were generated with correct project config
+- [ ] create a GUI app to generate project configs
+- [ ] move grader protos to the same folder as the tracing ones
 
 ### Project Setup
 - [x] generate object and binaries in a temp folder inside rootfs
@@ -63,7 +82,7 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] swap flask with [fastapi](https://fastapi.tiangolo.com/)
 	- [maybe helpful?](https://testdriven.io/blog/moving-from-flask-to-fastapi/)
 	- might need to adapt [rocher](https://github.com/julien-duponchelle/rocher/blob/main/rocher/flask.py)?
-- [ ] make debugging route and methods async
+- [ ] make run and trace routes and methods async
 	- [maybe helpful? (flask)](https://flask.palletsprojects.com/en/stable/async-await/)
 	- [maybe helpful? (fastapi)](https://fastapi.tiangolo.com/async/)
 - [ ] find best gunicorn config
@@ -82,13 +101,9 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [x] allow user to change registers shown
+- [ ] add a button to load code from examples
 - [ ] allow user to change memory area shown
-- [ ] give user option to delete old debugging session and start a new one
-- [ ] handle no available ports for a new debugger session
-	- maybe a timer and try again in a minute?
-- [ ] handle already active session for user
-	- maybe a popup and ask if they want to quit the old one?
 - [ ] have a toggle for ascii vs non ascii memory view
-- [ ] speedup/optimize steps in debug-mode
+- [ ] show instruction information when hovering over it
 - [ ] improve the gui -- make everything look nicer :)
 	- [maybe helpful?](https://getbootstrap.com/)

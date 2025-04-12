@@ -2,10 +2,6 @@
 #       will probably have to move to something like alpine/ubuntu and then install everything it needs.
 FROM qilingframework/qiling:1.4.6
 
-# Location of the gdb.py file that needs to be patched.
-# Ref: https://github.com/qilingframework/qiling/issues/1377
-ARG QL_GDB_PATH="/usr/local/lib/python3.8/site-packages/qiling/debugger/gdb/gdb.py"
-
 # Install zsh + omzsh
 RUN apt update && \
     apt install wget -y && \
@@ -23,8 +19,6 @@ RUN apt update && \
     make gcc-aarch64-linux-gnu\
     # riscv64 toolchain (assemble/link riscv64 assembly code)
     make gcc-riscv64-linux-gnu\
-    # gdb-multiarch (for user debugging sessions)
-    gdb-multiarch\
     # tmux (for dev debugging in container)
     tmux\
     # protobuf to handle project grading config files
@@ -35,12 +29,6 @@ RUN apt update && \
 # Install required python packages
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt --break-system-packages
-
-# Copy a patched version of qiling's gdb server. It has the following changes:
-#   1. fix a bug that prevents stepping over the code (ref: https://github.com/qilingframework/qiling/issues/1377);
-#   2. adds the option to allow clients to detach without exiting, so the server accepts multiple clients in sequence;
-#   3. adds a special command (i) that can return qiling's variables to the gdb client.
-COPY resources/qiling_debugger_gdb_gdb.py ${QL_GDB_PATH}
 
 # Copy the app code into the container and set the workdirectory to point to that.
 COPY webassembliss /webassembliss
