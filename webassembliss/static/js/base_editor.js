@@ -257,15 +257,15 @@ ld_err: ${ld_err}`;
     }
 }
 
-function BASE_createEditor(default_code, archID, archSyntaxFun) {
+function BASE_createEditor(default_code, archSyntaxFun) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
-        monaco.languages.register({ id: archID });
-        monaco.languages.setMonarchTokensProvider(archID, archSyntaxFun());
+        monaco.languages.register({ id: ARCH_ID });
+        monaco.languages.setMonarchTokensProvider(ARCH_ID, archSyntaxFun());
         window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
             // Change "value" to upload files
             value: default_code.join('\n'),
-            language: archID,
+            language: ARCH_ID,
             theme: 'vs-dark',
             glyphMargin: true,
             lineNumbersMinChars: 2,
@@ -314,7 +314,7 @@ function detectAndHighlightErrors() {
     });
 }
 
-function BASE_runCode(archID) {
+function BASE_runCode() {
     clearOutput();
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
@@ -332,7 +332,7 @@ function BASE_runCode(archID) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            arch: archID,
+            arch: ARCH_ID,
             source_code: source_code,
             user_input: user_input,
             cl_args: window.cl_args,
@@ -468,7 +468,7 @@ const currentTraceStep = {
     stderr: [],
 };
 
-function BASE_startTracing(archID) {
+function BASE_startTracing() {
     // Clear any old information.
     clearOutput();
     // Show the trace menu information and hide the start tracing button.
@@ -492,7 +492,7 @@ function BASE_startTracing(archID) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            arch: archID,
+            arch: ARCH_ID,
             source_code: source_code,
             user_input: user_input,
             cl_args: window.cl_args,

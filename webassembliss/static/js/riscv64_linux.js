@@ -1,15 +1,15 @@
 const ARCH_ID = "riscv64_linux";
 
 function createEditor(default_code) {
-    BASE_createEditor(default_code, ARCH_ID, getRISCVSyntaxHighlighting)
+    BASE_createEditor(default_code, getRISCVSyntaxHighlighting)
 }
 
 function runCode() {
-    BASE_runCode(ARCH_ID);
+    BASE_runCode();
 }
 
 function startTracing() {
-    BASE_startTracing(ARCH_ID);
+    BASE_startTracing();
 }
 
 function getRISCVSyntaxHighlighting() {
