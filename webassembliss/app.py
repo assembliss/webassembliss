@@ -169,7 +169,7 @@ def editor_page(arch):
     # Return the template with the appropriate code to display.
     return render_template(
         arch_info.template_path,
-        default_code=session["source_code"]["usrCode.S"].split("\n"),
+        default_code=source_code.split("\n"),
     )
     
 
