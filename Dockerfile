@@ -17,7 +17,9 @@ RUN apt update && \
     apt install -y \
     # arm64 toolchain (assemble/link arm64 assembly code)
     make gcc-aarch64-linux-gnu\
-    # tmux (for development in container)
+    # riscv64 toolchain (assemble/link riscv64 assembly code)
+    make gcc-riscv64-linux-gnu\
+    # tmux (for dev debugging in container)
     tmux\
     # protobuf to handle project grading config files
     protobuf-compiler\
