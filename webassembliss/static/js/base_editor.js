@@ -417,6 +417,22 @@ function updateLastLine(line) {
     });
 }
 
+function updateTraceLinesHighlights(traceStep) {
+    // Highlight the next line to be executed.
+    if (traceStep + 1 < window.lastTrace.steps.length && window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted !== null) {
+        // If it's not the last step and we have line information, highlight the next line.
+        // TODO: handle lines in different tabs.
+        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+    }
+
+    // Highlight the last line that was executed.
+    if (traceStep && window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted !== null) {
+        // If it's not the first step and we have line information, highlight the last line that was executed.
+        // TODO: handle lines in different tabs.
+        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+    }
+}
+
 function addBreakpointHighlight(line) {
     addHighlight(line, {
         isWholeLine: true,
@@ -822,19 +838,8 @@ function updateTraceGUI() {
     }
     document.getElementById("memValues").value = memoryValues;
 
-    // Highlight the next line to be executed.
-    if (currentTraceStep.stepNum + 1 < window.lastTrace.steps.length) {
-        // If it's not the last step, highlight the next line.
-        // TODO: handle lines in different tabs.
-        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
-    }
-
-    // Highlight the last line that was executed.
-    if (currentTraceStep.stepNum) {
-        // If it's not the first step, highlight the last line that was executed.
-        // TODO: handle lines in different tabs.
-        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
-    }
+    // Update the last and next lines to be executed.
+    updateTraceLinesHighlights(currentTraceStep.stepNum);
 
     // Update the progress bar.
     let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;

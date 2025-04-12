@@ -190,6 +190,9 @@ def stepped_emulation(
     # Flag to stop emulation early.
     emulation_error = False
 
+    # First instruction address should be the binary's entry point.
+    next_instr_addr = ql.loader.entry_point
+
     # Emulate up to the maximum number of steps.
     for step_num in range(1, max_steps + 1):
         # Create new streams for output; easier to parse only the output for this step.
@@ -204,10 +207,11 @@ def stepped_emulation(
         execution_error = ""
         try:
             # TODO: apply timeout as a sum of each instruction, i.e., timeout the stepped_emulation method.
-            next_instr_addr = find_next_addr(ql)
             ql.emu_start(
                 begin=next_instr_addr, end=exit_address, timeout=timeout, count=1
             )
+            # Update the next instruction to be executed.
+            last_instr_addr, next_instr_addr = next_instr_addr, find_next_addr(ql)
 
         except QlErrorCoreHook as error:
             # Catch a notimplemented interrupt error.
@@ -250,7 +254,7 @@ def stepped_emulation(
 
         # Get information about the line that was executed.
         line_executed = None
-        fi, ln = linenum_map.get(next_instr_addr, (-1, -1))
+        fi, ln = linenum_map.get(last_instr_addr, (-1, -1))
         # If we do not have line information, e.g., pre-assembled object, do not add anything.
         if fi >= 0 and ln >= 0:
             line_executed = LineInfo()
@@ -419,7 +423,7 @@ if __name__ == "__main__":
             max_trace_steps=200,
         )
 
-    print("Emulation info:")
+    print("ARM64 Emulation info:")
     print(f"{et.rootfs=}")
     print(f"{et.source_filenames=}")
     print(f"{et.assembled_ok=}")

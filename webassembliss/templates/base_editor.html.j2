@@ -5,6 +5,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 {% endblock %}
 
+{% block tag %}
+    &nbsp;
+    <span class="badge bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill">
+    {% block archTag %}{% endblock %}
+    </span>
+{% endblock %}
+
 {% block content %}
     <input type="button" id="runBtn" value="Run" onclick="runCode()" />
     <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />

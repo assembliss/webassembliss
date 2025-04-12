@@ -1,8 +1,8 @@
 from qiling import Qiling
 
-rootfs = "/webassembliss/rootfs/riscv64_linux"
+rootfs = "../../rootfs/riscv64_linux"
 profile = "linux.ql"
-argv = ["HelloWorld"]
+argv = ["hello.out"]
 
 ql = Qiling(argv, rootfs, profile=profile)
 

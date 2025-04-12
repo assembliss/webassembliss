@@ -4,10 +4,7 @@
 {% block title %} - ARM64{% endblock %}
 
 
-{% block tag %}
-    &nbsp;
-    <span class="badge bg-secondary-subtle border border-secondary-subtle text-secondary-emphasis rounded-pill">arm64</span>
-{% endblock %}
+{% block archTag %}arm64{% endblock %}
 
 
 {% block navbar %}
@@ -28,6 +25,7 @@
 
 {% block statusFlags %}
     <th>Status Flags</th>
+    {# The ID should be formatted as "<flag name>Flag" so the tracing logic can update values without changes. #}
     <td>N: <span id="nFlag">⭕</span></td>
     <td>Z: <span id="zFlag">⭕</span></td>
     <td>C: <span id="cFlag">⭕</span></td>
