@@ -1,2 +1,0 @@
- - Update riscv64_linux.html.j2 with riscv64 resources, line 19
- - Update riscv64_linux.js with riscv64 instructions, line 571

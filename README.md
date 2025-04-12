@@ -31,6 +31,8 @@ The goal is to have a webapp that allows users to edit, run, and debug ARM64 ass
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] handle multiple architectures
+- [ ] refactor backend to have a single run/trace route that receives the arch as parameter
+- [ ] refactor the frontend so the editor is generic and new archs only need to provide the syntax highlighting and help links
 
 ### Grading Workflow
 - [x] allow testing of code (given input, expected output)

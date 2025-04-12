@@ -282,7 +282,7 @@ def riscv64_linux_index():
     # If the user has run or debugged code, we have it saved in their session; reload it.
     if "source_code" in session:
         return render_template(
-            "riscv_linux.html.j2", default_code=session["source_code"]["usrCode.S"].split("\n")
+            "riscv64_linux.html.j2", default_code=session["source_code"]["usrCode.S"].split("\n")
         )
     # If no code for this user, read the hello world example to use it as the default code in the editor.
     with open("/webassembliss/examples/riscv64_linux/hello.S") as file_in:

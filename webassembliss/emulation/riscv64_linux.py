@@ -1,13 +1,11 @@
 import subprocess
-from typing import Dict, List, Optional, Tuple, Union
 from io import BytesIO
 from os import PathLike
-from .base_emulation import EmulationResults, assemble, clean_emulation
-from qiling import Qiling  # type: ignore[import-untyped]
+from typing import Dict, List, Optional, Union
+
 import qiling.arch.riscv_const  # type: ignore[import-untyped]
 
-# Wasn't sure what to import here, since there isn't an exact RISC-V copy of NZCV.
-#from unicorn.riscv_const import UC_RISCV_REG_HSTATUS  # type: ignore[import-untyped]
+from .base_emulation import EmulationResults, assemble, clean_emulation
 
 ROOTFS_PATH = "/webassembliss/rootfs/riscv64_linux"
 AS_CMD = "riscv64-linux-gnu-as"
