@@ -106,6 +106,8 @@ function openTab(tabNum) {
                 // Update active tab number.
                 currentTab.change(tabNum);
             });
+        // Store changes in the local storage as well.
+        localTabsPost(currentTab_filename, currentTab_contents, newTab_filename);
     }
 }
 
@@ -125,6 +127,8 @@ function closeTab(tabNum) {
         document.getElementById(`tab${tabNum}Btn`).remove();
         document.getElementById(`tab${tabNum}BtnX`).remove();
     });
+    // Delete tab locally as well.
+    localTabsDelete(toBeClosed_filename);
 }
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
@@ -154,6 +158,93 @@ const tabs = {
         openTab(tabNum);
     }
 };
+
+const localTabStorage = {
+    archID: null,
+    tabs: null,
+    size: null,
+}
+
+function localTabsGet(filename) {
+    // Get the file contents stored; if there are none, use an empty string.
+    let contents = (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
+    return { filename: filename, contents: contents, user_storage: localTabStorage.size };
+}
+
+function localTabsPost(filename, contents, returnFilename) {
+    // Check if this is a new file or an update to an existing one.
+    if (filename in localTabStorage.tabs) {
+        oldLength = localTabStorage.tabs[filename].length;
+        deltaLength = contents.length - oldLength;
+        localTabStorage.tabs[filename] = contents;
+        localTabStorage.size += deltaLength;
+    } else {
+        localTabStorage.tabs[filename] = contents;
+        localTabStorage.size += filename.length + contents.length;
+    }
+
+    saveLocalTabs();
+    let resp = { message: `Stored contents of {filename}` };
+
+    // If there is a return file requested, add it to the response.
+    if (returnFilename !== null) {
+        resp["return_file"] = {
+            filename: returnFilename,
+            contents: (returnFilename in localTabStorage.tabs) ? localTabStorage.tabs[returnFilename] : "",
+            user_storage: localTabStorage.size,
+        }
+    }
+
+    return resp;
+}
+
+function localTabsPatch(oldFilename, newFilename) {
+    // Check if file is saved.
+    if (!(oldFilename in localTabStorage.tabs)) {
+        return;
+    }
+    // Check if the new name is not taken.
+    if ((newFilename in localTabStorage.tabs)) {
+        return;
+    }
+    // Copy contents from old name to new one.
+    localTabStorage.tabs[newFilename] = localTabStorage.tabs[oldFilename];
+    // Delete old entry.
+    delete localTabStorage.tabs[oldFilename];
+    // Update the size and save these changes.
+    localTabStorage.size += newFilename.length - oldFilename.length;
+    saveLocalTabs();
+}
+
+function localTabsDelete(filename) {
+    if (filename in localTabStorage.tabs) {
+        contents = localTabStorage.tabs[filename];
+        localTabStorage.size -= filename.length + contents.length;
+        delete localTabStorage.tabs[filename];
+        saveLocalTabs();
+    }
+}
+
+function saveLocalTabs() {
+    console.log("Saving localTabs; see contents below");
+    console.log(localTabStorage);
+    localStorage.setItem(`tabs-${localTabStorage.archID}`, JSON.stringify(localTabStorage.tabs));
+}
+
+function reloadLocalTabs() {
+    // Update the architecture.
+    localTabStorage.archID = ARCH_ID;
+    // Load saved tabs from localStorage.
+    let savedTabs = localStorage.getItem(`tabs-${localTabStorage.archID}`);
+    localTabStorage.tabs = savedTabs ? JSON.parse(savedTabs) : {};
+    // Calculates storage size.
+    localTabStorage.size = 0;
+    for (const [filename, contents] of Object.entries(localTabStorage.tabs)) {
+        localTabStorage.size += filename.length + contents.length;
+    }
+    console.log("Reloaded saved tabs; see contents below");
+    console.log(localTabStorage);
+}
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
@@ -253,7 +344,7 @@ ld_err: ${ld_err}`;
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
-        }
+        } ``
     }
 }
 
