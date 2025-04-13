@@ -171,6 +171,13 @@ function getLocalTab(filename) {
     return (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
 }
 
+function saveCurrentTabLocally() {
+    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+    let currentTab_filename = currentTabBtn.value;
+    let currentTab_contents = window.editor.getValue();
+    saveLocalTab(currentTab_filename, currentTab_contents);
+}
+
 function saveLocalTab(filename, contents) {
     // Check if this is a new file or an update to an existing one.
     if (filename in localTabStorage.tabs) {
@@ -399,7 +406,7 @@ function BASE_runCode() {
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    let source_code = getSource();
+    saveCurrentTabLocally();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -410,7 +417,7 @@ function BASE_runCode() {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
-            source_code: source_code,
+            source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
             registers: registers
@@ -559,7 +566,7 @@ function BASE_startTracing() {
     document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    let source_code = getSource();
+    saveCurrentTabLocally();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -570,7 +577,7 @@ function BASE_startTracing() {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
-            source_code: source_code,
+            source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
             registers: registers

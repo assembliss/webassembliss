@@ -27,9 +27,9 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 	- [x] solved with tracing
 - [x] created a sandbox for each user emulation
 	- [x] fix sandbox vulnerability with absolute paths
-- [ ] allow multiple sources to work together
+- [x] allow multiple sources to work together
 	- [x] backend is able to handle it
-	- [ ] process all sources from frontend
+	- [x] process all sources from frontend
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 	- [x] backend is able to handle it
 	- [ ] allow user to upload objects

@@ -179,8 +179,8 @@ def code_run():
         return "No JSON data received", 400
     if "arch" not in request.json:
         return "No architecture config in JSON data", 400
-    if "source_code" not in request.json:
-        return "No source_code in JSON data", 400
+    if "source_files" not in request.json:
+        return "No source_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
     
@@ -188,16 +188,11 @@ def code_run():
     if arch_info is None:
         return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
 
-    session["source_code"] = {"usrCode.S": request.json["source_code"]}
-    session["user_input"] = request.json["user_input"]
-    session["cl_args"] = request.json.get("cl_args", "")
-    session["registers"] = request.json.get("registers", "")
-
     emu_results = arch_info.emulate(
-        session["source_code"],
-        stdin=session["user_input"],
-        cl_args=session["cl_args"],
-        registers=session["registers"].split(),
+        source_files=request.json["source_files"],
+        stdin=request.json["user_input"],
+        cl_args=request.json["cl_args"],
+        registers=request.json.get("registers", "").split(),
     )
 
     # TODO: return simply emu_results and do parsing of results on javascript side;
@@ -226,7 +221,7 @@ def code_trace():
         return "No JSON data received", 400
     if "arch" not in request.json:
         return "No architecture config in JSON data", 400
-    if "source_code" not in request.json:
+    if "source_files" not in request.json:
         return "No source_code in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
@@ -235,16 +230,13 @@ def code_trace():
     if arch_info is None:
         return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
 
-    session["source_code"] = {"usrCode.S": request.json["source_code"]}
-    session["user_input"] = request.json["user_input"]
-    session["cl_args"] = request.json.get("cl_args", "")
-    session["registers"] = request.json.get("registers", "")
     emulation_trace = arch_info.trace(
-        source_files=session["source_code"],
-        stdin=session["user_input"],
-        cl_args=session["cl_args"],
-        registers=session["registers"],
+        source_files=request.json["source_files"],
+        stdin=request.json["user_input"],
+        cl_args=request.json["cl_args"],
+        registers=request.json.get("registers", "").split(),
     )
+
     return send_file(
         BytesIO(emulation_trace.SerializeToString()),
         mimetype="application/x-protobuf",
