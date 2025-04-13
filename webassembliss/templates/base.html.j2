@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>WebAssembliss{% block title %}{% endblock %}</title>
     <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
-    <link href="{{ url_for('static', filename='css/external/bootstrap-5.3.3.min.css') }}" rel="stylesheet">
+    <link href="{{ url_for('static', filename='external/bootstrap-5.3.3/bootstrap-5.3.3.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/base.css') }}" rel="stylesheet">
     {% block head %}{% endblock %}
   </head>
@@ -76,8 +76,8 @@
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/external/jquery-3.2.1.slim.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/external/bootstrap-5.3.3.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='external/jquery-3.2.1/jquery-3.2.1.slim.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='external/bootstrap-5.3.3/bootstrap-5.3.3.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/base.js') }}"></script>
     {% block scripts %}{% endblock %}
   </body>

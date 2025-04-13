@@ -166,7 +166,7 @@
 
 {% block scripts %}
     <script src="/static/vs/loader.js"></script>
-    <script src="{{ url_for('static', filename='js/external/protobuf-7.4.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}
     <script>createEditor({{ default_code }})</script>
