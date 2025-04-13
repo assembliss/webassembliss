@@ -301,13 +301,13 @@ const localTabStorage = {
 
             // Update active tab number.
             currentTab.change(maxTabNum);
+        }).then(() => {
+            // Check if we should delete the default tab from html template.
+            if (!('Tab1' in this.tabs)) {
+                // If we don't have contents saved for it, delete it.
+                closeTab(1);
+            }
         });
-
-        // Check if we should delete the default tab from html template.
-        if (!('Tab1' in this.tabs)) {
-            // If we don't have contents saved for it, delete it.
-            closeTab(1);
-        }
     }
 }
 
