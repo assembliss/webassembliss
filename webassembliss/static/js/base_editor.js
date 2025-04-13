@@ -107,7 +107,8 @@ function openTab(tabNum) {
                 currentTab.change(tabNum);
             });
         // Store changes in the local storage as well.
-        localTabsPost(currentTab_filename, currentTab_contents, newTab_filename);
+        saveLocalTab(currentTab_filename, currentTab_contents);
+        let localNewContents = getLocalTab(newTab_filename);
     }
 }
 
@@ -128,7 +129,7 @@ function closeTab(tabNum) {
         document.getElementById(`tab${tabNum}BtnX`).remove();
     });
     // Delete tab locally as well.
-    localTabsDelete(toBeClosed_filename);
+    deleteLocalTab(toBeClosed_filename);
 }
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
@@ -165,13 +166,12 @@ const localTabStorage = {
     size: null,
 }
 
-function localTabsGet(filename) {
+function getLocalTab(filename) {
     // Get the file contents stored; if there are none, use an empty string.
-    let contents = (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
-    return { filename: filename, contents: contents, user_storage: localTabStorage.size };
+    return (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
 }
 
-function localTabsPost(filename, contents, returnFilename) {
+function saveLocalTab(filename, contents) {
     // Check if this is a new file or an update to an existing one.
     if (filename in localTabStorage.tabs) {
         oldLength = localTabStorage.tabs[filename].length;
@@ -182,23 +182,11 @@ function localTabsPost(filename, contents, returnFilename) {
         localTabStorage.tabs[filename] = contents;
         localTabStorage.size += filename.length + contents.length;
     }
-
-    saveLocalTabs();
-    let resp = { message: `Stored contents of {filename}` };
-
-    // If there is a return file requested, add it to the response.
-    if (returnFilename !== null) {
-        resp["return_file"] = {
-            filename: returnFilename,
-            contents: (returnFilename in localTabStorage.tabs) ? localTabStorage.tabs[returnFilename] : "",
-            user_storage: localTabStorage.size,
-        }
-    }
-
-    return resp;
+    // Update the tabs in localStorage.
+    storeLocalTabs();
 }
 
-function localTabsPatch(oldFilename, newFilename) {
+function renameLocalTab(oldFilename, newFilename) {
     // Check if file is saved.
     if (!(oldFilename in localTabStorage.tabs)) {
         return;
@@ -211,23 +199,23 @@ function localTabsPatch(oldFilename, newFilename) {
     localTabStorage.tabs[newFilename] = localTabStorage.tabs[oldFilename];
     // Delete old entry.
     delete localTabStorage.tabs[oldFilename];
-    // Update the size and save these changes.
+    // Update the size.
     localTabStorage.size += newFilename.length - oldFilename.length;
-    saveLocalTabs();
+    // Update the tabs in localStorage.
+    storeLocalTabs();
 }
 
-function localTabsDelete(filename) {
+function deleteLocalTab(filename) {
     if (filename in localTabStorage.tabs) {
         contents = localTabStorage.tabs[filename];
         localTabStorage.size -= filename.length + contents.length;
         delete localTabStorage.tabs[filename];
-        saveLocalTabs();
+        // Update the tabs in localStorage.
+        storeLocalTabs();
     }
 }
 
-function saveLocalTabs() {
-    console.log("Saving localTabs; see contents below");
-    console.log(localTabStorage);
+function storeLocalTabs() {
     localStorage.setItem(`tabs-${localTabStorage.archID}`, JSON.stringify(localTabStorage.tabs));
 }
 
@@ -242,8 +230,6 @@ function reloadLocalTabs() {
     for (const [filename, contents] of Object.entries(localTabStorage.tabs)) {
         localTabStorage.size += filename.length + contents.length;
     }
-    console.log("Reloaded saved tabs; see contents below");
-    console.log(localTabStorage);
 }
 
 function importCode() {
