@@ -222,7 +222,7 @@ const localTabStorage = {
         this.load();
 
         // Display the stored tabs in the editor.
-        if (!this.tabs) {
+        if (!this.size) {
             // If there are no tabs stored, keep the default code on editor.
             return;
         }
