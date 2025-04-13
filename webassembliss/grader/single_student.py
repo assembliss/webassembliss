@@ -368,7 +368,7 @@ def grade_student(
         bin_path = join(tmpdirname, config.exec_name)
         gr.linked, _, _, gr.errors = link(
             ld_cmd=arch.ld_cmd,
-            obj_path=obj_path,
+            obj_paths=[obj_path],
             flags=config.ld_flags,
             bin_path=bin_path,
         )
