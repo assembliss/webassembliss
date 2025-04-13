@@ -236,19 +236,21 @@ const localTabStorage = {
             let newTabNum = parseInt(filename.slice(3));
             if (firstTab) {
                 maxTabNum = minTabNum = newTabNum;
+                firstTab = false;
             } else {
                 maxTabNum = (maxTabNum >= newTabNum) ? maxTabNum : newTabNum;
                 minTabNum = (minTabNum <= newTabNum) ? minTabNum : newTabNum;
             }
         }
 
-        console.log("here!");
-        console.log("maxTabNum:" + maxTabNum);
-        console.log("minTabNum:" + minTabNum);
-        console.log("tabs.count: " + tabs.count);
-
         // Create tabs needed.
         while (tabs.count <= maxTabNum) {
+            if (!(`Tab${tabs.count}` in this.tabs)) {
+                // If it is not a tab we have contents stored, skip it.
+                tabs.count++;
+                continue;
+            }
+
             // Add tabs, but don't open them.
             let tabNum = tabs.count;
             let newTab = document.createElement("input");
@@ -268,25 +270,43 @@ const localTabStorage = {
             document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
             document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
             tabs.count++;
-
-            console.log("opened new tab");
-            console.log("tabs.count: " + tabs.count);
         }
 
-        // Add an extra tab and open it.
-        tabs.addTab();
-        maxTabNum++;
+        // Load the code of the first tab we have saved into the editor.
+        // Delay for the editor to load.
+        sleep(200).then(() => {
+            // Same logic as the openTab method, but it does not save the changes locally.
+            // TODO: maybe make this logic a new function that we can call both in here and in openTab; that would make it easier to implement future changes.
 
-        // Load the code of the first tab into the editor.
-        // TODO: for some reason there is a bug here: the editor has not loaded yet when we try to set the contents of it.
-        openTab(minTabNum);
+            // Update button styles.
+            let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+            let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+            let newTabBtn = document.getElementById(`tab${maxTabNum}Btn`);
+            let newTabBtnX = document.getElementById(`tab${maxTabNum}BtnX`);
+            // For a background tab, make close button clickable and visible.
+            currentTabBtn.className = "tabBtn";
+            currentTabBtnX.className = "tabBtnX";
+            currentTabBtnX.disabled = false;
+            currentTabBtnX.removeAttribute("hidden");
+            // For the foreground tab, disable the close button and hide it.
+            newTabBtn.className = "activeTabBtn";
+            newTabBtnX.className = "activeTabBtnX";
+            newTabBtnX.disabled = true;
+            newTabBtnX.setAttribute("hidden", "hidden");
 
-        // Delete tabs that are not needed.
-        while (maxTabNum > 0) {
-            if (!(`Tab${maxTabNum}` in this.tabs)) {
-                closeTab(maxTabNum);
-            }
-            maxTabNum--;
+            // Update the editor contents.
+            let newTab_filename = newTabBtn.value;
+            let localNewContents = localTabStorage.get(newTab_filename);
+            window.editor.setValue(localNewContents);
+
+            // Update active tab number.
+            currentTab.change(maxTabNum);
+        });
+
+        // Check if we should delete the default tab from html template.
+        if (!('Tab1' in this.tabs)) {
+            // If we don't have contents saved for it, delete it.
+            closeTab(1);
         }
     }
 }
