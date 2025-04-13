@@ -1,8 +1,6 @@
 dataclasses_json==0.6.7
 Flask==3.0.3
-Flask-Session[redis]==0.8.0
 gunicorn==23.0.0
 qiling==1.4.6
 protobuf==5.29.3
-redis==5.2.1
 rocher==0.52.2

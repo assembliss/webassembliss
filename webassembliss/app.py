@@ -1,40 +1,15 @@
 from io import BytesIO
-from os import environ
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import (
-    Flask,
-    abort,
-    current_app,
-    jsonify,
-    render_template,
-    request,
-    send_file,
-    session,
-)
-from flask_session import Session  # type: ignore[import-untyped]
-from redis import Redis
+from flask import Flask, abort, render_template, request, send_file
 
 from .grader.single_student import grade_form_submission
 from .utils import ARCH_MAP
 
 app = Flask(__name__)
+
 # Limit requests to be a maximum of 1 MB.
 app.config["MAX_CONTENT_LENGTH"] = 1 * 1000 * 1000
-
-# Setup user sessions.
-SESSION_TYPE = "redis"
-SESSION_REDIS = Redis(
-    host=environ.get("REDIS_HOST", "localhost"),
-    port=int(environ.get("REDIS_PORT", "6379")),
-    password=environ.get("REDIS_PASSWORD", ""),
-)
-app.config.from_object(__name__)
-Session(app)
-
-# User file storage limits.
-MAX_SINGLE_FILE_SIZE = int(environ.get("MAX_SINGLE_FILE_SIZE", "10_240"))
-MAX_TOTAL_FILE_SIZE = int(environ.get("MAX_TOTAL_FILE_SIZE", "102_400"))
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
@@ -49,83 +24,6 @@ def index():
 @app.route("/about/")
 def about():
     return render_template("about.html.j2")
-
-
-@app.route("/tab_manager/<filename>/", methods=["POST", "GET", "DELETE"])
-def tab_manager(filename):
-    if not filename:
-        return jsonify({"error": "No filename provided"}), 400
-
-    if request.method == "GET":
-        # For GET method, return the content of the given filename.
-        if "user_files" not in session or filename not in session["user_files"]:
-            return jsonify({"error": f"Could not find '{filename}'"}), 400
-        return (
-            jsonify(
-                {"filename": filename, "contents": session["user_files"][filename]}
-            ),
-            200,
-        )
-
-    elif request.method == "DELETE":
-        # For DELETE method, delete the saved contents of the given filename
-        if "user_files" not in session or filename not in session["user_files"]:
-            return jsonify({"error": f"Could not find '{filename}'"}), 400
-        session["user_storage"] -= len(session["user_files"][filename])
-        del session["user_files"][filename]
-        return jsonify({"message": f"Deleted '{filename}' from the server"}), 200
-
-    elif request.method == "POST":
-        # For POST method, store the given contents in the filename passed in the url
-        # if, "return_file" is in the json, return the contents of that file in the response.
-
-        # Check json was received.
-        if request.json is None:
-            return jsonify({"error": "No JSON data received"}), 400
-
-        # Initialize session values to store files.
-        if "user_files" not in session:
-            session["user_files"] = {}
-            session["user_storage"] = 0
-
-        if "contents" not in request.json:
-            return jsonify({"error": "No contents in JSON data"}), 400
-
-        content_len = len(request.json["contents"])
-        if content_len > MAX_SINGLE_FILE_SIZE:
-            return jsonify({"error": "Single file exceeds max size of 10KB"}), 400
-
-        old_len = len(session["user_files"].get(filename, ""))
-        delta_len = content_len - old_len
-        if (session["user_storage"] + delta_len) > MAX_TOTAL_FILE_SIZE:
-            return (
-                jsonify({"error": "User will exceed max storage of 100KB"}),
-                400,
-            )
-
-        # Store the file and update user storage size.
-        session["user_files"][filename] = request.json["contents"]
-        session["user_storage"] += delta_len
-
-        # Create base response.
-        resp = {"message": f"Stored contents of '{filename}'"}
-
-        # Check if the user requested a return file.
-        if "return_file" in request.json:
-            # If they did, add its contents to the response.
-            # If the file does not exist, use an empty string.
-            return_filename = request.json["return_file"]
-            resp["return_file"] = {
-                "filename": return_filename,
-                "contents": session["user_files"].get(return_filename, ""),
-            }
-
-        # Return the final response.
-        return jsonify(resp), 200
-
-    else:
-        return jsonify({"error": f"Cannot handle '{request.method}' method"}), 400
-
 
 @app.route("/grader/", methods=["POST", "GET"])
 def grader():
@@ -165,17 +63,14 @@ def editor_page(arch):
             400,
         )
 
-    # Retrieve any user code we have stored already.
-    source_code = session.get("source_code", {}).get("usrCode.S")
-    if source_code is None:
-        # If no code for this user, read the default example for the architecture to display.
-        with open(arch_info.example_path) as file_in:
-            source_code = file_in.read()
+    # Load default source code for architecture to populate the template.
+    with open(arch_info.example_path) as file_in:
+        default_source_code = file_in.read()
 
     # Return the template with the appropriate code to display.
     return render_template(
         arch_info.template_path,
-        default_code=source_code.split("\n"),
+        default_code=default_source_code.split("\n"),
     )
 
 

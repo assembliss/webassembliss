@@ -66,49 +66,31 @@ function openTab(tabNum) {
         alert("rename temp");
     } else {
         // Save current tab contents
+        saveCurrentTabLocally();
 
+        // Update button styles.
         let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
         let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
         let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
         let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
+        // For a background tab, make close button clickable and visible.
+        currentTabBtn.className = "tabBtn";
+        currentTabBtnX.className = "tabBtnX";
+        currentTabBtnX.disabled = false;
+        currentTabBtnX.removeAttribute("hidden");
+        // For the foreground tab, disable the close button and hide it.
+        newTabBtn.className = "activeTabBtn";
+        newTabBtnX.className = "activeTabBtnX";
+        newTabBtnX.disabled = true;
+        newTabBtnX.setAttribute("hidden", "hidden");
 
-        let currentTab_filename = currentTabBtn.value;
-        let currentTab_contents = window.editor.getValue();
-
+        // Update the editor contents.
         let newTab_filename = newTabBtn.value;
-
-        // Make a post request that will save the contents of the current tab and return the contents of the new tab.
-        fetch('/tab_manager/' + currentTab_filename, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: currentTab_contents,
-                return_file: newTab_filename
-            }),
-        }).then(response => response.json())
-            .then(data => {
-                // TODO: Validate this response.
-                // Update the editor contents.
-                window.editor.setValue(data.return_file.contents);
-                // Update button styles.
-                // For a background tab, make close button clickable and visible.
-                currentTabBtn.className = "tabBtn";
-                currentTabBtnX.className = "tabBtnX";
-                currentTabBtnX.disabled = false;
-                currentTabBtnX.removeAttribute("hidden");
-                // For the foreground tab, disable the close button and hide it.
-                newTabBtn.className = "activeTabBtn";
-                newTabBtnX.className = "activeTabBtnX";
-                newTabBtnX.disabled = true;
-                newTabBtnX.setAttribute("hidden", "hidden");
-                // Update active tab number.
-                currentTab.change(tabNum);
-            });
-        // Store changes in the local storage as well.
-        saveLocalTab(currentTab_filename, currentTab_contents);
         let localNewContents = getLocalTab(newTab_filename);
+        window.editor.setValue(localNewContents);
+
+        // Update active tab number.
+        currentTab.change(tabNum);
     }
 }
 
@@ -122,14 +104,11 @@ function closeTab(tabNum) {
         return;
     }
     let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
-    fetch('/tab_manager/' + toBeClosed_filename, {
-        method: 'DELETE',
-    }).then(() => {
-        document.getElementById(`tab${tabNum}Btn`).remove();
-        document.getElementById(`tab${tabNum}BtnX`).remove();
-    });
-    // Delete tab locally as well.
+    // Delete tab locally.
     deleteLocalTab(toBeClosed_filename);
+    // Remove tab buttons.
+    document.getElementById(`tab${tabNum}Btn`).remove();
+    document.getElementById(`tab${tabNum}BtnX`).remove();
 }
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
