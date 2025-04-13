@@ -170,5 +170,5 @@
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}
     <script>createEditor({{ default_code }})</script>
-    <script>reloadLocalTabs()</script>
+    <script>localTabStorage.init()</script>
 {% endblock %}

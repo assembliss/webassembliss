@@ -66,49 +66,31 @@ function openTab(tabNum) {
         alert("rename temp");
     } else {
         // Save current tab contents
+        localTabStorage.saveCurrentTab();
 
+        // Update button styles.
         let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
         let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
         let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
         let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
+        // For a background tab, make close button clickable and visible.
+        currentTabBtn.className = "tabBtn";
+        currentTabBtnX.className = "tabBtnX";
+        currentTabBtnX.disabled = false;
+        currentTabBtnX.removeAttribute("hidden");
+        // For the foreground tab, disable the close button and hide it.
+        newTabBtn.className = "activeTabBtn";
+        newTabBtnX.className = "activeTabBtnX";
+        newTabBtnX.disabled = true;
+        newTabBtnX.setAttribute("hidden", "hidden");
 
-        let currentTab_filename = currentTabBtn.value;
-        let currentTab_contents = window.editor.getValue();
-
+        // Update the editor contents.
         let newTab_filename = newTabBtn.value;
+        let localNewContents = localTabStorage.get(newTab_filename);
+        window.editor.setValue(localNewContents);
 
-        // Make a post request that will save the contents of the current tab and return the contents of the new tab.
-        fetch('/tab_manager/' + currentTab_filename, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: currentTab_contents,
-                return_file: newTab_filename
-            }),
-        }).then(response => response.json())
-            .then(data => {
-                // TODO: Validate this response.
-                // Update the editor contents.
-                window.editor.setValue(data.return_file.contents);
-                // Update button styles.
-                // For a background tab, make close button clickable and visible.
-                currentTabBtn.className = "tabBtn";
-                currentTabBtnX.className = "tabBtnX";
-                currentTabBtnX.disabled = false;
-                currentTabBtnX.removeAttribute("hidden");
-                // For the foreground tab, disable the close button and hide it.
-                newTabBtn.className = "activeTabBtn";
-                newTabBtnX.className = "activeTabBtnX";
-                newTabBtnX.disabled = true;
-                newTabBtnX.setAttribute("hidden", "hidden");
-                // Update active tab number.
-                currentTab.change(tabNum);
-            });
-        // Store changes in the local storage as well.
-        saveLocalTab(currentTab_filename, currentTab_contents);
-        let localNewContents = getLocalTab(newTab_filename);
+        // Update active tab number.
+        currentTab.change(tabNum);
     }
 }
 
@@ -122,14 +104,11 @@ function closeTab(tabNum) {
         return;
     }
     let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
-    fetch('/tab_manager/' + toBeClosed_filename, {
-        method: 'DELETE',
-    }).then(() => {
-        document.getElementById(`tab${tabNum}Btn`).remove();
-        document.getElementById(`tab${tabNum}BtnX`).remove();
-    });
-    // Delete tab locally as well.
-    deleteLocalTab(toBeClosed_filename);
+    // Delete tab locally.
+    localTabStorage.delete(toBeClosed_filename);
+    // Remove tab buttons.
+    document.getElementById(`tab${tabNum}Btn`).remove();
+    document.getElementById(`tab${tabNum}BtnX`).remove();
 }
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
@@ -164,78 +143,171 @@ const localTabStorage = {
     archID: null,
     tabs: null,
     size: null,
-}
 
-function getLocalTab(filename) {
-    // Get the file contents stored; if there are none, use an empty string.
-    return (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
-}
+    get(filename) {
+        // Get the file contents stored; if there are none, use an empty string.
+        return (filename in this.tabs) ? this.tabs[filename] : "";
+    },
 
-function saveCurrentTabLocally() {
-    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-    let currentTab_filename = currentTabBtn.value;
-    let currentTab_contents = window.editor.getValue();
-    saveLocalTab(currentTab_filename, currentTab_contents);
-}
-
-function saveLocalTab(filename, contents) {
-    // Check if this is a new file or an update to an existing one.
-    if (filename in localTabStorage.tabs) {
-        oldLength = localTabStorage.tabs[filename].length;
-        deltaLength = contents.length - oldLength;
-        localTabStorage.tabs[filename] = contents;
-        localTabStorage.size += deltaLength;
-    } else {
-        localTabStorage.tabs[filename] = contents;
-        localTabStorage.size += filename.length + contents.length;
-    }
-    // Update the tabs in localStorage.
-    storeLocalTabs();
-}
-
-function renameLocalTab(oldFilename, newFilename) {
-    // Check if file is saved.
-    if (!(oldFilename in localTabStorage.tabs)) {
-        return;
-    }
-    // Check if the new name is not taken.
-    if ((newFilename in localTabStorage.tabs)) {
-        return;
-    }
-    // Copy contents from old name to new one.
-    localTabStorage.tabs[newFilename] = localTabStorage.tabs[oldFilename];
-    // Delete old entry.
-    delete localTabStorage.tabs[oldFilename];
-    // Update the size.
-    localTabStorage.size += newFilename.length - oldFilename.length;
-    // Update the tabs in localStorage.
-    storeLocalTabs();
-}
-
-function deleteLocalTab(filename) {
-    if (filename in localTabStorage.tabs) {
-        contents = localTabStorage.tabs[filename];
-        localTabStorage.size -= filename.length + contents.length;
-        delete localTabStorage.tabs[filename];
+    save(filename, contents) {
+        // Check if this is a new file or an update to an existing one.
+        if (filename in this.tabs) {
+            oldLength = this.tabs[filename].length;
+            deltaLength = contents.length - oldLength;
+            this.tabs[filename] = contents;
+            this.size += deltaLength;
+        } else {
+            this.tabs[filename] = contents;
+            this.size += filename.length + contents.length;
+        }
         // Update the tabs in localStorage.
-        storeLocalTabs();
-    }
-}
+        this.store();
+    },
 
-function storeLocalTabs() {
-    localStorage.setItem(`tabs-${localTabStorage.archID}`, JSON.stringify(localTabStorage.tabs));
-}
+    saveCurrentTab() {
+        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+        let currentTab_filename = currentTabBtn.value;
+        let currentTab_contents = window.editor.getValue();
+        this.save(currentTab_filename, currentTab_contents);
+    },
 
-function reloadLocalTabs() {
-    // Update the architecture.
-    localTabStorage.archID = ARCH_ID;
-    // Load saved tabs from localStorage.
-    let savedTabs = localStorage.getItem(`tabs-${localTabStorage.archID}`);
-    localTabStorage.tabs = savedTabs ? JSON.parse(savedTabs) : {};
-    // Calculates storage size.
-    localTabStorage.size = 0;
-    for (const [filename, contents] of Object.entries(localTabStorage.tabs)) {
-        localTabStorage.size += filename.length + contents.length;
+    rename(oldFilename, newFilename) {
+        // Check if file is saved.
+        if (!(oldFilename in this.tabs)) {
+            return;
+        }
+        // Check if the new name is not taken.
+        if ((newFilename in this.tabs)) {
+            return;
+        }
+        // Copy contents from old name to new one.
+        this.tabs[newFilename] = this.tabs[oldFilename];
+        // Delete old entry.
+        delete this.tabs[oldFilename];
+        // Update the size.
+        this.size += newFilename.length - oldFilename.length;
+        // Update the tabs in localStorage.
+        this.store();
+    },
+
+    delete(filename) {
+        if (filename in this.tabs) {
+            contents = this.tabs[filename];
+            this.size -= filename.length + contents.length;
+            delete this.tabs[filename];
+            // Update the tabs in localStorage.
+            this.store();
+        }
+    },
+
+    store() {
+        localStorage.setItem(`tabs-${this.archID}`, JSON.stringify(this.tabs));
+    },
+
+    load() {
+        // Update the architecture.
+        this.archID = ARCH_ID;
+        // Load saved tabs from localStorage.
+        let savedTabs = localStorage.getItem(`tabs-${this.archID}`);
+        this.tabs = savedTabs ? JSON.parse(savedTabs) : {};
+        // Calculates storage size.
+        this.size = 0;
+        for (const [filename, contents] of Object.entries(this.tabs)) {
+            this.size += filename.length + contents.length;
+        }
+    },
+
+    init() {
+        // Load tabs information stored in localstorage.
+        this.load();
+
+        // Display the stored tabs in the editor.
+        if (!this.tabs) {
+            // If there are no tabs stored, keep the default code on editor.
+            return;
+        }
+
+        // Find the maximum tab number we need to create.
+        // TODO: revisit this logic once tabs are names instead of numbered.
+        let firstTab = true;
+        let maxTabNum = 0;
+        let minTabNum = 0;
+        for (const [filename, contents] of Object.entries(this.tabs)) {
+            let newTabNum = parseInt(filename.slice(3));
+            if (firstTab) {
+                maxTabNum = minTabNum = newTabNum;
+                firstTab = false;
+            } else {
+                maxTabNum = (maxTabNum >= newTabNum) ? maxTabNum : newTabNum;
+                minTabNum = (minTabNum <= newTabNum) ? minTabNum : newTabNum;
+            }
+        }
+
+        // Create tabs needed.
+        while (tabs.count <= maxTabNum) {
+            if (!(`Tab${tabs.count}` in this.tabs)) {
+                // If it is not a tab we have contents stored, skip it.
+                tabs.count++;
+                continue;
+            }
+
+            // Add tabs, but don't open them.
+            let tabNum = tabs.count;
+            let newTab = document.createElement("input");
+            newTab.type = "button";
+            newTab.className = "tabBtn";
+            newTab.value = `Tab${tabNum}`;
+            newTab.id = `tab${tabNum}Btn`;
+            newTab.onclick = () => openTab(tabNum);
+
+            let newTabX = document.createElement("input");
+            newTabX.type = "button";
+            newTabX.className = "tabBtnX";
+            newTabX.value = "x";
+            newTabX.id = `tab${tabNum}BtnX`;
+            newTabX.onclick = () => closeTab(tabNum);
+
+            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+            tabs.count++;
+        }
+
+        // Load the code of the first tab we have saved into the editor.
+        // Delay for the editor to load.
+        sleep(200).then(() => {
+            // Same logic as the openTab method, but it does not save the changes locally.
+            // TODO: maybe make this logic a new function that we can call both in here and in openTab; that would make it easier to implement future changes.
+
+            // Update button styles.
+            let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+            let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+            let newTabBtn = document.getElementById(`tab${maxTabNum}Btn`);
+            let newTabBtnX = document.getElementById(`tab${maxTabNum}BtnX`);
+            // For a background tab, make close button clickable and visible.
+            currentTabBtn.className = "tabBtn";
+            currentTabBtnX.className = "tabBtnX";
+            currentTabBtnX.disabled = false;
+            currentTabBtnX.removeAttribute("hidden");
+            // For the foreground tab, disable the close button and hide it.
+            newTabBtn.className = "activeTabBtn";
+            newTabBtnX.className = "activeTabBtnX";
+            newTabBtnX.disabled = true;
+            newTabBtnX.setAttribute("hidden", "hidden");
+
+            // Update the editor contents.
+            let newTab_filename = newTabBtn.value;
+            let localNewContents = localTabStorage.get(newTab_filename);
+            window.editor.setValue(localNewContents);
+
+            // Update active tab number.
+            currentTab.change(maxTabNum);
+        }).then(() => {
+            // Check if we should delete the default tab from html template.
+            if (!('Tab1' in this.tabs)) {
+                // If we don't have contents saved for it, delete it.
+                closeTab(1);
+            }
+        });
     }
 }
 
@@ -406,7 +478,7 @@ function BASE_runCode() {
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    saveCurrentTabLocally();
+    localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -566,7 +638,7 @@ function BASE_startTracing() {
     document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    saveCurrentTabLocally();
+    localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
