@@ -19,12 +19,12 @@ import zipfile
 from hmac import compare_digest
 from io import BufferedReader, TextIOWrapper
 from os import mkdir, rename
-from os.path import dirname, join, basename, sep
+from os.path import basename, dirname, join, sep
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import List, Union
 
-from .project_config_pb2 import WrappedProject
+from ..pyprotos.project_config_pb2 import WrappedProject
 from .single_student import grade_student
 from .utils import (
     SubmissionResults,

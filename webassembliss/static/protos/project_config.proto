@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-// This file can be compiled with: protoc project_config.proto --python_out=.
+// This file can be compiled with: protoc project_config.proto --python_out=../../pyprotos
 // That will generate the project_config_pb2.py file that we can import in the python backend.
 
 // Define available architectures for the grader.

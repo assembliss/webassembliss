@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple, Union
 from werkzeug.datastructures import FileStorage
 
 from ..emulation.base_emulation import assemble, link, timed_emulation
-from .project_config_pb2 import (
+from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
     WrappedProject,

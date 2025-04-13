@@ -16,7 +16,7 @@ from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
 from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
 from ..emulation.arm64_linux import ROOTFS_PATH as ARM64_LINUX_ROOTFS
 from ..emulation.arm64_linux import count_source_instructions as ARM64_LINUX_COUNT_FUN
-from .project_config_pb2 import (
+from ..pyprotos.project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
     ProjectConfig,
