@@ -13,11 +13,13 @@
 {% endblock %}
 
 {% block content %}
-    <input type="button" id="runBtn" value="Run" onclick="runCode()" />
-    <input type="button" id="runBtn" value="CL Args" onclick="setCLArgs()" />
-    <input type="button" id="resetBtn" value="Reset" onclick="clearOutput()" />
-    <input type="button" id="saveBtn" value="Save" onclick="downloadCurrentTab()" />
-    <input type="file" id="fileUpload" />
+<div class="container">
+    <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()">Run Code</button>
+    <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()">Trace Code</button>
+    <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()">Set CL Args</button>
+    <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()">Reset</button>
+    <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()">Save</button>
+    <input type="file" class="codeActionBtn" id="fileUpload" />
     <br/>
     <div id="tabsDiv" style="display: flex">
     <input class="activeTabBtn" type="button" id="tab1Btn" value="Tab1" onclick="openTab(1)"/>
@@ -44,9 +46,6 @@
     </div>
 
     <div style="width: 800px;">
-        <div id="startTraceButtonDiv" class="text-center">
-            <button type="button" id="traceStart" class="btn btn-danger justify-content-center" onclick="startTracing()">Trace this code!</button>
-        </div>
         <div id="traceMenuDiv" class="collapse">
             <div id="tracingProgressBarAria" class="progress" role="progressbar" aria-label="Emulation Tracing Progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                 <div id="tracingProgressBar" class="progress-bar" style="width: 0%"></div>
@@ -161,7 +160,7 @@
         <li>Editor tabs for multi-file</li>
         <li>Menus so the user can customize view (e.g., which registers show, dark vs light theme)</li>
     </ul>
-
+</div>
 {% endblock %}
 
 {% block scripts %}

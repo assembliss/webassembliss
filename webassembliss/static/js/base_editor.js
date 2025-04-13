@@ -627,10 +627,12 @@ const currentTraceStep = {
 function BASE_startTracing() {
     // Clear any old information.
     clearOutput();
-    // Show the trace menu information and hide the start tracing button.
-    document.getElementById("startTraceButtonDiv").classList.add("collapse");
+    // Show the trace menu information and disable code action buttons.
     document.getElementById("statusFlagsDisplay").classList.remove("collapse");
     document.getElementById("traceMenuDiv").classList.remove("collapse");
+    Array.from(document.getElementsByClassName("codeActionBtn")).forEach((el) => {
+        el.disabled = true;
+    });
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
     removeAllHighlights();
@@ -1063,10 +1065,12 @@ function stopTracing() {
     document.getElementById("traceStop").disabled = true;
     document.getElementById("traceDownload").disabled = true;
 
-    // Hide the tracing menu and show the start tracing button again.
+    // Hide the tracing menu and enable code action buttons.
     document.getElementById("traceMenuDiv").classList.add("collapse");
     document.getElementById("statusFlagsDisplay").classList.add("collapse");
-    document.getElementById("startTraceButtonDiv").classList.remove("collapse");
+    Array.from(document.getElementsByClassName("codeActionBtn")).forEach((el) => {
+        el.disabled = false;
+    });
 
     // Make editor writeable again.
     window.editor.updateOptions({ readOnly: false });
