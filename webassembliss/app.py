@@ -19,6 +19,8 @@ from .grader.single_student import grade_form_submission
 from .utils import ARCH_MAP
 
 app = Flask(__name__)
+# Limit requests to be a maximum of 1 MB.
+app.config['MAX_CONTENT_LENGTH'] = 1 * 1000 * 1000
 
 # Setup user sessions.
 SESSION_TYPE = "redis"
