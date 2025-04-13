@@ -106,6 +106,9 @@ function openTab(tabNum) {
                 // Update active tab number.
                 currentTab.change(tabNum);
             });
+        // Store changes in the local storage as well.
+        saveLocalTab(currentTab_filename, currentTab_contents);
+        let localNewContents = getLocalTab(newTab_filename);
     }
 }
 
@@ -125,6 +128,8 @@ function closeTab(tabNum) {
         document.getElementById(`tab${tabNum}Btn`).remove();
         document.getElementById(`tab${tabNum}BtnX`).remove();
     });
+    // Delete tab locally as well.
+    deleteLocalTab(toBeClosed_filename);
 }
 
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
@@ -154,6 +159,85 @@ const tabs = {
         openTab(tabNum);
     }
 };
+
+const localTabStorage = {
+    archID: null,
+    tabs: null,
+    size: null,
+}
+
+function getLocalTab(filename) {
+    // Get the file contents stored; if there are none, use an empty string.
+    return (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
+}
+
+function saveCurrentTabLocally() {
+    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+    let currentTab_filename = currentTabBtn.value;
+    let currentTab_contents = window.editor.getValue();
+    saveLocalTab(currentTab_filename, currentTab_contents);
+}
+
+function saveLocalTab(filename, contents) {
+    // Check if this is a new file or an update to an existing one.
+    if (filename in localTabStorage.tabs) {
+        oldLength = localTabStorage.tabs[filename].length;
+        deltaLength = contents.length - oldLength;
+        localTabStorage.tabs[filename] = contents;
+        localTabStorage.size += deltaLength;
+    } else {
+        localTabStorage.tabs[filename] = contents;
+        localTabStorage.size += filename.length + contents.length;
+    }
+    // Update the tabs in localStorage.
+    storeLocalTabs();
+}
+
+function renameLocalTab(oldFilename, newFilename) {
+    // Check if file is saved.
+    if (!(oldFilename in localTabStorage.tabs)) {
+        return;
+    }
+    // Check if the new name is not taken.
+    if ((newFilename in localTabStorage.tabs)) {
+        return;
+    }
+    // Copy contents from old name to new one.
+    localTabStorage.tabs[newFilename] = localTabStorage.tabs[oldFilename];
+    // Delete old entry.
+    delete localTabStorage.tabs[oldFilename];
+    // Update the size.
+    localTabStorage.size += newFilename.length - oldFilename.length;
+    // Update the tabs in localStorage.
+    storeLocalTabs();
+}
+
+function deleteLocalTab(filename) {
+    if (filename in localTabStorage.tabs) {
+        contents = localTabStorage.tabs[filename];
+        localTabStorage.size -= filename.length + contents.length;
+        delete localTabStorage.tabs[filename];
+        // Update the tabs in localStorage.
+        storeLocalTabs();
+    }
+}
+
+function storeLocalTabs() {
+    localStorage.setItem(`tabs-${localTabStorage.archID}`, JSON.stringify(localTabStorage.tabs));
+}
+
+function reloadLocalTabs() {
+    // Update the architecture.
+    localTabStorage.archID = ARCH_ID;
+    // Load saved tabs from localStorage.
+    let savedTabs = localStorage.getItem(`tabs-${localTabStorage.archID}`);
+    localTabStorage.tabs = savedTabs ? JSON.parse(savedTabs) : {};
+    // Calculates storage size.
+    localTabStorage.size = 0;
+    for (const [filename, contents] of Object.entries(localTabStorage.tabs)) {
+        localTabStorage.size += filename.length + contents.length;
+    }
+}
 
 function importCode() {
     let file = document.getElementById("fileUpload").files[0];
@@ -253,19 +337,19 @@ ld_err: ${ld_err}`;
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}`, "_blank");
         } else {
             window.open(`https://github.ncsu.edu/assembliss/webassembliss/issues/new?title=${encodedTitle}&body=${encodedBody}&labels=${encodedLabels}`, "_blank");
-        }
+        } ``
     }
 }
 
-function BASE_createEditor(default_code, archID, archSyntaxFun) {
+function BASE_createEditor(default_code, archSyntaxFun) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
-        monaco.languages.register({ id: archID });
-        monaco.languages.setMonarchTokensProvider(archID, archSyntaxFun());
+        monaco.languages.register({ id: ARCH_ID });
+        monaco.languages.setMonarchTokensProvider(ARCH_ID, archSyntaxFun());
         window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
             // Change "value" to upload files
             value: default_code.join('\n'),
-            language: archID,
+            language: ARCH_ID,
             theme: 'vs-dark',
             glyphMargin: true,
             lineNumbersMinChars: 2,
@@ -314,7 +398,7 @@ function detectAndHighlightErrors() {
     });
 }
 
-function BASE_runCode(archID) {
+function BASE_runCode() {
     clearOutput();
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
@@ -322,7 +406,7 @@ function BASE_runCode(archID) {
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    let source_code = getSource();
+    saveCurrentTabLocally();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -332,8 +416,8 @@ function BASE_runCode(archID) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            arch: archID,
-            source_code: source_code,
+            arch: ARCH_ID,
+            source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
             registers: registers
@@ -468,7 +552,7 @@ const currentTraceStep = {
     stderr: [],
 };
 
-function BASE_startTracing(archID) {
+function BASE_startTracing() {
     // Clear any old information.
     clearOutput();
     // Show the trace menu information and hide the start tracing button.
@@ -482,7 +566,7 @@ function BASE_startTracing(archID) {
     document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    let source_code = getSource();
+    saveCurrentTabLocally();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -492,8 +576,8 @@ function BASE_startTracing(archID) {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            arch: archID,
-            source_code: source_code,
+            arch: ARCH_ID,
+            source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
             registers: registers

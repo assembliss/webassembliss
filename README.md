@@ -27,18 +27,20 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 	- [x] solved with tracing
 - [x] created a sandbox for each user emulation
 	- [x] fix sandbox vulnerability with absolute paths
-- [ ] allow multiple sources to work together
+- [x] allow multiple sources to work together
 	- [x] backend is able to handle it
-	- [ ] process all sources from frontend
+	- [x] process all sources from frontend
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 	- [x] backend is able to handle it
 	- [ ] allow user to upload objects
 - [ ] remove as/ld and just use gcc
 	- have to consider all pros (e.g., can throw sources and objects at it) and cons (some archs might need separate commands)
 - [ ] remove flask-session
-	- [ ] store everything client-side with [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
-	- [ ] receive all files in the request json body
-	- [ ] [limit the max request size a user can send](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/#improving-uploads)
+	- [x] store everything client-side with [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+	- [x] receive all files in the request json body
+	- [x] [limit the max request size a user can send](https://flask.palletsprojects.com/en/stable/patterns/fileuploads/#improving-uploads)
+	- [ ] change all logic that used tab_manager to use local tabs
+	- [ ] delete tab_manager route and remove flask_session dependencies
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [x] refactor backend to have a single run/trace route that receives the arch as parameter

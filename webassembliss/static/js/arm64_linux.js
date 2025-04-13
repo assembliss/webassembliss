@@ -1,11 +1,11 @@
 const ARCH_ID = "arm64_linux";
 
 function createEditor(default_code) {
-    BASE_createEditor(default_code, ARCH_ID, getARM64SyntaxHighlighting)
+    BASE_createEditor(default_code, getARM64SyntaxHighlighting)
 }
 
 function runCode() {
-    BASE_runCode(ARCH_ID);
+    BASE_runCode();
 }
 
 function startTracing() {
@@ -14,7 +14,7 @@ function startTracing() {
     document.getElementById("zFlag").innerHTML = ERROR_SYMBOL;
     document.getElementById("cFlag").innerHTML = ERROR_SYMBOL;
     document.getElementById("vFlag").innerHTML = ERROR_SYMBOL;
-    BASE_startTracing(ARCH_ID);
+    BASE_startTracing();
 }
 
 function getARM64SyntaxHighlighting() {
