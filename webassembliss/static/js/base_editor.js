@@ -66,7 +66,7 @@ function openTab(tabNum) {
         alert("rename temp");
     } else {
         // Save current tab contents
-        saveCurrentTabLocally();
+        localTabStorage.saveCurrentTab();
 
         // Update button styles.
         let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
@@ -86,7 +86,7 @@ function openTab(tabNum) {
 
         // Update the editor contents.
         let newTab_filename = newTabBtn.value;
-        let localNewContents = getLocalTab(newTab_filename);
+        let localNewContents = localTabStorage.get(newTab_filename);
         window.editor.setValue(localNewContents);
 
         // Update active tab number.
@@ -105,7 +105,7 @@ function closeTab(tabNum) {
     }
     let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
     // Delete tab locally.
-    deleteLocalTab(toBeClosed_filename);
+    localTabStorage.delete(toBeClosed_filename);
     // Remove tab buttons.
     document.getElementById(`tab${tabNum}Btn`).remove();
     document.getElementById(`tab${tabNum}BtnX`).remove();
@@ -143,78 +143,84 @@ const localTabStorage = {
     archID: null,
     tabs: null,
     size: null,
-}
 
-function getLocalTab(filename) {
-    // Get the file contents stored; if there are none, use an empty string.
-    return (filename in localTabStorage.tabs) ? localTabStorage.tabs[filename] : "";
-}
+    get(filename) {
+        // Get the file contents stored; if there are none, use an empty string.
+        return (filename in this.tabs) ? this.tabs[filename] : "";
+    },
 
-function saveCurrentTabLocally() {
-    let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-    let currentTab_filename = currentTabBtn.value;
-    let currentTab_contents = window.editor.getValue();
-    saveLocalTab(currentTab_filename, currentTab_contents);
-}
-
-function saveLocalTab(filename, contents) {
-    // Check if this is a new file or an update to an existing one.
-    if (filename in localTabStorage.tabs) {
-        oldLength = localTabStorage.tabs[filename].length;
-        deltaLength = contents.length - oldLength;
-        localTabStorage.tabs[filename] = contents;
-        localTabStorage.size += deltaLength;
-    } else {
-        localTabStorage.tabs[filename] = contents;
-        localTabStorage.size += filename.length + contents.length;
-    }
-    // Update the tabs in localStorage.
-    storeLocalTabs();
-}
-
-function renameLocalTab(oldFilename, newFilename) {
-    // Check if file is saved.
-    if (!(oldFilename in localTabStorage.tabs)) {
-        return;
-    }
-    // Check if the new name is not taken.
-    if ((newFilename in localTabStorage.tabs)) {
-        return;
-    }
-    // Copy contents from old name to new one.
-    localTabStorage.tabs[newFilename] = localTabStorage.tabs[oldFilename];
-    // Delete old entry.
-    delete localTabStorage.tabs[oldFilename];
-    // Update the size.
-    localTabStorage.size += newFilename.length - oldFilename.length;
-    // Update the tabs in localStorage.
-    storeLocalTabs();
-}
-
-function deleteLocalTab(filename) {
-    if (filename in localTabStorage.tabs) {
-        contents = localTabStorage.tabs[filename];
-        localTabStorage.size -= filename.length + contents.length;
-        delete localTabStorage.tabs[filename];
+    save(filename, contents) {
+        // Check if this is a new file or an update to an existing one.
+        if (filename in this.tabs) {
+            oldLength = this.tabs[filename].length;
+            deltaLength = contents.length - oldLength;
+            this.tabs[filename] = contents;
+            this.size += deltaLength;
+        } else {
+            this.tabs[filename] = contents;
+            this.size += filename.length + contents.length;
+        }
         // Update the tabs in localStorage.
-        storeLocalTabs();
-    }
-}
+        this.store();
+    },
 
-function storeLocalTabs() {
-    localStorage.setItem(`tabs-${localTabStorage.archID}`, JSON.stringify(localTabStorage.tabs));
-}
+    saveCurrentTab() {
+        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+        let currentTab_filename = currentTabBtn.value;
+        let currentTab_contents = window.editor.getValue();
+        this.save(currentTab_filename, currentTab_contents);
+    },
 
-function reloadLocalTabs() {
-    // Update the architecture.
-    localTabStorage.archID = ARCH_ID;
-    // Load saved tabs from localStorage.
-    let savedTabs = localStorage.getItem(`tabs-${localTabStorage.archID}`);
-    localTabStorage.tabs = savedTabs ? JSON.parse(savedTabs) : {};
-    // Calculates storage size.
-    localTabStorage.size = 0;
-    for (const [filename, contents] of Object.entries(localTabStorage.tabs)) {
-        localTabStorage.size += filename.length + contents.length;
+    rename(oldFilename, newFilename) {
+        // Check if file is saved.
+        if (!(oldFilename in this.tabs)) {
+            return;
+        }
+        // Check if the new name is not taken.
+        if ((newFilename in this.tabs)) {
+            return;
+        }
+        // Copy contents from old name to new one.
+        this.tabs[newFilename] = this.tabs[oldFilename];
+        // Delete old entry.
+        delete this.tabs[oldFilename];
+        // Update the size.
+        this.size += newFilename.length - oldFilename.length;
+        // Update the tabs in localStorage.
+        this.store();
+    },
+
+    delete(filename) {
+        if (filename in this.tabs) {
+            contents = this.tabs[filename];
+            this.size -= filename.length + contents.length;
+            delete this.tabs[filename];
+            // Update the tabs in localStorage.
+            this.store();
+        }
+    },
+
+    store() {
+        localStorage.setItem(`tabs-${this.archID}`, JSON.stringify(this.tabs));
+    },
+
+    load() {
+        // Update the architecture.
+        this.archID = ARCH_ID;
+        // Load saved tabs from localStorage.
+        let savedTabs = localStorage.getItem(`tabs-${this.archID}`);
+        this.tabs = savedTabs ? JSON.parse(savedTabs) : {};
+        // Calculates storage size.
+        this.size = 0;
+        for (const [filename, contents] of Object.entries(this.tabs)) {
+            this.size += filename.length + contents.length;
+        }
+    },
+
+    init() {
+        // Load tabs information stored in localstorage.
+        localTabStorage.load();
+        // TODO: display the stored tabs in the editor.
     }
 }
 
@@ -385,7 +391,7 @@ function BASE_runCode() {
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    saveCurrentTabLocally();
+    localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -545,7 +551,7 @@ function BASE_startTracing() {
     document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    saveCurrentTabLocally();
+    localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
