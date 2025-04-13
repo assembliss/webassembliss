@@ -20,7 +20,7 @@ from .utils import ARCH_MAP
 
 app = Flask(__name__)
 # Limit requests to be a maximum of 1 MB.
-app.config['MAX_CONTENT_LENGTH'] = 1 * 1000 * 1000
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1000 * 1000
 
 # Setup user sessions.
 SESSION_TYPE = "redis"
@@ -155,25 +155,29 @@ def grader():
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
 
+
 @app.route("/editor/<arch>/")
 def editor_page(arch):
     arch_info = ARCH_MAP.get(arch)
     if arch_info is None:
-        return f"Invalid architecture config for editor; valid options are {ARCH_MAP.keys()}", 400
-    
+        return (
+            f"Invalid architecture config for editor; valid options are {ARCH_MAP.keys()}",
+            400,
+        )
+
     # Retrieve any user code we have stored already.
     source_code = session.get("source_code", {}).get("usrCode.S")
     if source_code is None:
         # If no code for this user, read the default example for the architecture to display.
         with open(arch_info.example_path) as file_in:
             source_code = file_in.read()
-    
+
     # Return the template with the appropriate code to display.
     return render_template(
         arch_info.template_path,
         default_code=source_code.split("\n"),
     )
-    
+
 
 @app.route("/run/", methods=["POST"])
 def code_run():
@@ -185,10 +189,13 @@ def code_run():
         return "No source_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
-    
+
     arch_info = ARCH_MAP.get(request.json["arch"])
     if arch_info is None:
-        return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
+        return (
+            f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}",
+            400,
+        )
 
     emu_results = arch_info.emulate(
         source_files=request.json["source_files"],
@@ -230,7 +237,10 @@ def code_trace():
 
     arch_info = ARCH_MAP.get(request.json["arch"])
     if arch_info is None:
-        return f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}", 400
+        return (
+            f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}",
+            400,
+        )
 
     emulation_trace = arch_info.trace(
         source_files=request.json["source_files"],
@@ -243,6 +253,7 @@ def code_trace():
         BytesIO(emulation_trace.SerializeToString()),
         mimetype="application/x-protobuf",
     )
+
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0")

@@ -15,17 +15,19 @@ class ArchMethods:
     template_path: str
     example_path: str
 
+
 EXAMPLES_PATH = join(dirname(realpath(__file__)), "examples")
 ARCH_MAP = {
-    "arm64_linux": ArchMethods(emulate=arm64_linux_emulation,
-                         trace=arm64_linux_trace,
-                         template_path="arm64_linux.html.j2",
-                         example_path=join(EXAMPLES_PATH, "arm64_linux", "hello.S")
-                         ),
-
-    "riscv64_linux": ArchMethods(emulate=riscv64_linux_emulation,
-                           trace=riscv64_linux_trace,
-                           template_path="riscv64_linux.html.j2",
-                           example_path=join(EXAMPLES_PATH, "riscv64_linux", "hello.S")
-                           ),
+    "arm64_linux": ArchMethods(
+        emulate=arm64_linux_emulation,
+        trace=arm64_linux_trace,
+        template_path="arm64_linux.html.j2",
+        example_path=join(EXAMPLES_PATH, "arm64_linux", "hello.S"),
+    ),
+    "riscv64_linux": ArchMethods(
+        emulate=riscv64_linux_emulation,
+        trace=riscv64_linux_trace,
+        template_path="riscv64_linux.html.j2",
+        example_path=join(EXAMPLES_PATH, "riscv64_linux", "hello.S"),
+    ),
 }

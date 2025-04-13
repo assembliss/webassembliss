@@ -15,6 +15,7 @@ OBJDUMP_CMD = "riscv64-linux-gnu-objdump"
 
 RISCV64_REGISTERS = list(qiling.arch.riscv_const.reg_map)
 
+
 def count_source_instructions(src_path: Union[PathLike, str]) -> int:
     """Count the number of instructions in an riscv64 assembly source file."""
 
@@ -62,6 +63,7 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
 
     return instruction_count
 
+
 def emulate(
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
@@ -100,6 +102,7 @@ def emulate(
         cl_args=cl_args.split(),
         count_instructions_func=count_source_instructions,
     )
+
 
 def trace(
     source_files: Dict[str, str],
