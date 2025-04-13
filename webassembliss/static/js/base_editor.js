@@ -220,7 +220,74 @@ const localTabStorage = {
     init() {
         // Load tabs information stored in localstorage.
         localTabStorage.load();
-        // TODO: display the stored tabs in the editor.
+
+        // Display the stored tabs in the editor.
+        if (!this.tabs) {
+            // If there are no tabs stored, keep the default code on editor.
+            return;
+        }
+
+        // Find the maximum tab number we need to create.
+        // TODO: revisit this logic once tabs are names instead of numbered.
+        let firstTab = true;
+        let maxTabNum = 0;
+        let minTabNum = 0;
+        for (const [filename, contents] of Object.entries(this.tabs)) {
+            let newTabNum = parseInt(filename.slice(3));
+            if (firstTab) {
+                maxTabNum = minTabNum = newTabNum;
+            } else {
+                maxTabNum = (maxTabNum >= newTabNum) ? maxTabNum : newTabNum;
+                minTabNum = (minTabNum <= newTabNum) ? minTabNum : newTabNum;
+            }
+        }
+
+        console.log("here!");
+        console.log("maxTabNum:" + maxTabNum);
+        console.log("minTabNum:" + minTabNum);
+        console.log("tabs.count: " + tabs.count);
+
+        // Create tabs needed.
+        while (tabs.count <= maxTabNum) {
+            // Add tabs, but don't open them.
+            let tabNum = tabs.count;
+            let newTab = document.createElement("input");
+            newTab.type = "button";
+            newTab.className = "tabBtn";
+            newTab.value = `Tab${tabNum}`;
+            newTab.id = `tab${tabNum}Btn`;
+            newTab.onclick = () => openTab(tabNum);
+
+            let newTabX = document.createElement("input");
+            newTabX.type = "button";
+            newTabX.className = "tabBtnX";
+            newTabX.value = "x";
+            newTabX.id = `tab${tabNum}BtnX`;
+            newTabX.onclick = () => closeTab(tabNum);
+
+            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+            tabs.count++;
+
+            console.log("opened new tab");
+            console.log("tabs.count: " + tabs.count);
+        }
+
+        // Add an extra tab and open it.
+        tabs.addTab();
+        maxTabNum++;
+
+        // Load the code of the first tab into the editor.
+        // TODO: for some reason there is a bug here: the editor has not loaded yet when we try to set the contents of it.
+        openTab(minTabNum);
+
+        // Delete tabs that are not needed.
+        while (maxTabNum > 0) {
+            if (!(`Tab${maxTabNum}` in this.tabs)) {
+                closeTab(maxTabNum);
+            }
+            maxTabNum--;
+        }
     }
 }
 
