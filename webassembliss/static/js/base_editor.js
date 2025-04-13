@@ -219,7 +219,7 @@ const localTabStorage = {
 
     init() {
         // Load tabs information stored in localstorage.
-        localTabStorage.load();
+        this.load();
 
         // Display the stored tabs in the editor.
         if (!this.tabs) {
