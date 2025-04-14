@@ -515,6 +515,9 @@ function detectAndHighlightErrors() {
     let as_err = parseEmulationJSON("as_err");
     let lines = as_err.split("\n").map(line => {
 
+        // TODO: Update regex to use this format: ".../userprograms/(filename):(linenum): Error: (message)"
+        // Then, you would have to make sure that filename matches the active tab to highlight these errors.
+        // Probably keep track of error messages per file, so we can show the existing errors on different tabs.
         let match = line.match(/usrCode\.S:(\d+): Error: (.+)/);
         if (match) {
             return { lineNumber: match[1], message: match[2] };
