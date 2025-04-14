@@ -107,8 +107,9 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] allow user to change timeout
 - [x] allow user to change registers shown
 - [ ] add a button to load code from examples
-- [ ] allow user to change memory area shown
-- [ ] have a toggle for ascii vs non ascii memory view
+- [x] allow user to change memory area shown
+	- not needed for now, we're filtering by "interesting" parts of memory already
+- [x] have a toggle for ascii vs non ascii memory view
 - [ ] show instruction information when hovering over it
-- [ ] improve the gui -- make everything look nicer :)
-	- [maybe helpful?](https://getbootstrap.com/)
+- [x] improve the gui -- make everything look nicer :)
+	- wip
