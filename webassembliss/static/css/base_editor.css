@@ -134,6 +134,7 @@ table {
 }
 
 #memValues,
+#memValuesTable,
 #regValues,
 #regValuesTable,
 #outputBox,
@@ -141,4 +142,8 @@ table {
 #errorBox,
 #emulationInfo {
     font-family: monospace;
+}
+
+td.memory-value-in-ascii {
+    color: magenta;
 }

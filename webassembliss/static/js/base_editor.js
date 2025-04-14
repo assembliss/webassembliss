@@ -435,7 +435,7 @@ function populateRegisterTable(registers) {
     // Create a starting values with enough zeros for the number of bits given.
     let starting_value = intToHexBytes(0, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
     // Create register rows in the template table.
-    let tableRows = document.getElementById("regValuesRows");
+    let tableRows = document.getElementById("regValuesTBody");
     for (const reg of registers) {
         // Create new row and cells.
         let newTr = document.createElement('tr');
@@ -461,8 +461,9 @@ function populateRegisterTable(registers) {
 
 function clearRegTable() {
     // Mark all rows as not changed.
-    Array.from(document.getElementsByClassName("regValueRows")).forEach((el) => {
+    Array.from(document.getElementsByClassName("register-value-updated")).forEach((el) => {
         el.classList.remove("table-active");
+        el.classList.remove("register-value-updated");
     });
     // Set all values as zero.
     Array.from(document.getElementsByClassName("regValueCells")).forEach((el) => {
@@ -472,8 +473,9 @@ function clearRegTable() {
 
 function updateRegisterTable(reg_value_map) {
     // Mark all rows as not changed.
-    Array.from(document.getElementsByClassName("regValueRows")).forEach((el) => {
+    Array.from(document.getElementsByClassName("register-value-updated")).forEach((el) => {
         el.classList.remove("table-active");
+        el.classList.remove("register-value-updated");
     });
 
     // If there are no values, do not update anything.
@@ -493,50 +495,8 @@ function updateRegisterTable(reg_value_map) {
         regValueCell.innerHTML = formattedValue;
         // Mark this row as changed.
         document.getElementById(`regValueRow-${reg}`).classList.add("table-active");
+        document.getElementById(`regValueRow-${reg}`).classList.add("register-value-updated");
     };
-}
-
-function notImplemented() {
-    alert("Not implemented yet...");
-}
-
-function clearOutput() {
-    document.getElementById("runStatus").innerHTML = WAITING_SYMBOL;
-    document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
-    document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
-    document.getElementById("timeOut").innerHTML = WAITING_SYMBOL;
-    document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
-    document.getElementById("outputBox").value = "";
-    document.getElementById("errorBox").value = "";
-    document.getElementById("emulationInfo").value = "";
-    document.getElementById("regValues").value = "";
-    document.getElementById("memValues").value = "";
-    window.lastRunInfo = null;
-    document.getElementById("downloadButton").disabled = true;
-    clearRegTable();
-}
-
-function detectAndHighlightErrors() {
-    // Find errors, parse through
-    let as_err = parseEmulationJSON("as_err");
-    let lines = as_err.split("\n").map(line => {
-
-        // TODO: Update regex to use this format: ".../userprograms/(filename):(linenum): Error: (message)"
-        // Then, you would have to make sure that filename matches the active tab to highlight these errors.
-        // Probably keep track of error messages per file, so we can show the existing errors on different tabs.
-        let match = line.match(/usrCode\.S:(\d+): Error: (.+)/);
-        if (match) {
-            return { lineNumber: match[1], message: match[2] };
-        }
-        return null;
-
-    }).filter(error => error !== null); // Remove non-error lines
-
-    // Highlight lines for each error
-    lines.forEach(line => {
-        line.message = line.message.replace(/`/g, '\\`');
-        addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
-    });
 }
 
 function parseRegisterValues(emulation_reg_values) {
@@ -576,6 +536,222 @@ function parseRegisterDeltaMap(reg_delta) {
         }
     }
     return reg_map;
+}
+
+function mapMemoryTableRowsIndices() {
+    // Go through the table of memory values and creates an array with all the addresses in it.
+    let indices = [];
+    Array.from(document.getElementsByClassName("memory-table-address")).forEach((el) => {
+        // Convert the hex address to decimal.
+        indices.push(el.intMemAddr);
+    });
+    return indices;
+}
+
+function insertMemoryAddressRow(address, index) {
+    let tableRows = document.getElementById("memValuesTBody");
+    // Create new a row to hold all the new cells.
+    let newTr = document.createElement('tr');
+    // Create a new node for the address value.
+    let addrCell = document.createElement('td');
+    let hexAddr = intToHexBytes(parseInt(address));
+    addrCell.id = `memAddrCell-${hexAddr}`;
+    addrCell.classList.add('memory-table-address');
+    addrCell.intMemAddr = address;
+    addrCell.innerHTML = hexAddr;
+    newTr.appendChild(addrCell);
+    // Add one cell for each byte of the 16-byte memory chunk.
+    for (let i = 0; i < 16; i++) {
+        let hexOffset = intToHexBytes(i);
+        let memValueCell = document.createElement('td');
+        memValueCell.id = `memValueCell-${hexAddr}+${hexOffset}`;
+        memValueCell.innerHTML = "00";
+        memValueCell.intValue = 0;
+        memValueCell.classList.add('memory-table-value');
+        newTr.appendChild(memValueCell);
+    }
+    // Add the new row to the table.
+    if (index >= tableRows.children.length) {
+        tableRows.appendChild(newTr);
+    } else {
+        tableRows.insertBefore(newTr, tableRows.children[index])
+    }
+}
+
+function hexBytetoASCIIChar(hexByte) {
+    return String.fromCharCode(parseInt(hexByte, 16));
+}
+
+function ASCIICharToHexByte(char) {
+    return intToHexBytes(char.charCodeAt(0), 1);
+}
+
+function updateMemoryTable(mem_values) {
+    // Mark all memory values as not changed.
+    Array.from(document.getElementsByClassName("memory-value-updated")).forEach((el) => {
+        el.classList.remove("table-active");
+        el.classList.remove("memory-value-updated");
+    });
+
+    // Go over the memory addresses we received and add any new rows to the table.
+    let currentAddresses = mapMemoryTableRowsIndices();
+    let sortedNewAddresses = Object.keys(mem_values).sort();
+    let curIdx = 0;
+    let newIdx = 0;
+    while (newIdx < sortedNewAddresses.length) {
+        if (curIdx >= currentAddresses.length) {
+            // We have reached the end of the existing addresses list; insert at the end.
+            currentAddresses.splice(curIdx, 0, sortedNewAddresses[newIdx]);
+            insertMemoryAddressRow(sortedNewAddresses[newIdx], curIdx);
+            curIdx++;
+            newIdx++;
+        } else if (currentAddresses[curIdx] == sortedNewAddresses[newIdx]) {
+            // Element already in the list, skip.
+            curIdx++;
+            newIdx++;
+        } else if (currentAddresses[curIdx] < sortedNewAddresses[newIdx]) {
+            // New address is larger than the one in current index, skip to next position to check.
+            curIdx++;
+        } else {
+            // New address should be included in this position.
+            currentAddresses.splice(curIdx, 0, sortedNewAddresses[newIdx]);
+            insertMemoryAddressRow(sortedNewAddresses[newIdx], curIdx);
+            curIdx++;
+            newIdx++;
+        }
+    }
+
+    // Update all the memory values.
+    for (const [address, chunk] of Object.entries(mem_values)) {
+        let hexAddr = intToHexBytes(parseInt(address));
+        let i = 0;
+        while (i < 16) {
+            let hexOffset = intToHexBytes(i);
+            let memValueCell = document.getElementById(`memValueCell-${hexAddr}+${hexOffset}`);
+            let newMemValue = (i >= chunk.length) ? 0 : chunk[i];
+            if (memValueCell.intValue != newMemValue) {
+                memValueCell.intValue = newMemValue;
+                let newHexMemValue = intToHexBytes(newMemValue, 1);
+                // Update the table if the value has changed.
+                memValueCell.innerText = newHexMemValue;
+                memValueCell.classList.add("table-active");
+                memValueCell.classList.add("memory-value-updated");
+                if ((newMemValue > 32) && (newMemValue < 127)) {
+                    // If this is a printable value in ASCII, mark the cell.
+                    memValueCell.classList.add("ascii-printable-memory-value");
+                    if (document.getElementById('asciiMemorySwitch').checked) {
+                        // If the user wants to see the ASCII value, convert it.
+                        memValueCell.classList.add("memory-value-in-ascii");
+                        memValueCell.innerText = hexBytetoASCIIChar(newHexMemValue);
+                    }
+                } else {
+                    // If it is not printable, remove the mark in case it was there
+                    memValueCell.classList.remove("ascii-printable-memory-value");
+                }
+            }
+            i++;
+        }
+    }
+}
+
+function parseMemoryDeltaMap(mem_delta) {
+    // This functions creates a register map for the tracing deltas.
+    // For any registers that do not have values, it adds a zero for it.
+
+    if (!mem_delta) {
+        // If nothing given, simply return.
+        return;
+    }
+
+    // Creates a new object so we can map the values.
+    let mem_map = {};
+    for (const [reg, values] of Object.entries(mem_delta)) {
+        if (values.length == 0) {
+            mem_map[reg] = 0;
+        } else {
+            mem_map[reg] = values[values.length - 1];
+        }
+    }
+    return mem_map;
+}
+
+function convertMemoryValuesToASCII() {
+    Array.from(document.getElementsByClassName("ascii-printable-memory-value")).forEach((el) => {
+        if (el.classList.contains("memory-value-in-ascii")) {
+            // Value already in ascii, skip it.
+            return;
+        }
+        el.classList.add("memory-value-in-ascii");
+        el.innerText = hexBytetoASCIIChar(el.textContent);
+    });
+}
+
+function convertMemoryValuesToRawBytes() {
+    Array.from(document.getElementsByClassName("ascii-printable-memory-value")).forEach((el) => {
+        if (!el.classList.contains("memory-value-in-ascii")) {
+            // Value already NOT in ascii, skip it.
+            return;
+        }
+        el.classList.remove("memory-value-in-ascii");
+        el.innerText = ASCIICharToHexByte(el.textContent);
+    });
+}
+
+function toggleASCIIMemory() {
+    if (document.getElementById('asciiMemorySwitch').checked) {
+        convertMemoryValuesToASCII();
+    } else {
+        convertMemoryValuesToRawBytes();
+    }
+}
+
+function clearMemoryTable() {
+    // Delete all rows containing memory values.
+    document.getElementById("memValuesTBody").innerHTML = "";
+}
+
+function notImplemented() {
+    alert("Not implemented yet...");
+}
+
+function clearOutput() {
+    document.getElementById("runStatus").innerHTML = WAITING_SYMBOL;
+    document.getElementById("asStatus").innerHTML = WAITING_SYMBOL;
+    document.getElementById("ldStatus").innerHTML = WAITING_SYMBOL;
+    document.getElementById("timeOut").innerHTML = WAITING_SYMBOL;
+    document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
+    document.getElementById("outputBox").value = "";
+    document.getElementById("errorBox").value = "";
+    document.getElementById("emulationInfo").value = "";
+    document.getElementById("regValues").value = "";
+    document.getElementById("memValues").value = "";
+    window.lastRunInfo = null;
+    document.getElementById("downloadButton").disabled = true;
+    clearRegTable();
+    clearMemoryTable();
+}
+
+function detectAndHighlightErrors() {
+    // Find errors, parse through
+    let as_err = parseEmulationJSON("as_err");
+    let lines = as_err.split("\n").map(line => {
+
+        // TODO: Update regex to use this format: ".../userprograms/(filename):(linenum): Error: (message)"
+        // Then, you would have to make sure that filename matches the active tab to highlight these errors.
+        // Probably keep track of error messages per file, so we can show the existing errors on different tabs.
+        let match = line.match(/usrCode\.S:(\d+): Error: (.+)/);
+        if (match) {
+            return { lineNumber: match[1], message: match[2] };
+        }
+        return null;
+
+    }).filter(error => error !== null); // Remove non-error lines
+
+    // Highlight lines for each error
+    lines.forEach(line => {
+        line.message = line.message.replace(/`/g, '\\`');
+        addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
+    });
 }
 
 function BASE_runCode() {
@@ -1107,6 +1283,8 @@ function updateTraceGUI() {
         memoryValues += formattedMem + ":  " + formattedValue + "\n";
     }
     document.getElementById("memValues").value = memoryValues;
+    // Update the memory table with new values.
+    updateMemoryTable(parseMemoryDeltaMap(currentTraceStep.mem_changes));
 
     // Update the last and next lines to be executed.
     updateTraceLinesHighlights(currentTraceStep.stepNum);

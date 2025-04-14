@@ -129,7 +129,7 @@
                 <th scope="col">Value</th>
             </tr>
         </thead>
-        <tbody id="regValuesRows" class="regValues table-group-divider"></tbody>
+        <tbody id="regValuesTBody" class="regValues table-group-divider"></tbody>
     </table>
 
     <br/>
@@ -147,6 +147,36 @@
         </ul>
     </div>
 
+    <div class="form-check form-switch form-check-reverse">
+        <input class="form-check-input" type="checkbox" role="switch" id="asciiMemorySwitch" checked onclick='toggleASCIIMemory()' />
+        <label class="form-check-label" for="switchCheckChecked">Show ASCII Characters</label>
+    </div>
+    {# Memory table assumes that memory chunks are 16 bytes. #}
+    <table id="memValuesTable" class="table table-hover table-sm">
+        <thead>
+            <tr>
+                <th scope="col">Address</th>
+                <th scope="col">+0</th>
+                <th scope="col">+1</th>
+                <th scope="col">+2</th>
+                <th scope="col">+3</th>
+                <th scope="col">+4</th>
+                <th scope="col">+5</th>
+                <th scope="col">+6</th>
+                <th scope="col">+7</th>
+                <th scope="col">+8</th>
+                <th scope="col">+9</th>
+                <th scope="col">+A</th>
+                <th scope="col">+B</th>
+                <th scope="col">+C</th>
+                <th scope="col">+D</th>
+                <th scope="col">+E</th>
+                <th scope="col">+F</th>
+            </tr>
+        </thead>
+        <tbody id="memValuesTBody" class="memValues table-group-divider"></tbody>
+    </table>
+
     <br/>
     <br/>
 
@@ -163,12 +193,6 @@
         <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=100 placeholder="emulation info will appear here after your code finishes running..."></textarea>
        <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true" />
     </div>
-
-    <h3>Missing elements</h3>
-    <ul>
-        <li>Editor tabs for multi-file</li>
-        <li>Menus so the user can customize view (e.g., which registers show, dark vs light theme)</li>
-    </ul>
 </div>
 {% endblock %}
 
