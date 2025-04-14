@@ -475,6 +475,12 @@ function updateRegisterTable(reg_value_map) {
     Array.from(document.getElementsByClassName("regValueRows")).forEach((el) => {
         el.classList.remove("table-active");
     });
+
+    // If there are no values, do not update anything.
+    if (!reg_value_map) {
+        return;
+    }
+
     // Go through the register values we received to update the changed ones.
     for (const [reg, val] of Object.entries(reg_value_map)) {
         let formattedValue = intToHexBytes(val, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
@@ -537,6 +543,13 @@ function parseRegisterValues(emulation_reg_values) {
     // This method extracts the first value of the array of values in the map.
     // For the runCode method, this removes the boolean that indicates if this value has changed or not.
     // TODO: remove the bool from the source; make base_emulation stop keeping track of registers that have changed.
+
+    if (!emulation_reg_values) {
+        // If nothing given, simply return.
+        return;
+    }
+
+    // Creates a new object so we can map the values.
     let reg_map = {};
     for (const [reg, val] of Object.entries(emulation_reg_values)) {
         reg_map[reg] = val[0];
@@ -547,6 +560,13 @@ function parseRegisterValues(emulation_reg_values) {
 function parseRegisterDeltaMap(reg_delta) {
     // This functions creates a register map for the tracing deltas.
     // For any registers that do not have values, it adds a zero for it.
+
+    if (!reg_delta) {
+        // If nothing given, simply return.
+        return;
+    }
+
+    // Creates a new object so we can map the values.
     let reg_map = {};
     for (const [reg, values] of Object.entries(reg_delta)) {
         if (values.length == 0) {
