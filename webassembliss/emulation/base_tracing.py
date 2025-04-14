@@ -278,7 +278,7 @@ def stepped_emulation(
         if ql.os.exit_code is not None or emulation_error:
             break
 
-    return argv, ql.os.exit_code, step_num == max_steps, steps, relevant_mem_area
+    return argv, ql.os.exit_code, step_num == max_steps, steps, relevant_mem_area, ql.arch.bits
 
 
 def clean_trace(
@@ -362,6 +362,7 @@ def clean_trace(
             reached_max_steps,
             trace_steps,
             mapped_memory,
+            arch_num_bits,
         ) = stepped_emulation(
             rootfs_path=rootfs_sandbox,
             bin_path=bin_path,
@@ -375,7 +376,8 @@ def clean_trace(
             objdump_cmd=objdump_cmd,
             source_filenames=source_filenames,
         )
-
+        
+        et.arch_num_bits = arch_num_bits
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
         et.steps.extend(trace_steps)

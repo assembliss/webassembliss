@@ -431,6 +431,65 @@ function BASE_createEditor(default_code, archSyntaxFun) {
     });
 }
 
+function populateRegisterTable(registers) {
+    // Create a starting values with enough zeros for the number of bits given.
+    let starting_value = intToHexBytes(0, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
+    // Create register rows in the template table.
+    let tableRows = document.getElementById("regValuesRows");
+    for (const reg of registers) {
+        // Create new row and cells.
+        let newTr = document.createElement('tr');
+        let regName = document.createElement('td');
+        let regValue = document.createElement('td');
+        // Assign IDs so we can modify them later.
+        newTr.id = `regValueRow-${reg}`;
+        regName.id = `regNameCell-${reg}`;
+        regValue.id = `regValueCell-${reg}`;
+        // Assign a class to rows so we can access all of them later.
+        newTr.classList.add("regValueRows");
+        regValue.classList.add("regValueCells");
+        // Assign the appropriate values.
+        regName.textContent = reg;
+        regValue.innerHTML = starting_value;
+        // Add the new cells to our new row.
+        newTr.appendChild(regName);
+        newTr.appendChild(regValue);
+        // Add the new row to the template table.
+        tableRows.appendChild(newTr);
+    }
+}
+
+function clearRegTable() {
+    // Mark all rows as not changed.
+    Array.from(document.getElementsByClassName("regValueRows")).forEach((el) => {
+        el.classList.remove("table-active");
+    });
+    // Set all values as zero.
+    Array.from(document.getElementsByClassName("regValueCells")).forEach((el) => {
+        el.innerHTML = intToHexBytes(0, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
+    });
+}
+
+function updateRegisterTable(reg_value_map) {
+    // Mark all rows as not changed.
+    Array.from(document.getElementsByClassName("regValueRows")).forEach((el) => {
+        el.classList.remove("table-active");
+    });
+    // Go through the register values we received to update the changed ones.
+    for (const [reg, val] of Object.entries(reg_value_map)) {
+        let formattedValue = intToHexBytes(val, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
+        let regValueCell = document.getElementById(`regValueCell-${reg}`);
+        if (regValueCell.innerHTML == formattedValue) {
+            // If the value has NOT changed, go to next element.
+            continue;
+        }
+        // Update the value with the new one we received.
+        regValueCell.innerHTML = formattedValue;
+        // Mark this row as changed.
+        document.getElementById(`regValueRow-${reg}`).classList.add("table-active");
+    };
+}
+
 function notImplemented() {
     alert("Not implemented yet...");
 }
@@ -448,6 +507,7 @@ function clearOutput() {
     document.getElementById("memValues").value = "";
     window.lastRunInfo = null;
     document.getElementById("downloadButton").disabled = true;
+    clearRegTable();
 }
 
 function detectAndHighlightErrors() {
@@ -468,6 +528,31 @@ function detectAndHighlightErrors() {
         line.message = line.message.replace(/`/g, '\\`');
         addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
     });
+}
+
+function parseRegisterValues(emulation_reg_values) {
+    // This method extracts the first value of the array of values in the map.
+    // For the runCode method, this removes the boolean that indicates if this value has changed or not.
+    // TODO: remove the bool from the source; make base_emulation stop keeping track of registers that have changed.
+    let reg_map = {};
+    for (const [reg, val] of Object.entries(emulation_reg_values)) {
+        reg_map[reg] = val[0];
+    }
+    return reg_map;
+}
+
+function parseRegisterDeltaMap(reg_delta) {
+    // This functions creates a register map for the tracing deltas.
+    // For any registers that do not have values, it adds a zero for it.
+    let reg_map = {};
+    for (const [reg, values] of Object.entries(reg_delta)) {
+        if (values.length == 0) {
+            reg_map[reg] = 0;
+        } else {
+            reg_map[reg] = values[values.length - 1];
+        }
+    }
+    return reg_map;
 }
 
 function BASE_runCode() {
@@ -506,6 +591,8 @@ function BASE_runCode() {
             document.getElementById("emulationInfo").value = data.all_info;
             document.getElementById("regValues").value = data.registers;
             document.getElementById("memValues").value = data.memory;
+            // Update the register table with new values.
+            updateRegisterTable(parseRegisterValues(data.info_obj.registers), data.info_obj.reg_num_bits);
             lastRunInfo = data.info_obj;
             // Make sure to highlight detection AFTER lastRunInfo is updated!
             detectAndHighlightErrors();
@@ -981,6 +1068,8 @@ function updateTraceGUI() {
         registerValues += reg.padStart(10, " ") + ":  " + intToHexBytes(lastValue, 8, "  ") + "\n";
     }
     document.getElementById("regValues").value = registerValues;
+    // Update the register table with new values.
+    updateRegisterTable(parseRegisterDeltaMap(currentTraceStep.reg_changes), window.lastTrace.arch_num_bits);
 
     // Show the memory values.
     let memoryValues = "";
