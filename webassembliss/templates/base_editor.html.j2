@@ -155,7 +155,10 @@
     <table id="memValuesTable" class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col">Address</th>
+                <th scope="col">
+                    <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-title="If an address does not appear, it holds a value of 0."></i>
+                    Address
+                </th>
                 <th scope="col">+0</th>
                 <th scope="col">+1</th>
                 <th scope="col">+2</th>
@@ -174,7 +177,9 @@
                 <th scope="col">+F</th>
             </tr>
         </thead>
-        <tbody id="memValuesTBody" class="memValues table-group-divider"></tbody>
+        <tbody id="memValuesTBody" class="memValues table-group-divider">
+            <td>Values will appear after code is ran or traced.</td>
+        </tbody>
     </table>
 
     <br/>
