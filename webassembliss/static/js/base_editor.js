@@ -441,11 +441,11 @@ function showDisplayCheckboxes(type) {
         el.removeAttribute("hidden");
     });
     // Show changes button.
-    document.getElementById("registerShowAll").removeAttribute("hidden");
-    document.getElementById("registerHideAll").removeAttribute("hidden");
-    document.getElementById("registerShowAccept").removeAttribute("hidden");
+    document.getElementById(`${type}ShowAll`).removeAttribute("hidden");
+    document.getElementById(`${type}HideAll`).removeAttribute("hidden");
+    document.getElementById(`${type}ShowAccept`).removeAttribute("hidden");
     // Hide edit selection button.
-    document.getElementById("registerShowSelect").setAttribute("hidden", "hidden");
+    document.getElementById(`${type}ShowSelect`).setAttribute("hidden", "hidden");
 }
 
 function hideDisplayCheckboxes(type) {
@@ -458,11 +458,11 @@ function hideDisplayCheckboxes(type) {
         el.setAttribute("hidden", "hidden");
     });
     // Hide changes button.
-    document.getElementById("registerShowAll").setAttribute("hidden", "hidden");
-    document.getElementById("registerHideAll").setAttribute("hidden", "hidden");
-    document.getElementById("registerShowAccept").setAttribute("hidden", "hidden");
+    document.getElementById(`${type}ShowAll`).setAttribute("hidden", "hidden");
+    document.getElementById(`${type}HideAll`).setAttribute("hidden", "hidden");
+    document.getElementById(`${type}ShowAccept`).setAttribute("hidden", "hidden");
     // Show edit selection button.
-    document.getElementById("registerShowSelect").removeAttribute("hidden");
+    document.getElementById(`${type}ShowSelect`).removeAttribute("hidden");
 }
 
 function showAllRows(type) {
@@ -624,13 +624,14 @@ function insertMemoryAddressRow(address, index) {
     let tableRows = document.getElementById("memValuesTBody");
     // Create new a row to hold all the new cells.
     let newTr = document.createElement('tr');
+    let hexAddr = intToHexBytes(parseInt(address));
+    newTr.id = `memValueRow-${hexAddr}`;
     // Create a new node for the address value.
     let addrCell = document.createElement('td');
-    let hexAddr = intToHexBytes(parseInt(address));
     addrCell.id = `memAddrCell-${hexAddr}`;
     addrCell.classList.add('memory-table-address');
     addrCell.intMemAddr = address;
-    addrCell.innerHTML = hexAddr;
+    addrCell.innerHTML = `<input class="form-check-input memory-display-check" type="checkbox" value="" id="${newTr.id}-check" onclick='toggleRowDisplay("${newTr.id}", "memory")' hidden checked> ${hexAddr}`;
     newTr.appendChild(addrCell);
     // Add one cell for each byte of the 16-byte memory chunk.
     for (let i = 0; i < 16; i++) {

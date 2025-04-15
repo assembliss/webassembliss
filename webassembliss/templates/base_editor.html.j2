@@ -163,6 +163,10 @@
             <tr>
                 <th scope="col">
                     <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-title="If an address does not appear, it holds a value of 0."></i>
+                    <i id="memoryShowSelect" class="fa-solid fa-sliders" data-bs-toggle="tooltip" data-bs-title="Click here to select which memory addresses are displayed." onclick='showDisplayCheckboxes("memory")'></i>
+                    <i id="memoryHideAll" class="fa-solid fa-toggle-off" data-bs-toggle="tooltip" data-bs-title="Click here to hide all memory addresses." onclick='hideAllRows("memory")' hidden></i>
+                    <i id="memoryShowAll" class="fa-solid fa-toggle-on" data-bs-toggle="tooltip" data-bs-title="Click here to show all memory addresses." onclick='showAllRows("memory")' hidden></i>
+                    <i id="memoryShowAccept" class="fa-solid fa-check" data-bs-toggle="tooltip" data-bs-title="Click here to save changes and hide unchecked memory addresses." onclick='hideDisplayCheckboxes("memory")' hidden></i>
                     Address
                 </th>
                 <th scope="col">+0</th>
