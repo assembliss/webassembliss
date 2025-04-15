@@ -14,7 +14,7 @@
 {% block content %}
 <div class="container">
  <div class="row">
-  <div class="col-md-7 themed-grid-col">
+  <div class="col-xxl-7">
     <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()"><i class="fa-solid fa-play"></i> Run Code</button>
     <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()"><i class="fa-solid fa-bug"></i> Trace Code</button>
     <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
@@ -78,7 +78,7 @@
     <h3>Output</h3>
     <textarea id="outputBox" name="outputBox" readOnly=true rows=2 cols=70 placeholder="your output will appear here after your code finishes running..."></textarea>
   </div>
-  <div class="col-6 col-md-5 themed-grid-col">
+  <div class="col-6 col-md-5">
    <div class="tableFixHead">
    <small>
     <table id="regValuesTable" class="table table-hover table-sm">
