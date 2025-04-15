@@ -13,6 +13,8 @@
 
 {% block content %}
 <div class="container">
+ <div class="row">
+  <div class="col-md-7 themed-grid-col">
     <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()"><i class="fa-solid fa-play"></i> Run Code</button>
     <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()"><i class="fa-solid fa-bug"></i> Trace Code</button>
     <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
@@ -75,7 +77,10 @@
 
     <h3>Output</h3>
     <textarea id="outputBox" name="outputBox" readOnly=true rows=2 cols=70 placeholder="your output will appear here after your code finishes running..."></textarea>
-
+  </div>
+  <div class="col-6 col-md-5 themed-grid-col">
+   <div class="tableFixHead">
+   <small>
     <table id="regValuesTable" class="table table-hover table-sm">
         <thead>
             <tr>
@@ -91,7 +96,13 @@
         </thead>
         <tbody id="regValuesTBody" class="regValues table-group-divider"></tbody>
     </table>
+   </small>
+   </div>
 
+   <hr/>
+
+   <small>
+   <div class="tableFixHead">
     <div class="form-check form-switch form-check-reverse">
         <input class="form-check-input" type="checkbox" role="switch" id="asciiMemorySwitch" checked onclick='toggleASCIIMemory()' />
         <label class="form-check-label" for="switchCheckChecked">Show <span style="color: magenta;">ASCII</span> Characters</label>
@@ -106,6 +117,7 @@
                     <i id="memoryHideAll" class="fa-solid fa-toggle-off" data-bs-toggle="tooltip" data-bs-title="Click here to hide all memory addresses." onclick='hideAllRows("memory")' hidden></i>
                     <i id="memoryShowAll" class="fa-solid fa-toggle-on" data-bs-toggle="tooltip" data-bs-title="Click here to show all memory addresses." onclick='showAllRows("memory")' hidden></i>
                     <i id="memoryShowAccept" class="fa-solid fa-check" data-bs-toggle="tooltip" data-bs-title="Click here to save changes and hide unchecked memory addresses." onclick='hideDisplayCheckboxes("memory")' hidden></i>
+                    <br/>
                     Address
                 </th>
                 <th scope="col">+0</th>
@@ -130,10 +142,11 @@
             <td>Values will appear after code is ran or traced.</td>
         </tbody>
     </table>
-
-    <br/>
-    <br/>
-
+   </small>
+   </div>
+  </div>
+ </div>
+ <hr/>
     <button type="button" class="collapsible">Show/hide error information</button>
     <div class="collapsibleContent">
         <textarea id="errorBox" name="errorBox" readOnly=true rows=10 cols=100 placeholder="any errors will appear here after your code finishes running..."></textarea>

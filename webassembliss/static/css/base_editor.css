@@ -133,9 +133,7 @@ table {
     background: rgba(255, 70, 70, 0.125);
 }
 
-#memValues,
 #memValuesTable,
-#regValues,
 #regValuesTable,
 #outputBox,
 #inputBox,
@@ -146,4 +144,17 @@ table {
 
 td.memory-value-in-ascii {
     color: magenta;
+}
+
+.tableFixHead {
+    overflow-y: auto;
+    overflow-x: visible;
+    width: 575px;
+    height: 320px;
+}
+
+.tableFixHead thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
 }
