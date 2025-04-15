@@ -91,6 +91,9 @@ function openTab(tabNum) {
 
         // Update active tab number.
         currentTab.change(tabNum);
+
+        // Update highlights.
+        showTabHighlights();
     }
 }
 
@@ -914,17 +917,20 @@ function clearOutput() {
     clearMemoryTable();
 }
 
+const tabErrorHighlights = {};
+
 function detectAndHighlightErrors() {
+    // Delete previous errors we had stored.
+    for (let key in tabErrorHighlights) {
+        delete tabErrorHighlights[key];
+    }
+
     // Find errors, parse through
     let as_err = parseEmulationJSON("as_err");
     let lines = as_err.split("\n").map(line => {
-
-        // TODO: Update regex to use this format: ".../userprograms/(filename):(linenum): Error: (message)"
-        // Then, you would have to make sure that filename matches the active tab to highlight these errors.
-        // Probably keep track of error messages per file, so we can show the existing errors on different tabs.
-        let match = line.match(/usrCode\.S:(\d+): Error: (.+)/);
+        let match = line.match(/userprograms\/([^:]+):(\d+): Error: (.+)/);
         if (match) {
-            return { lineNumber: match[1], message: match[2] };
+            return { filename: match[1], lineNumber: match[2], message: match[3] };
         }
         return null;
 
@@ -932,9 +938,16 @@ function detectAndHighlightErrors() {
 
     // Highlight lines for each error
     lines.forEach(line => {
-        line.message = line.message.replace(/`/g, '\\`');
-        addErrorHighlight(parseInt(line.lineNumber, 10), [{ value: line.message }]);
+        if (!(line.filename in tabErrorHighlights)) {
+            tabErrorHighlights[line.filename] = [];
+        }
+        let lineNumber = parseInt(line.lineNumber, 10);
+        let message = line.message.replace(/`/g, "'");
+        tabErrorHighlights[line.filename].push({ lineNumber: lineNumber, message: message })
     });
+
+    // Show the errors for the current tab.
+    showTabHighlights();
 }
 
 function BASE_runCode() {
@@ -1077,6 +1090,35 @@ function addCurrentTabBreakpointsHighlights() {
 
 function removeAllHighlights() {
     decorations.clear();
+}
+
+function showTabErrors(tabName) {
+    if (!(tabName in tabErrorHighlights)) {
+        return;
+    }
+
+    let allTabErrors = [];
+
+    for (const error of tabErrorHighlights[tabName]) {
+        // Add the error information to the appropriate line.
+        addErrorHighlight(error.lineNumber, [{ value: error.message }]);
+        // Add all errors at the top of the file as a summary.
+        allTabErrors.push({ value: `Line ${error.lineNumber}: ${error.message}` });
+    }
+
+    // Add a summary of all errors 
+    if (allTabErrors.length) {
+        addErrorHighlight(0, allTabErrors);
+    }
+}
+
+function showTabHighlights() {
+    let tabName = `Tab${currentTab.num}`;
+    // Remove all highlights.
+    removeAllHighlights();
+    // Add error highlights.
+    showTabErrors(tabName);
+    // TODO: Add tracing line highlights.
 }
 
 protobuf.load("/static/protos/trace_info.proto").then(function (root) {
