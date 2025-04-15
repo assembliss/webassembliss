@@ -25,9 +25,9 @@
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentTab();">Current Tab Only (default)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentTab();return false;">Current Tab Only (default)</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" onclick="downloadWorkspaceJSON();">Workspace as JSON</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="downloadWorkspaceJSON();return false;">Workspace as JSON</a></li>
                 </ul>
             </div>
             <div class="btn-group">
@@ -36,9 +36,9 @@
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);">Single Tab (default)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);return false;">Single Tab (default)</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);">JSON Workspace</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);return false;">JSON Workspace</a></li>
                 </ul>
             </div>
             <div id="tabsDiv" style="display: flex">
