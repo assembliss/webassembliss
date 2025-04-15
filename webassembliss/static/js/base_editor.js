@@ -440,7 +440,9 @@ function showDisplayCheckboxes(type) {
     Array.from(document.getElementsByClassName(`${type}-display-hide`)).forEach((el) => {
         el.removeAttribute("hidden");
     });
-    // Show save changes button.
+    // Show changes button.
+    document.getElementById("registerShowAll").removeAttribute("hidden");
+    document.getElementById("registerHideAll").removeAttribute("hidden");
     document.getElementById("registerShowAccept").removeAttribute("hidden");
     // Hide edit selection button.
     document.getElementById("registerShowSelect").setAttribute("hidden", "hidden");
@@ -455,10 +457,28 @@ function hideDisplayCheckboxes(type) {
     Array.from(document.getElementsByClassName(`${type}-display-hide`)).forEach((el) => {
         el.setAttribute("hidden", "hidden");
     });
-    // Hide save changes button.
+    // Hide changes button.
+    document.getElementById("registerShowAll").setAttribute("hidden", "hidden");
+    document.getElementById("registerHideAll").setAttribute("hidden", "hidden");
     document.getElementById("registerShowAccept").setAttribute("hidden", "hidden");
     // Show edit selection button.
     document.getElementById("registerShowSelect").removeAttribute("hidden");
+}
+
+function showAllRows(type) {
+    // Checks all display checkboxes for the given type and call its toggle function.
+    Array.from(document.getElementsByClassName(`${type}-display-check`)).forEach((el) => {
+        el.checked = true;
+        el.onclick.apply(el);
+    });
+}
+
+function hideAllRows(type) {
+    // Unchecks all display checkboxes for the given type and call its toggle function.
+    Array.from(document.getElementsByClassName(`${type}-display-check`)).forEach((el) => {
+        el.checked = false;
+        el.onclick.apply(el);
+    });
 }
 
 function toggleRowDisplay(rowID, type) {
