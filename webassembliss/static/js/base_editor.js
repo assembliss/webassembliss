@@ -55,6 +55,11 @@ function downloadCurrentTab() {
     download_file(currentTab_filename, getSource(), "text/plain");
 }
 
+function downloadWorkspaceJSON() {
+    let workspace = { arch: ARCH_ID, tabs: localTabStorage.tabs };
+    download_file("webassembliss_workspace.json", JSON.stringify(workspace), "application/json");
+}
+
 function openTab(tabNum) {
     if (currentTab.num == tabNum) {
         // TODO: Implement a tab renaming system (and make it look good... yikes!)
@@ -199,7 +204,7 @@ const localTabStorage = {
         localStorage.setItem(`tabs-${this.archID}`, JSON.stringify(this.tabs));
     },
 
-    load() {
+    loadFromStorage() {
         // Update the architecture.
         this.archID = ARCH_ID;
         // Load saved tabs from localStorage.
@@ -212,10 +217,21 @@ const localTabStorage = {
         }
     },
 
-    init() {
-        // Load tabs information stored in localstorage.
-        this.load();
+    loadFromJSON(contents) {
+        // Load workspace information from the json object.
+        if (!contents.arch) {
+            alert("Invalid workspace; no architecture information found.");
+            return;
+        }
+        this.archID = contents.arch;
+        this.tabs = contents.tabs;
+        // Update the tabs in localStorage.
+        this.store();
+        // Refresh the page so new tabs are properly created.
+        location.reload();
+    },
 
+    reloadTabs() {
         // Display the stored tabs in the editor.
         if (!this.size) {
             // If there are no tabs stored, keep the default code on editor.
@@ -303,6 +319,13 @@ const localTabStorage = {
                 closeTab(1);
             }
         });
+    },
+
+    init() {
+        // Load tabs information stored in localstorage.
+        this.loadFromStorage();
+        // Reload tabs in the editor.
+        this.reloadTabs();
     }
 }
 
@@ -325,6 +348,10 @@ function importCode(fileUploadTarget) {
         return;
     }
 
+    if (!confirm("This will overwrite the contents of your current.")) {
+        return;
+    }
+
     let fileReader = new FileReader();
     fileReader.onload = function (onLoadEvent) {
         const fileContents = onLoadEvent.target.result;
@@ -337,8 +364,35 @@ function importCode(fileUploadTarget) {
     };
 
     fileReader.readAsText(file);
+}
 
+function importWorkspace(fileUploadTarget) {
+    let file = fileUploadTarget.files[0];
 
+    if (!file) {
+        return;
+    }
+
+    if (!file.name.endsWith(".json")) {
+        alert("Invalid file! Please select a .json file.");
+        return;
+    }
+
+    if (!confirm("This will delete all existing tabs!")) {
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+        localTabStorage.loadFromJSON(JSON.parse(fileContents));
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+    fileReader.readAsText(file);
 }
 
 /* Parses through the emulation information JSON and returns the string within quotes following the target.

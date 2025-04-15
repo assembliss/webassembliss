@@ -20,21 +20,25 @@
             <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
             <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()"><i class="fa-solid fa-rotate-left"></i> Clear</button>
             <div class="btn-group">
-                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()"><i class="fa-solid fa-download"></i> Save</button>
+                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadWorkspaceJSON()"><i class="fa-solid fa-download"></i> Save</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split codeActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentTab();">Current Tab (default)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="downloadWorkspaceJSON();">Workspace as JSON (default)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentTab();">Current Tab Only</a></li>
                 </ul>
             </div>
             <div class="btn-group">
-                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="uploadFile(importCode)"><i class="fa-solid fa-upload"></i> Upload</button>
+                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="uploadFile(importWorkspace)"><i class="fa-solid fa-upload"></i> Upload</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split codeActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);">Single Tab (default)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);">JSON Workspace (default)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);">Single Tab</a></li>
                 </ul>
             </div>
             <div id="tabsDiv" style="display: flex">
