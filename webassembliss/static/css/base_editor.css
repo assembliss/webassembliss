@@ -35,11 +35,6 @@
     background-color: rgb(255, 240, 240);
 }
 
-/* Disable resizing element of textarea elements by default */
-textarea {
-    resize: none;
-}
-
 .issueLabelButton {
     background-color: rgb(189, 189, 189);
 }

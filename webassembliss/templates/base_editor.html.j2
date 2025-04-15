@@ -18,9 +18,25 @@
             <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()"><i class="fa-solid fa-play"></i> Run Code</button>
             <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()"><i class="fa-solid fa-bug"></i> Trace Code</button>
             <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
-            <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-            <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()"><i class="fa-solid fa-download"></i> Save File</button>
-            <input type="file" class="codeActionBtn" id="fileUpload" />
+            <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()"><i class="fa-solid fa-rotate-left"></i> Clear</button>
+            <div class="btn-group">
+                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()"><i class="fa-solid fa-download"></i> Save</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split codeActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="downloadCurrentTab();">Current Tab (default)</a></li>
+                </ul>
+            </div>
+            <div class="btn-group">
+                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="uploadFile(importCode)"><i class="fa-solid fa-upload"></i> Upload</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split codeActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);">Single Tab (default)</a></li>
+                </ul>
+            </div>
             <div id="tabsDiv" style="display: flex">
                 <input class="activeTabBtn" type="button" id="tab1Btn" value="Tab1" onclick="openTab(1)"/>
                 <input class="activeTabBtnX" type="button" id="tab1BtnX" value="x" onclick="closeTab(1)" disabled="true" hidden="hidden"/>
@@ -72,11 +88,18 @@
                 </div>
             </div>
 
-            <h3>Input</h3>
-            <textarea id="inputBox" name="inputBox" rows=2 cols=70 placeholder="type any input your code will use here"></textarea>
+            <br/>
+            
+            <div class="input-group">
+                <span class="input-group-text">User Input</span>
+                <textarea class="form-control" id="inputBox" name="inputBox" aria-label="Text area for user input" placeholder="type any input your code will use here"></textarea>
+            </div>
 
-            <h3>Output</h3>
-            <textarea id="outputBox" name="outputBox" readOnly=true rows=2 cols=70 placeholder="your output will appear here after your code finishes running..."></textarea>
+            <div class="input-group">
+                <span class="input-group-text">Output</span>
+                <textarea class="form-control" id="outputBox" name="outputBox" readOnly=true aria-label="Text area for program output" placeholder="your output will appear here after your code finishes running..."></textarea>
+            </div>
+
         </div>
         <div class="col-6 col-md-5">
             <div class="tableFixHead">

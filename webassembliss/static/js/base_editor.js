@@ -43,11 +43,6 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
     }
 });
 
-document.getElementById("fileUpload").addEventListener("change", function (uploadEvent) {
-    importCode();
-});
-
-
 const currentTab = {
     num: 1,
     change(target) {
@@ -311,8 +306,15 @@ const localTabStorage = {
     }
 }
 
-function importCode() {
-    let file = document.getElementById("fileUpload").files[0];
+function uploadFile(callback) {
+    let fileUploadEl = document.createElement('input');
+    fileUploadEl.type = 'file';
+    fileUploadEl.onchange = e => callback(e.target);
+    fileUploadEl.click();
+}
+
+function importCode(fileUploadTarget) {
+    let file = fileUploadTarget.files[0];
 
     if (!file) {
         return;
