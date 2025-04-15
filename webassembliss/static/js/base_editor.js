@@ -852,8 +852,6 @@ function clearOutput() {
     document.getElementById("outputBox").value = "";
     document.getElementById("errorBox").value = "";
     document.getElementById("emulationInfo").value = "";
-    document.getElementById("regValues").value = "";
-    document.getElementById("memValues").value = "";
     window.lastRunInfo = null;
     document.getElementById("downloadButton").disabled = true;
     clearRegTable();
@@ -893,7 +891,6 @@ function BASE_runCode() {
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/run/', {
         method: 'POST',
@@ -905,7 +902,6 @@ function BASE_runCode() {
             source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
-            registers: registers
         }),
     }).then(response => response.json())
         .then(data => {
@@ -917,8 +913,7 @@ function BASE_runCode() {
             document.getElementById("outputBox").value = data.stdout;
             document.getElementById("errorBox").value = data.stderr;
             document.getElementById("emulationInfo").value = data.all_info;
-            document.getElementById("regValues").value = data.registers;
-            document.getElementById("memValues").value = data.memory;
+            // Update the memory table with new values.
             updateMemoryTable(parseRunMemoryReport(data.memory));
             // Update the register table with new values.
             updateRegisterTable(parseRegisterValues(data.info_obj.registers), data.info_obj.reg_num_bits);
@@ -1058,7 +1053,6 @@ function BASE_startTracing() {
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
     localTabStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
-    let registers = document.getElementById("regsToShow").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/trace/', {
         method: 'POST',
@@ -1070,7 +1064,6 @@ function BASE_startTracing() {
             source_files: localTabStorage.tabs,
             user_input: user_input,
             cl_args: window.cl_args,
-            registers: registers
         }),
     }).then(response => response.arrayBuffer())
         .then(data => {
@@ -1387,32 +1380,9 @@ function updateTraceGUI() {
     }
     document.getElementById("errorBox").value = combinedStderr;
 
-    // Show the register values.
-    let registerValues = "";
-    for (let reg in currentTraceStep.reg_changes) {
-        // Get the stored values we have for this register.
-        let regValues = currentTraceStep.reg_changes[reg];
-        // Find the most recent one or use a default of 0 if we have none.
-        let lastValue = !regValues.length ? 0 : regValues[regValues.length - 1];
-        registerValues += reg.padStart(10, " ") + ":  " + intToHexBytes(lastValue, 8, "  ") + "\n";
-    }
-    document.getElementById("regValues").value = registerValues;
     // Update the register table with new values.
     updateRegisterTable(parseRegisterDeltaMap(currentTraceStep.reg_changes), window.lastTrace.arch_num_bits);
 
-    // Show the memory values.
-    let memoryValues = "";
-    for (let mem in currentTraceStep.mem_changes) {
-        // Get the stored values we have for this register.
-        let memValues = currentTraceStep.mem_changes[mem];
-        // Find the most recent one or use a default of 0 if we have none.
-        let lastValue = !memValues.length ? 0 : memValues[memValues.length - 1];
-        // Format the address and chunk values for display.
-        let formattedMem = intToHexBytes(parseInt(mem));
-        let formattedValue = formatMemoryChunk(lastValue, 16, "  ", true);
-        memoryValues += formattedMem + ":  " + formattedValue + "\n";
-    }
-    document.getElementById("memValues").value = memoryValues;
     // Update the memory table with new values.
     updateMemoryTable(parseMemoryDeltaMap(currentTraceStep.mem_changes));
 
