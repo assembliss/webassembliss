@@ -101,7 +101,7 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] allow user to submit an issue through the webapp
 - [x] highlight assembler errors in source code
-	- [ ] update error display for multiple tabs
+	- [x] update error display for multiple tabs
 - [x] preserve source code between refreshes
 - [ ] allow user to change themes
 - [ ] allow user to change timeout

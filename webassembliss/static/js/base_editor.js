@@ -114,6 +114,19 @@ function closeTab(tabNum) {
     document.getElementById(`tab${tabNum}BtnX`).remove();
 }
 
+function getCurrentTabName() {
+    return `Tab${currentTab.num}`;
+}
+
+function getTabNumber(tabName) {
+    return parseInt(tabName.slice(3), 10);
+}
+
+function getTabButtonByName(tabName) {
+    let tabNum = getTabNumber(tabName);
+    return document.getElementById(`tab${tabNum}Btn`);
+}
+
 // THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
 const tabs = {
     // Start at tab #2. Tab #1 already exists when the webpage is opened
@@ -946,8 +959,18 @@ function detectAndHighlightErrors() {
         tabErrorHighlights[line.filename].push({ lineNumber: lineNumber, message: message })
     });
 
-    // Show the errors for the current tab.
-    showTabHighlights();
+    if (Object.keys(tabErrorHighlights).length == 0) {
+        // If no errors, nothing to show.
+        return;
+    } else if (tabErrorHighlights[getCurrentTabName()] != null) {
+        // If current tab has errors, show them.
+        showTabHighlights();
+    } else {
+        // If it doesn't, open one tab with errors and show them.
+        let tabWithErrors = Object.keys(tabErrorHighlights)[0];
+        let tabNum = getTabNumber(tabWithErrors);
+        openTab(tabNum);
+    }
 }
 
 function BASE_runCode() {
@@ -975,7 +998,16 @@ function BASE_runCode() {
     }).then(response => response.json())
         .then(data => {
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            document.getElementById("asStatus").innerHTML = data.as_ok === null ? WAITING_SYMBOL : data.as_ok ? OK_SYMBOL : ERROR_SYMBOL;
+            if (data.as_ok !== null) {
+                // Assume everything assembled ok, and then loop through each status to find something broken.
+                document.getElementById("asStatus").innerHTML = OK_SYMBOL;
+                for (const fileAsStatus of Object.values(data.as_ok)) {
+                    if (!fileAsStatus) {
+                        document.getElementById("asStatus").innerHTML = ERROR_SYMBOL;
+                        break;
+                    }
+                }
+            }
             document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("timeOut").innerHTML = data.timed_out === null ? WAITING_SYMBOL : data.timed_out ? OK_SYMBOL : ERROR_SYMBOL;
             document.getElementById("exitCode").innerHTML = exitCodeToEmoji(data.exit_code);
@@ -1061,8 +1093,10 @@ function updateTraceLinesHighlights(traceStep, tabName) {
         let nextFilenameIdx = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.filenameIndex;
         let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
         if (nextFilename == tabName) {
-            // If the current tab is the file that has the next line to be executed, highlight it.
-            updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+            // If the current tab is the file that has the next line to be executed, highlight it and scroll to it.
+            let linenum = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum
+            updateNextLine(linenum);
+            window.editor.revealLineInCenter(linenum);
         }
     }
 
@@ -1107,22 +1141,23 @@ function showTabErrors(tabName) {
     }
 
     let allTabErrors = [];
-
+    let firstError = true;
     for (const error of tabErrorHighlights[tabName]) {
         // Add the error information to the appropriate line.
         addErrorHighlight(error.lineNumber, [{ value: error.message }]);
         // Add all errors at the top of the file as a summary.
         allTabErrors.push({ value: `Line ${error.lineNumber}: ${error.message}` });
+        if (firstError) {
+            // Scroll to the first error in the file.
+            firstError = false;
+            window.editor.revealLineInCenter(error.lineNumber);
+        }
     }
 
-    // Add a summary of all errors 
+    // Add a summary of all errors at the top of the file.
     if (allTabErrors.length) {
         addErrorHighlight(0, allTabErrors);
     }
-}
-
-function getCurrentTabName() {
-    return `Tab${currentTab.num}`;
 }
 
 function showTabHighlights() {
@@ -1528,6 +1563,13 @@ function updateTraceGUI() {
         Array.from(document.getElementsByClassName("trace-actions-forward")).forEach((el) => {
             el.disabled = false;
         });
+        // Check if the next line to be executed is in a different file.
+        let nextFilenameIdx = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.filenameIndex;
+        let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
+        if (nextFilename && nextFilename != getCurrentTabName()) {
+            // If it isin a different tab, switch to that.
+            openTab(getTabNumber(nextFilename));
+        }
     }
 
     // Update the editor highlights.
