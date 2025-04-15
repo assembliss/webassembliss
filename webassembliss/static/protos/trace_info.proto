@@ -36,4 +36,5 @@ message ExecutionTrace {
   // Entries follow this format: start_address -> end_address
   map<uint64, uint64> mapped_memory = 8;
   repeated TraceStep steps = 9;
+  uint32 arch_num_bits = 10;
 }

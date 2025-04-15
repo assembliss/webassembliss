@@ -1,4 +1,11 @@
 const ARCH_ID = "arm64_linux";
+const ARCH_NUM_BITS = 64;
+
+// Add registers we want to display to the register table.
+const qilingARM64Registers = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11",
+    "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25",
+    "x26", "x27", "x28", "x29", "x30", "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate", "cpsr"];
+populateRegisterTable(qilingARM64Registers);
 
 function createEditor(default_code) {
     BASE_createEditor(default_code, getARM64SyntaxHighlighting)

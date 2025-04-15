@@ -187,9 +187,9 @@
               <h2 class="accordion-header">
                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTest{{ i + 1 }}" aria-expanded="false" aria-controls="collapseTest{{ i + 1 }}">
                   {% if results.tests[i].passed %}
-                    <img src="{{ url_for('static', filename='img/check-circle.svg') }}" alt="checkmark" width: 6em>
+                    <i class="fa-regular fa-circle-check"></i>
                   {% else %}
-                    <img src="{{ url_for('static', filename='img/x-circle-fill.svg') }}" alt="checkmark" width: 6em>
+                    <i class="fa-solid fa-circle-xmark"></i>
                   {% endif %}
                   &nbsp;
                   Test #{{ i + 1 }} ({{ results.tests[i].name }})

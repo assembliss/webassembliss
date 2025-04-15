@@ -2,7 +2,6 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base_editor.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='external/fontawesome-free-6.7.2-web/css/all.min.css') }}">
 {% endblock %}
 
 {% block tag %}
@@ -14,11 +13,11 @@
 
 {% block content %}
 <div class="container">
-    <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()">Run Code</button>
-    <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()">Trace Code</button>
-    <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()">Set CL Args</button>
-    <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()">Reset</button>
-    <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()">Save</button>
+    <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()"><i class="fa-solid fa-play"></i> Run Code</button>
+    <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()"><i class="fa-solid fa-bug"></i> Trace Code</button>
+    <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
+    <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+    <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()"><i class="fa-solid fa-download"></i> Save File</button>
     <input type="file" class="codeActionBtn" id="fileUpload" />
     <br/>
     <div id="tabsDiv" style="display: flex">
@@ -123,6 +122,22 @@
         </ul>
     </div> 
 
+    <table id="regValuesTable" class="table table-hover table-sm">
+        <thead>
+            <tr>
+                <th scope="col">
+                <i id="registerShowSelect" class="fa-solid fa-sliders" data-bs-toggle="tooltip" data-bs-title="Click here to select which registers are displayed." onclick='showDisplayCheckboxes("register")'></i>
+                <i id="registerHideAll" class="fa-solid fa-toggle-off" data-bs-toggle="tooltip" data-bs-title="Click here to hide all registers." onclick='hideAllRows("register")' hidden></i>
+                <i id="registerShowAll" class="fa-solid fa-toggle-on" data-bs-toggle="tooltip" data-bs-title="Click here to show all registers." onclick='showAllRows("register")' hidden></i>
+                <i id="registerShowAccept" class="fa-solid fa-check" data-bs-toggle="tooltip" data-bs-title="Click here to save changes and hide unchecked registers." onclick='hideDisplayCheckboxes("register")' hidden></i>
+                Register
+                </th>
+                <th scope="col">Value</th>
+            </tr>
+        </thead>
+        <tbody id="regValuesTBody" class="regValues table-group-divider"></tbody>
+    </table>
+
     <br/>
     <br/>
 
@@ -137,6 +152,45 @@
             <li>you can see *all* bytes as hex in the "show all emulation information" pane.</li>
         </ul>
     </div>
+
+    <div class="form-check form-switch form-check-reverse">
+        <input class="form-check-input" type="checkbox" role="switch" id="asciiMemorySwitch" checked onclick='toggleASCIIMemory()' />
+        <label class="form-check-label" for="switchCheckChecked">Show <span style="color: magenta;">ASCII</span> Characters</label>
+    </div>
+    {# Memory table assumes that memory chunks are 16 bytes. #}
+    <table id="memValuesTable" class="table table-hover table-sm">
+        <thead>
+            <tr>
+                <th scope="col">
+                    <i class="fa-regular fa-circle-question" data-bs-toggle="tooltip" data-bs-title="If an address does not appear, it holds a value of 0."></i>
+                    <i id="memoryShowSelect" class="fa-solid fa-sliders" data-bs-toggle="tooltip" data-bs-title="Click here to select which memory addresses are displayed." onclick='showDisplayCheckboxes("memory")'></i>
+                    <i id="memoryHideAll" class="fa-solid fa-toggle-off" data-bs-toggle="tooltip" data-bs-title="Click here to hide all memory addresses." onclick='hideAllRows("memory")' hidden></i>
+                    <i id="memoryShowAll" class="fa-solid fa-toggle-on" data-bs-toggle="tooltip" data-bs-title="Click here to show all memory addresses." onclick='showAllRows("memory")' hidden></i>
+                    <i id="memoryShowAccept" class="fa-solid fa-check" data-bs-toggle="tooltip" data-bs-title="Click here to save changes and hide unchecked memory addresses." onclick='hideDisplayCheckboxes("memory")' hidden></i>
+                    Address
+                </th>
+                <th scope="col">+0</th>
+                <th scope="col">+1</th>
+                <th scope="col">+2</th>
+                <th scope="col">+3</th>
+                <th scope="col">+4</th>
+                <th scope="col">+5</th>
+                <th scope="col">+6</th>
+                <th scope="col">+7</th>
+                <th scope="col">+8</th>
+                <th scope="col">+9</th>
+                <th scope="col">+A</th>
+                <th scope="col">+B</th>
+                <th scope="col">+C</th>
+                <th scope="col">+D</th>
+                <th scope="col">+E</th>
+                <th scope="col">+F</th>
+            </tr>
+        </thead>
+        <tbody id="memValuesTBody" class="memValues table-group-divider">
+            <td>Values will appear after code is ran or traced.</td>
+        </tbody>
+    </table>
 
     <br/>
     <br/>
@@ -154,12 +208,6 @@
         <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=100 placeholder="emulation info will appear here after your code finishes running..."></textarea>
        <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true" />
     </div>
-
-    <h3>Missing elements</h3>
-    <ul>
-        <li>Editor tabs for multi-file</li>
-        <li>Menus so the user can customize view (e.g., which registers show, dark vs light theme)</li>
-    </ul>
 </div>
 {% endblock %}
 

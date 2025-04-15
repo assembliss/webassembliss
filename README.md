@@ -101,13 +101,15 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] allow user to submit an issue through the webapp
 - [x] highlight assembler errors in source code
+	- [ ] update error display for multiple tabs
 - [x] preserve source code between refreshes
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [x] allow user to change registers shown
 - [ ] add a button to load code from examples
-- [ ] allow user to change memory area shown
-- [ ] have a toggle for ascii vs non ascii memory view
+- [x] allow user to change memory area shown
+	- not needed for now, we're filtering by "interesting" parts of memory already
+- [x] have a toggle for ascii vs non ascii memory view
 - [ ] show instruction information when hovering over it
-- [ ] improve the gui -- make everything look nicer :)
-	- [maybe helpful?](https://getbootstrap.com/)
+- [x] improve the gui -- make everything look nicer :)
+	- wip
