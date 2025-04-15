@@ -1053,19 +1053,28 @@ function updateLastLine(line) {
     });
 }
 
-function updateTraceLinesHighlights(traceStep) {
+function updateTraceLinesHighlights(traceStep, tabName) {
     // Highlight the next line to be executed.
     if (traceStep + 1 < window.lastTrace.steps.length && window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted !== null) {
         // If it's not the last step and we have line information, highlight the next line.
-        // TODO: handle lines in different tabs.
-        updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+        // Check if the next line to be executed is in the current tab.
+        let nextFilenameIdx = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.filenameIndex;
+        let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
+        if (nextFilename == tabName) {
+            // If the current tab is the file that has the next line to be executed, highlight it.
+            updateNextLine(window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.linenum);
+        }
     }
 
     // Highlight the last line that was executed.
     if (traceStep && window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted !== null) {
         // If it's not the first step and we have line information, highlight the last line that was executed.
-        // TODO: handle lines in different tabs.
-        updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+        let lastFilenameIdx = window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.filenameIndex;
+        let lastFilename = window.lastTrace.sourceFilenames[lastFilenameIdx];
+        if (lastFilename == tabName) {
+            // If the current tab is the file that has the last line executed, highlight it.
+            updateLastLine(window.lastTrace.steps[currentTraceStep.stepNum].lineExecuted.linenum);
+        }
     }
 }
 
@@ -1112,13 +1121,20 @@ function showTabErrors(tabName) {
     }
 }
 
+function getCurrentTabName() {
+    return `Tab${currentTab.num}`;
+}
+
 function showTabHighlights() {
-    let tabName = `Tab${currentTab.num}`;
+    let tabName = getCurrentTabName();
     // Remove all highlights.
     removeAllHighlights();
     // Add error highlights.
     showTabErrors(tabName);
-    // TODO: Add tracing line highlights.
+    // Update the last and next lines if tracing code.
+    if (window.lastTrace != null) {
+        updateTraceLinesHighlights(currentTraceStep.stepNum, tabName);
+    }
 }
 
 protobuf.load("/static/protos/trace_info.proto").then(function (root) {
@@ -1461,9 +1477,6 @@ function formatMemoryChunk(chunk, chunkShowLength, byteSep, showAscii) {
 }
 
 function updateTraceGUI() {
-    // Clear old editor's highlights.
-    removeAllHighlights();
-
     // Show the combined stdout.
     let combinedStdout = "";
     for (let i in currentTraceStep.stdout) {
@@ -1483,9 +1496,6 @@ function updateTraceGUI() {
 
     // Update the memory table with new values.
     updateMemoryTable(parseMemoryDeltaMap(currentTraceStep.mem_changes));
-
-    // Update the last and next lines to be executed.
-    updateTraceLinesHighlights(currentTraceStep.stepNum);
 
     // Update the progress bar.
     let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
@@ -1519,6 +1529,9 @@ function updateTraceGUI() {
             el.disabled = false;
         });
     }
+
+    // Update the editor highlights.
+    showTabHighlights();
 }
 
 function downloadTracing() {
