@@ -928,6 +928,7 @@ function clearOutput() {
     document.getElementById("downloadButton").disabled = true;
     clearRegTable();
     clearMemoryTable();
+    removeAllHighlights();
 }
 
 const tabErrorHighlights = {};
