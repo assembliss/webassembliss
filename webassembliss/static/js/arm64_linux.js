@@ -42,7 +42,7 @@ document.getElementById("fileUpload").addEventListener("change", function () {
 
 
 const currentTab = {
-    name: document.querySelector('.activeTabBtn:not([value="X"])'),
+    name: document.querySelector('.activeTabBtn:not([value="X"])').value,
     change(target) {
         this.name = target;
     }
@@ -59,7 +59,7 @@ function changeUserStorageCounter(newValue) {
     document.getElementById("userStorageCounter").value = `${MAX_TOTAL_FILE_SIZE - newValue} bytes remaining`;
 }
 
-function openTab(tabName) {
+function openTab(tabName, renameImmediately = false) {
 
     // tabNum input has been CHANGED to tabName
 
@@ -291,7 +291,6 @@ function closeTab(tabName) {
     });
 }
 
-// THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
 const tabs = {
     count: document.getElementsByClassName("tabBtn").length + 1,
     addTab() {
@@ -299,36 +298,37 @@ const tabs = {
         let unnamedTabExists = false;
 
         for (const tab of tabList) {
-            if (tab.value == "New Tab") {
+            // if we add more available extensions, this will need to be changed
+            if (tab.value.startsWith("NewTab") && !(tab.value.endsWith(".S") || tab.value.endsWith(".s"))) {
                 unnamedTabExists = true;
                 break;
             }
         }
 
         if (!unnamedTabExists) {
+            // New Tabs are now named uniquely.
+            let newName = "NewTab" + this.count;
+    
             let newTab = document.createElement("input");
             newTab.type = "button";
             newTab.className = "tabBtn";
-            newTab.value = `New Tab`;
-            newTab.id = `tabNewTabBtn`;
-            newTab.onclick = () => openTab("New Tab");
-
+            newTab.value = newName;
+            newTab.id = `tab${newName}Btn`;
+            newTab.onclick = () => openTab(newName);
+    
             let newTabX = document.createElement("input");
             newTabX.type = "button";
             newTabX.className = "tabBtnX";
             newTabX.value = "x";
-            newTabX.id = `tabNew TabBtnX`;
-            newTabX.onclick = () => closeTab("New Tab");
-
-
+            newTabX.id = `tab${newName}BtnX`;
+            newTabX.onclick = () => closeTab(newName);
+    
             document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
             document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
             this.count++;
-            console.log("added tab");
-            openTab("New Tab");
-            setTimeout(() => {
-                openTab("New Tab");
-            }, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
+            console.log("added tab with name: " + newName);
+            openTab(newName);
+            setTimeout(() => {openTab(newName);}, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
             // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
     }

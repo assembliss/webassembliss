@@ -35,11 +35,11 @@
         <input class="tabBtn" type="text" id="userStorageCounter" value="{{ storage_remaining }} bytes remaining" disabled="true"/> 
         {% for i in range(tab_names | length) %}
             {% if i == 0 %}
-                <input class="activeTabBtn" type="button" id="tab{{ i + 1 }}Btn" value="{{ tab_names[i] }}" onclick="openTab({{ i + 1 }})"/>
-                <input class="activeTabBtnX" type="button" id="tab{{ i + 1 }}BtnX" value="x" onclick="closeTab({{ i + 1 }})" disabled="true" hidden="hidden"/>
+                <input class="activeTabBtn" type="button" id="tab{{ tab_names[i] }}Btn" value="{{ tab_names[i] }}" onclick="openTab('{{ tab_names[i] }}')"/>
+                <input class="activeTabBtnX" type="button" id="tab{{ tab_names[i]  }}BtnX" value="x" onclick="closeTab('{{ tab_names[i] }}')" disabled="true" hidden="hidden"/>
             {% else %}
-                <input class="tabBtn" type="button" id="tab{{ i + 1 }}Btn" value="{{ tab_names[i] }}" onclick="openTab({{ i + 1 }})"/>
-                <input class="tabBtnX" type="button" id="tab{{ i + 1 }}BtnX" value="x" onclick="closeTab({{ i + 1 }})"/>
+                <input class="tabBtn" type="button" id="tab{{ tab_names[i] }}Btn" value="{{ tab_names[i] }}" onclick="openTab('{{ tab_names[i] }}')"/>
+                <input class="tabBtnX" type="button" id="tab{{ tab_names[i] }}BtnX" value="x" onclick="closeTab('{{ tab_names[i] }}')"/>
             {% endif %}
         {% endfor %}
         <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
