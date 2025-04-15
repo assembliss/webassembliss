@@ -521,7 +521,7 @@ function populateRegisterTable(registers) {
         newTr.classList.add("register-row-displayed");
         regValue.classList.add("regValueCells");
         // Assign the appropriate values.
-        regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="regValueRow-${reg}-check" onclick='toggleRowDisplay("regValueRow-${reg}", "register")' hidden checked> ${reg}`;
+        regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="${newTr.id}-check" onclick='toggleRowDisplay("${newTr.id}", "register")' hidden checked> ${reg}`;
         regValue.innerHTML = starting_value;
         // Add the new cells to our new row.
         newTr.appendChild(regName);
