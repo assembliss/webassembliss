@@ -125,7 +125,11 @@
     <table id="regValuesTable" class="table table-hover table-sm">
         <thead>
             <tr>
-                <th scope="col">Register</th>
+                <th scope="col">
+                <i id="registerShowSelect" class="fa-solid fa-sliders" data-bs-toggle="tooltip" data-bs-title="Click here to select which registers are displayed." onclick='showDisplayCheckboxes("register")'></i>
+                <i id="registerShowAccept" class="fa-solid fa-check" data-bs-toggle="tooltip" data-bs-title="Click here to save changes and hide unchecked registers." onclick='hideDisplayCheckboxes("register")' hidden></i>
+                Register
+                </th>
                 <th scope="col">Value</th>
             </tr>
         </thead>

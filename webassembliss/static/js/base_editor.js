@@ -431,6 +431,57 @@ function BASE_createEditor(default_code, archSyntaxFun) {
     });
 }
 
+function showDisplayCheckboxes(type) {
+    // Show all checkboxes.
+    Array.from(document.getElementsByClassName(`${type}-display-check`)).forEach((el) => {
+        el.removeAttribute("hidden");
+    });
+    // Show all hidden rows.
+    Array.from(document.getElementsByClassName(`${type}-display-hide`)).forEach((el) => {
+        el.removeAttribute("hidden");
+    });
+    // Show save changes button.
+    document.getElementById("registerShowAccept").removeAttribute("hidden");
+    // Hide edit selection button.
+    document.getElementById("registerShowSelect").setAttribute("hidden", "hidden");
+}
+
+function hideDisplayCheckboxes(type) {
+    // Hide all checkboxes.
+    Array.from(document.getElementsByClassName(`${type}-display-check`)).forEach((el) => {
+        el.setAttribute("hidden", "hidden");
+    });
+    // Hide all hidden rows.
+    Array.from(document.getElementsByClassName(`${type}-display-hide`)).forEach((el) => {
+        el.setAttribute("hidden", "hidden");
+    });
+    // Hide save changes button.
+    document.getElementById("registerShowAccept").setAttribute("hidden", "hidden");
+    // Show edit selection button.
+    document.getElementById("registerShowSelect").removeAttribute("hidden");
+}
+
+function toggleRowDisplay(rowID, type) {
+    // Check the row exists.
+    let rowEl = document.getElementById(rowID);
+    if (!rowEl) {
+        return;
+    }
+
+    // Check the row has a checkbox.
+    let checkEl = document.getElementById(`${rowID}-check`);
+    if (!checkEl) {
+        return;
+    }
+
+    let visibilityClass = `${type}-display-hide`
+    if (!checkEl.checked) {
+        rowEl.classList.add(visibilityClass);
+    } else {
+        rowEl.classList.remove(visibilityClass);
+    }
+}
+
 function populateRegisterTable(registers) {
     // Create a starting values with enough zeros for the number of bits given.
     let starting_value = intToHexBytes(0, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
@@ -447,9 +498,10 @@ function populateRegisterTable(registers) {
         regValue.id = `regValueCell-${reg}`;
         // Assign a class to rows so we can access all of them later.
         newTr.classList.add("regValueRows");
+        newTr.classList.add("register-row-displayed");
         regValue.classList.add("regValueCells");
         // Assign the appropriate values.
-        regName.textContent = reg;
+        regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="regValueRow-${reg}-check" onclick='toggleRowDisplay("regValueRow-${reg}", "register")' hidden checked> ${reg}`;
         regValue.innerHTML = starting_value;
         // Add the new cells to our new row.
         newTr.appendChild(regName);
