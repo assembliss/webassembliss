@@ -44,14 +44,14 @@ document.querySelector(".feedbackCollapsible").addEventListener("click", functio
 });
 
 const currentTab = {
-    num: 1,
+    name: document.querySelector('.activeTabBtn:not([value="X"])').value,
     change(target) {
-        this.num = target;
+        this.name = target;
     }
 };
 
 function downloadCurrentTab() {
-    let currentTab_filename = document.getElementById(`tab${currentTab.num}Btn`).value;
+    let currentTab_filename = document.getElementById(`tab${currentTab.name}Btn`).value;
     download_file(currentTab_filename, getSource(), "text/plain");
 }
 
@@ -59,19 +59,149 @@ function downloadWorkspaceJSON() {
     download_file("webassembliss_workspace.json", localFileStorage.exportToJSON(), "application/json");
 }
 
-function openTab(tabNum) {
-    if (currentTab.num == tabNum) {
-        // TODO: Implement a tab renaming system (and make it look good... yikes!)
-        alert("rename temp");
+function openTab(tabName) {
+    if (currentTab.name == tabName && !document.getElementById(`tab${currentTab.name}Rename`)) {
+        // Tab renaming functionality
+        // There might need to exist some sort of character check to make sure the filename isn't something illegal?
+        // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
+            let renameTextBox = document.createElement('input');
+            renameTextBox.type = "text";
+            renameTextBox.className = "activeTabBtn";
+            renameTextBox.id = `tab${tabName}Rename`;
+            renameTextBox.value = currentTabBtn.value;
+            renameTextBox.setAttribute("autocomplete", "off");
+    
+            currentTabBtn.replaceWith(renameTextBox);
+            renameTextBox.focus();
+            renameTextBox.select();
+    
+            // Prevent redundant running of replaceTabRename() by carefully running only 1 instance of the function.
+            let lastKeydownTimestamp = 0;
+    
+            // Only run if "Enter" wasn't pressed in the last 50ms.
+            document.getElementById(`tab${currentTab.name}Rename`).addEventListener("blur", function () {
+                if (Date.now() - lastKeydownTimestamp > 50) {
+                replaceTabRename();
+                }
+            });
+            document.getElementById(`tab${currentTab.name}Rename`).addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    lastKeydownTimestamp = Date.now();
+                    replaceTabRename();
+                }
+            });
+    
+        function replaceTabRename() {
+    
+            if (filenameTooltip) {
+                try {
+                    filenameTooltip.hide();
+                    filenameTooltip.dispose();
+                } catch (error) {
+                    console.error("Error disposing tooltip:", error);
+                }
+                filenameTooltip = null;
+            }
+    
+            let newTabName = renameTextBox.value;
+            // Validate new tab names
+            // Allowed file extensions in the editor
+            const extensions = ['.S','.s'];
+            let tabNameHasExtension = false;
+            let tabNameIsDuplicate = false;
+            let tabNameIsExtension = false;
+    
+            // Make sure newTabName ends with a file extension.
+            for (const extension of extensions) {
+                if (newTabName.endsWith(extension)) {
+                    tabNameHasExtension = true;
+                    break;
+                }
+            }
+            // Check if newTabName is just an extension.
+            for (const extension of extensions) {
+                if (newTabName == extension) {
+                    tabNameIsExtension = true;
+                    break;
+                }
+            }
+    
+            // Make sure newTabName is unique (not the same value as another existing tab name).
+            for (const tabTitle of tabTitles) {
+                if (tabTitle.value == newTabName) {
+                    tabNameIsDuplicate = true;
+                    break;
+                }
+            }
+            
+    
+            // If valid newTabName...
+            if (tabNameHasExtension && !tabNameIsDuplicate && !tabNameIsExtension) {
+                let renamedTab = document.createElement('input');
+                renamedTab.type = "button";
+                renamedTab.className = "activeTabBtn";
+                renamedTab.id = `tab${currentTab.name}Btn`;
+                renamedTab.value = newTabName;
+                renamedTab.onclick = () => openTab(tabName);
+    
+                renameTextBox.replaceWith(renamedTab);
+    
+                // Update python side directly.
+                if (currentTabBtn.value != newTabName) {
+                    fetch('/tab_manager/' + currentTabBtn.value, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            new_filename: newTabName
+                        })
+                    }).then(response => response.json()).then(data => {
+                        console.log("Response data:" + data);
+                    }).catch(error => {
+                        console.error("Error:" + error);
+                    });
+                }
+    
+            } else { // if invalid newTabName
+                renameTextBox.setAttribute("data-bs-toggle", "tooltip");
+                renameTextBox.setAttribute("data-bs-placement", "top");
+                
+                       if (tabNameIsDuplicate) {
+                    renameTextBox.setAttribute("data-bs-title", "Another tab already has this name. File names must be unique!");
+                } else if (!tabNameHasExtension) {
+                    renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
+                } else if (tabNameIsExtension) {
+                    renameTextBox.setAttribute("data-bs-title", "File must have a name beyond an extension!");
+                }
+    
+                filenameTooltip = new bootstrap.Tooltip(renameTextBox);
+                filenameTooltip.show();
+                renameTextBox.focus();
+    
+                renameTextBox.removeEventListener("input", handleInput);
+                renameTextBox.addEventListener("input", handleInput);
+    
+                function handleInput() {
+                    if (filenameTooltip) {
+                        filenameTooltip.hide();
+                        filenameTooltip.dispose();
+                        filenameTooltip = null;
+                    }
+                    renameTextBox.removeEventListener("input", handleInput);
+                }
+            }
+        }
+    
     } else {
         // Save current tab contents
         localFileStorage.saveCurrentTab();
 
         // Update button styles.
-        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-        let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
-        let newTabBtn = document.getElementById(`tab${tabNum}Btn`);
-        let newTabBtnX = document.getElementById(`tab${tabNum}BtnX`);
+        let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
+        let currentTabBtnX = document.getElementById(`tab${currentTab.name}BtnX`);
+        let newTabBtn = document.getElementById(`tab${tabName}Btn`);
+        let newTabBtnX = document.getElementById(`tab${tabName}BtnX`);
         // For a background tab, make close button clickable and visible.
         currentTabBtn.className = "tabBtn";
         currentTabBtnX.className = "tabBtnX";
@@ -89,7 +219,7 @@ function openTab(tabNum) {
         window.editor.setValue(localNewContents);
 
         // Update active tab number.
-        currentTab.change(tabNum);
+        currentTab.change(tabName);
 
         // Update highlights.
         showTabHighlights();
@@ -99,22 +229,22 @@ function openTab(tabNum) {
 /* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
  * TODO: Prevent last tab from being closed.
  */
-function closeTab(tabNum) {
-    if (currentTab.num == tabNum) {
+function closeTab(tabName) {
+    if (currentTab.name == tabName) {
         // TODO: if current tab is open when this function is ran, swap to another tab.
         // Meanwhile, we just prevent that from happening... this is probably fine behavior.
         return;
     }
-    let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
+    let toBeClosed_filename = document.getElementById(`tab${tabName}Btn`).value;
     // Delete tab locally.
     localFileStorage.deleteTab(toBeClosed_filename);
     // Remove tab buttons.
-    document.getElementById(`tab${tabNum}Btn`).remove();
-    document.getElementById(`tab${tabNum}BtnX`).remove();
+    document.getElementById(`tab${tabName}Btn`).remove();
+    document.getElementById(`tab${tabName}BtnX`).remove();
 }
 
 function getCurrentTabName() {
-    return `Tab${currentTab.num}`;
+    return `Tab${currentTab.name}`;
 }
 
 function getTabNumber(tabName) {
@@ -122,35 +252,49 @@ function getTabNumber(tabName) {
 }
 
 function getTabButtonByName(tabName) {
-    let tabNum = getTabNumber(tabName);
-    return document.getElementById(`tab${tabNum}Btn`);
+    return document.getElementById(`tab${tabName}Btn`);
 }
 
-// THE COUNT MAY NEED TO BE SAVED AS A COOKIE.
 const tabs = {
-    // Start at tab #2. Tab #1 already exists when the webpage is opened
-    count: 2,
+    count: document.getElementsByClassName("tabBtn").length + 1,
     addTab() {
-        let tabNum = this.count;
-        let newTab = document.createElement("input");
-        newTab.type = "button";
-        newTab.className = "tabBtn";
-        newTab.value = `Tab${tabNum}`;
-        newTab.id = `tab${tabNum}Btn`;
-        newTab.onclick = () => openTab(tabNum);
+        let tabList = document.querySelectorAll('#tabsDiv input:not([id$="X"])'); 
+        let unnamedTabExists = false;
 
-        let newTabX = document.createElement("input");
-        newTabX.type = "button";
-        newTabX.className = "tabBtnX";
-        newTabX.value = "x";
-        newTabX.id = `tab${tabNum}BtnX`;
-        newTabX.onclick = () => closeTab(tabNum);
+        for (const tab of tabList) {
+            // if we add more available extensions, this will need to be changed
+            if (tab.value.startsWith("NewTab") && !(tab.value.endsWith(".S") || tab.value.endsWith(".s"))) {
+                unnamedTabExists = true;
+                break;
+            }
+        }
 
-
-        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
-        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
-        this.count++;
-        openTab(tabNum);
+        if (!unnamedTabExists) {
+            // New Tabs are now named uniquely.
+            let newName = "NewTab" + this.count;
+    
+            let newTab = document.createElement("input");
+            newTab.type = "button";
+            newTab.className = "tabBtn";
+            newTab.value = newName;
+            newTab.id = `tab${newName}Btn`;
+            newTab.onclick = () => openTab(newName);
+    
+            let newTabX = document.createElement("input");
+            newTabX.type = "button";
+            newTabX.className = "tabBtnX";
+            newTabX.value = "x";
+            newTabX.id = `tab${newName}BtnX`;
+            newTabX.onclick = () => closeTab(newName);
+    
+            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+            this.count++;
+            console.log("added tab with name: " + newName);
+            openTab(newName);
+            setTimeout(() => {openTab(newName);}, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
+            // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
+        }
     }
 };
 
@@ -183,7 +327,9 @@ const localFileStorage = {
     },
 
     saveCurrentTab() {
-        let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
+        console.log(currentTab.name);
+        let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
+        console.log(currentTabBtn);
         let currentTab_filename = currentTabBtn.value;
         let currentTab_contents = window.editor.getValue();
         this.saveTab(currentTab_filename, currentTab_contents);
@@ -352,8 +498,8 @@ const localFileStorage = {
             // TODO: maybe make this logic a new function that we can call both in here and in openTab; that would make it easier to implement future changes.
 
             // Update button styles.
-            let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
-            let currentTabBtnX = document.getElementById(`tab${currentTab.num}BtnX`);
+            let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
+            let currentTabBtnX = document.getElementById(`tab${currentTab.name}BtnX`);
             let newTabBtn = document.getElementById(`tab${maxTabNum}Btn`);
             let newTabBtnX = document.getElementById(`tab${maxTabNum}BtnX`);
             // For a background tab, make close button clickable and visible.
@@ -1461,8 +1607,8 @@ function addBreakpointHighlight(line) {
 }
 
 function addCurrentTabBreakpointsHighlights() {
-    if (currentTab.num in activeBreakpoints) {
-        for (const [line, active] of Object.entries(activeBreakpoints[currentTab.num])) {
+    if (currentTab.name in activeBreakpoints) {
+        for (const [line, active] of Object.entries(activeBreakpoints[currentTab.name])) {
             if (active) {
                 addBreakpointHighlight(parseInt(line));
             }
