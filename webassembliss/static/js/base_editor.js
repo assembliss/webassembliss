@@ -1642,6 +1642,8 @@ function updateTraceGUI() {
             el.disabled = false;
         });
         // Check if we have information about the next line to be executed.
+        // If we do not have information about the line, it means that we do not have the source file in the workspace.
+        // TODO: treat such steps as a function call, combine all external steps into a single one and apply all changes together.
         let lineInfo = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted;
         if (lineInfo !== null) {
             // Check if the next line to be executed exists and is in a different file.
