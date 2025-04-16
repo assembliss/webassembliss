@@ -247,7 +247,7 @@ function closeTab(tabName) {
 }
 
 function getCurrentTabName() {
-    return `Tab${currentTab.name}`;
+    return currentTab.name;
 }
 
 function getTabNumber(tabName) {
