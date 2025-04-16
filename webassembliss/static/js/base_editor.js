@@ -281,7 +281,7 @@ const localFileStorage = {
         let firstTab = true;
         let maxTabNum = 0;
         let minTabNum = 0;
-        for (const [filename, contents] of Object.entries(this.tabs)) {
+        for (const filename of Object.keys(this.tabs)) {
             let newTabNum = parseInt(filename.slice(3));
             if (firstTab) {
                 maxTabNum = minTabNum = newTabNum;
@@ -367,19 +367,72 @@ const localFileStorage = {
         this.size += filename.length + b64Contents.length;
         // Update the objects in localStorage.
         this.storeObjs();
-        // TODO: update the display of objects stored.
+        // Update table with new object information.
+        this.showObjOnTable(filename);
+    },
+
+    showObjOnTable(filename) {
+        if (!(filename in this.objs)) {
+            // File is not in storage.
+            return;
+        }
+
+        let fileRowID = `uploadedObjTbl-${filename}`;
+        let fileSize = formatHumanSize(this.objs[filename].length, 0);
+
+        // Check if the file is already being displayed.
+        let existingRow = document.getElementById(fileRowID);
+        if (existingRow === null) {
+            // This is a new file, create a new row to be inserted into the table.
+            let newTr = document.createElement('tr');
+            newTr.id = fileRowID;
+            // Set the filename for the row.
+            let filenameCell = document.createElement('td');
+            filenameCell.innerText = filename;
+            newTr.appendChild(filenameCell);
+            // Set the filesize and delete button for the row.
+            let filesizeCell = document.createElement('td');
+            filesizeCell.id = `${fileRowID}-size`;
+            filesizeCell.innerText = fileSize;
+            newTr.appendChild(filesizeCell);
+            // Add a button for the file to be removed later.
+            // TODO: figure out why the tooltip is not working on the trash can.
+            let fileDeleteCell = document.createElement('td');
+            fileDeleteCell.innerHTML = `<i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='localFileStorage.deleteAssembledObj("${filename}")'></i>`;
+            newTr.appendChild(fileDeleteCell);
+            // Add the new row to the table.
+            let tbody = document.getElementById("uploadedObjectsTBody");
+            tbody.appendChild(newTr);
+        } else {
+            // This file is overwriting an existing the file, only need to update the size.
+            document.getElementById(`${fileRowID}-size`).innerText = fileSize;
+        }
+    },
+
+    removeObjFromTable(filename) {
+        let fileRowID = `uploadedObjTbl-${filename}`;
+        let existingRow = document.getElementById(fileRowID);
+        if (existingRow !== null) {
+            existingRow.remove();
+        }
+    },
+
+    reloadObjTable() {
+        for (const filename of Object.keys(this.objs)) {
+            this.showObjOnTable(filename);
+        }
     },
 
     deleteAssembledObj(filename) {
         if (filename in this.objs) {
             // Update the storage size.
-            let contents = this.objs[filename];
-            this.size -= filename.length + contents.length;
+            this.size -= filename.length + this.objs[filename].length;
             // Delete the file.
             delete this.objs[filename];
             // Update the objects in localStorage.
             this.storeObjs();
-            // TODO: update the display of objects stored.
+            // Remove this object from the table.
+            this.removeObjFromTable(filename);
         }
     },
 
@@ -388,7 +441,19 @@ const localFileStorage = {
         this.loadFromStorage();
         // Reload tabs in the editor.
         this.reloadTabs();
+        // Reload the table of objects uploaded.
+        this.reloadObjTable();
     }
+}
+
+function formatHumanSize(bytes, decimals) {
+    // Ref: https://gist.github.com/zentala/1e6f72438796d74531803cc3833c039c
+    if (bytes == 0) return '0 Bytes';
+    var k = 1024,
+        dm = decimals || 2,
+        sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
 function uploadFile(callback) {

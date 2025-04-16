@@ -153,3 +153,16 @@ td.memory-value-in-ascii {
     top: 0;
     z-index: 1;
 }
+
+.smallTableFixHead {
+    overflow-y: auto;
+    overflow-x: visible;
+    width: 250px;
+    height: 80px;
+}
+
+.smallTableFixHead thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}

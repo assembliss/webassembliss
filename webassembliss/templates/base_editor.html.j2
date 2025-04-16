@@ -108,6 +108,24 @@
 
         </div>
         <div class="col-6 col-md-5">
+
+            <div class="smallTableFixHead">
+                <small>
+                    <table id="uploadedObjectsTable" class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th scope="col">Object File</th>
+                                <th scope="col">Size</th>
+                                <th scope="col">Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="uploadedObjectsTBody" class="uploadedObjects table-group-divider"></tbody>
+                    </table>
+                </small>
+            </div>
+
+            <hr/>
+
             <div class="tableFixHead">
                 <small>
                     <table id="regValuesTable" class="table table-hover table-sm">
@@ -223,10 +241,10 @@
 {% endblock %}
 
 {% block scripts %}
-    <script src="/static/vs/loader.js"></script>
     <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}
+    <script src="/static/vs/loader.js"></script>
     <script>createEditor({{ default_code }})</script>
     <script>localFileStorage.init()</script>
 {% endblock %}
