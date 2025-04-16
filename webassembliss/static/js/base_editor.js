@@ -332,9 +332,7 @@ const localFileStorage = {
     },
 
     saveCurrentTab() {
-        console.log(currentTab.name);
         let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
-        console.log(currentTabBtn);
         let currentTab_filename = currentTabBtn.value;
         let currentTab_contents = window.editor.getValue();
         this.saveTab(currentTab_filename, currentTab_contents);
@@ -417,6 +415,13 @@ const localFileStorage = {
         for (const [filename, contents] of Object.entries(this.objs)) {
             this.size += filename.length + contents.length;
         }
+        // Adds the space for all filenames and contents of the data files.
+        for (const [filename, contents] of Object.entries(this.txtData)) {
+            this.size += filename.length + contents.length;
+        }
+        for (const [filename, contents] of Object.entries(this.binData)) {
+            this.size += filename.length + contents.length;
+        }
     },
 
     loadFromJSON(contents) {
@@ -429,11 +434,29 @@ const localFileStorage = {
             alert("The workspace architecture does not match the current editor architecture.");
             return;
         }
-        this.archID = contents.archID;
-        this.tabs = contents.tabs;
-        this.objs = contents.objs;
-        this.txtData = contents.txtData;
-        this.binData = contents.binData;
+        if (contents.size == 0) {
+            // If the given size is 0, delete all stored files.
+            // This works as a way to clean the workspace.
+            for (const filename of Object.keys(this.tabs)) {
+                delete this.tabs[filename];
+            }
+            for (const filename of Object.keys(this.objs)) {
+                delete this.objs[filename];
+            }
+            for (const filename of Object.keys(this.txtData)) {
+                delete this.txtData[filename];
+            }
+            for (const filename of Object.keys(this.binData)) {
+                delete this.binData[filename];
+            }
+            this.size = 0;
+        } else {
+            this.archID = contents.archID;
+            this.tabs = contents.tabs;
+            this.objs = contents.objs;
+            this.txtData = contents.txtData;
+            this.binData = contents.binData;
+        }
         // Update contents in localStorage.
         this.storeAll();
         // Refresh the page so new tabs are properly created.
@@ -1397,7 +1420,6 @@ function detectAndHighlightErrors() {
 }
 
 function BASE_runCode() {
-    console.log(localFileStorage);
     clearOutput();
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
