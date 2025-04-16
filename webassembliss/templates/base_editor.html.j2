@@ -38,6 +38,8 @@
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);return false;">Single Tab (default)</a></li>
                     <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importAssembledObject);return false;">Pre-Assembled Object</a></li>
+                    <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);return false;">JSON Workspace</a></li>
                 </ul>
             </div>
@@ -226,5 +228,5 @@
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}
     <script>createEditor({{ default_code }})</script>
-    <script>localTabStorage.init()</script>
+    <script>localFileStorage.init()</script>
 {% endblock %}

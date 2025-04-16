@@ -56,8 +56,7 @@ function downloadCurrentTab() {
 }
 
 function downloadWorkspaceJSON() {
-    let workspace = { arch: ARCH_ID, tabs: localTabStorage.tabs };
-    download_file("webassembliss_workspace.json", JSON.stringify(workspace), "application/json");
+    download_file("webassembliss_workspace.json", localFileStorage.exportToJSON(), "application/json");
 }
 
 function openTab(tabNum) {
@@ -66,7 +65,7 @@ function openTab(tabNum) {
         alert("rename temp");
     } else {
         // Save current tab contents
-        localTabStorage.saveCurrentTab();
+        localFileStorage.saveCurrentTab();
 
         // Update button styles.
         let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
@@ -86,7 +85,7 @@ function openTab(tabNum) {
 
         // Update the editor contents.
         let newTab_filename = newTabBtn.value;
-        let localNewContents = localTabStorage.get(newTab_filename);
+        let localNewContents = localFileStorage.getTab(newTab_filename);
         window.editor.setValue(localNewContents);
 
         // Update active tab number.
@@ -108,7 +107,7 @@ function closeTab(tabNum) {
     }
     let toBeClosed_filename = document.getElementById(`tab${tabNum}Btn`).value;
     // Delete tab locally.
-    localTabStorage.delete(toBeClosed_filename);
+    localFileStorage.deleteTab(toBeClosed_filename);
     // Remove tab buttons.
     document.getElementById(`tab${tabNum}Btn`).remove();
     document.getElementById(`tab${tabNum}BtnX`).remove();
@@ -155,17 +154,18 @@ const tabs = {
     }
 };
 
-const localTabStorage = {
+const localFileStorage = {
     archID: null,
     tabs: null,
+    objs: null,
     size: null,
 
-    get(filename) {
+    getTab(filename) {
         // Get the file contents stored; if there are none, use an empty string.
         return (filename in this.tabs) ? this.tabs[filename] : "";
     },
 
-    save(filename, contents) {
+    saveTab(filename, contents) {
         // Check if this is a new file or an update to an existing one.
         if (filename in this.tabs) {
             oldLength = this.tabs[filename].length;
@@ -177,17 +177,17 @@ const localTabStorage = {
             this.size += filename.length + contents.length;
         }
         // Update the tabs in localStorage.
-        this.store();
+        this.storeTabs();
     },
 
     saveCurrentTab() {
         let currentTabBtn = document.getElementById(`tab${currentTab.num}Btn`);
         let currentTab_filename = currentTabBtn.value;
         let currentTab_contents = window.editor.getValue();
-        this.save(currentTab_filename, currentTab_contents);
+        this.saveTab(currentTab_filename, currentTab_contents);
     },
 
-    rename(oldFilename, newFilename) {
+    renameTab(oldFilename, newFilename) {
         // Check if file is saved.
         if (!(oldFilename in this.tabs)) {
             return;
@@ -203,21 +203,30 @@ const localTabStorage = {
         // Update the size.
         this.size += newFilename.length - oldFilename.length;
         // Update the tabs in localStorage.
-        this.store();
+        this.storeTabs();
     },
 
-    delete(filename) {
+    deleteTab(filename) {
         if (filename in this.tabs) {
             contents = this.tabs[filename];
             this.size -= filename.length + contents.length;
             delete this.tabs[filename];
             // Update the tabs in localStorage.
-            this.store();
+            this.storeTabs();
         }
     },
 
-    store() {
+    storeTabs() {
         localStorage.setItem(`tabs-${this.archID}`, JSON.stringify(this.tabs));
+    },
+
+    storeObjs() {
+        localStorage.setItem(`objs-${this.archID}`, JSON.stringify(this.objs));
+    },
+
+    storeAll() {
+        this.storeTabs();
+        this.storeObjs();
     },
 
     loadFromStorage() {
@@ -226,25 +235,38 @@ const localTabStorage = {
         // Load saved tabs from localStorage.
         let savedTabs = localStorage.getItem(`tabs-${this.archID}`);
         this.tabs = savedTabs ? JSON.parse(savedTabs) : {};
+        // Load saved obj files from localStorage.
+        let savedObjs = localStorage.getItem(`objs-${this.archID}`);
+        this.objs = savedObjs ? JSON.parse(savedObjs) : {};
         // Calculates storage size.
         this.size = 0;
+        // Adds the space for all filenames and contents of the source files.
         for (const [filename, contents] of Object.entries(this.tabs)) {
+            this.size += filename.length + contents.length;
+        }
+        // Adds the space for all filenames and contents of the object files.
+        for (const [filename, contents] of Object.entries(this.objs)) {
             this.size += filename.length + contents.length;
         }
     },
 
     loadFromJSON(contents) {
         // Load workspace information from the json object.
-        if (!contents.arch) {
+        if (!contents.archID) {
             alert("Invalid workspace; no architecture information found.");
             return;
         }
-        this.archID = contents.arch;
+        this.archID = contents.archID;
         this.tabs = contents.tabs;
-        // Update the tabs in localStorage.
-        this.store();
+        this.objs = contents.objs;
+        // Update contents in localStorage.
+        this.storeAll();
         // Refresh the page so new tabs are properly created.
         location.reload();
+    },
+
+    exportToJSON() {
+        return JSON.stringify(this);
     },
 
     reloadTabs() {
@@ -323,7 +345,7 @@ const localTabStorage = {
 
             // Update the editor contents.
             let newTab_filename = newTabBtn.value;
-            let localNewContents = localTabStorage.get(newTab_filename);
+            let localNewContents = localFileStorage.getTab(newTab_filename);
             window.editor.setValue(localNewContents);
 
             // Update active tab number.
@@ -335,6 +357,30 @@ const localTabStorage = {
                 closeTab(1);
             }
         });
+    },
+
+    addAssembledObj(filename, contents) {
+        // Convert file to Base64 so we can send it to the python backend.
+        let b64Contents = (new Uint8Array(contents)).toBase64();
+        this.objs[filename] = b64Contents;
+        // Update the storage size.
+        this.size += filename.length + b64Contents.length;
+        // Update the objects in localStorage.
+        this.storeObjs();
+        // TODO: update the display of objects stored.
+    },
+
+    deleteAssembledObj(filename) {
+        if (filename in this.objs) {
+            // Update the storage size.
+            let contents = this.objs[filename];
+            this.size -= filename.length + contents.length;
+            // Delete the file.
+            delete this.objs[filename];
+            // Update the objects in localStorage.
+            this.storeObjs();
+            // TODO: update the display of objects stored.
+        }
     },
 
     init() {
@@ -371,8 +417,8 @@ function importCode(fileUploadTarget) {
     let fileReader = new FileReader();
     fileReader.onload = function (onLoadEvent) {
         const fileContents = onLoadEvent.target.result;
-
         window.editor.setValue(fileContents);
+        localFileStorage.saveCurrentTab();
     };
 
     fileReader.onerror = function () {
@@ -380,6 +426,35 @@ function importCode(fileUploadTarget) {
     };
 
     fileReader.readAsText(file);
+}
+
+function importAssembledObject(fileUploadTarget) {
+    let file = fileUploadTarget.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!(file.name.endsWith(".o") || file.name.endsWith(".obj"))) {
+        alert("Invalid file! Please select a .o or .obj file.");
+        return;
+    }
+
+    if (!confirm("If there is already a file with this name, it will be overwritten.")) {
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+        localFileStorage.addAssembledObj(file.name, fileContents);
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+    fileReader.readAsArrayBuffer(file);
 }
 
 function importWorkspace(fileUploadTarget) {
@@ -401,7 +476,7 @@ function importWorkspace(fileUploadTarget) {
     let fileReader = new FileReader();
     fileReader.onload = function (onLoadEvent) {
         const fileContents = onLoadEvent.target.result;
-        localTabStorage.loadFromJSON(JSON.parse(fileContents));
+        localFileStorage.loadFromJSON(JSON.parse(fileContents));
     };
 
     fileReader.onerror = function () {
@@ -982,7 +1057,7 @@ function BASE_runCode() {
     removeAllHighlights();
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    localTabStorage.saveCurrentTab();
+    localFileStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/run/', {
@@ -992,7 +1067,8 @@ function BASE_runCode() {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
-            source_files: localTabStorage.tabs,
+            source_files: localFileStorage.tabs,
+            object_files: localFileStorage.objs,
             user_input: user_input,
             cl_args: window.cl_args,
         }),
@@ -1201,7 +1277,7 @@ function BASE_startTracing() {
     document.getElementById("traceStop").disabled = false;
     window.editor.updateOptions({ readOnly: true });
     // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    localTabStorage.saveCurrentTab();
+    localFileStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     document.getElementById("runStatus").innerHTML = "⏳";
     fetch('/trace/', {
@@ -1211,7 +1287,8 @@ function BASE_startTracing() {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
-            source_files: localTabStorage.tabs,
+            source_files: localFileStorage.tabs,
+            object_files: localFileStorage.objs,
             user_input: user_input,
             cl_args: window.cl_args,
         }),
@@ -1564,12 +1641,16 @@ function updateTraceGUI() {
         Array.from(document.getElementsByClassName("trace-actions-forward")).forEach((el) => {
             el.disabled = false;
         });
-        // Check if the next line to be executed is in a different file.
-        let nextFilenameIdx = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted.filenameIndex;
-        let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
-        if (nextFilename && nextFilename != getCurrentTabName()) {
-            // If it isin a different tab, switch to that.
-            openTab(getTabNumber(nextFilename));
+        // Check if we have information about the next line to be executed.
+        let lineInfo = window.lastTrace.steps[currentTraceStep.stepNum + 1].lineExecuted;
+        if (lineInfo !== null) {
+            // Check if the next line to be executed exists and is in a different file.
+            let nextFilenameIdx = lineInfo.filenameIndex;
+            let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
+            if (nextFilename && nextFilename != getCurrentTabName()) {
+                // If it isin a different tab, switch to that.
+                openTab(getTabNumber(nextFilename));
+            }
         }
     }
 

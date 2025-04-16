@@ -4,6 +4,7 @@ import rocher.flask  # type: ignore[import-untyped]
 from flask import Flask, abort, render_template, request, send_file
 
 from .grader.single_student import grade_form_submission
+from .grader.utils import b64_to_bytes
 from .utils import ARCH_MAP
 
 app = Flask(__name__)
@@ -82,6 +83,8 @@ def code_run():
         return "No architecture config in JSON data", 400
     if "source_files" not in request.json:
         return "No source_files in JSON data", 400
+    if "object_files" not in request.json:
+        return "No object_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
 
@@ -94,6 +97,7 @@ def code_run():
 
     emu_results = arch_info.emulate(
         source_files=request.json["source_files"],
+        object_files={n: b64_to_bytes(c) for n, c in request.json["object_files"].items()},
         stdin=request.json["user_input"],
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
@@ -127,6 +131,8 @@ def code_trace():
         return "No architecture config in JSON data", 400
     if "source_files" not in request.json:
         return "No source_code in JSON data", 400
+    if "object_files" not in request.json:
+        return "No object_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
 
@@ -139,6 +145,7 @@ def code_trace():
 
     emulation_trace = arch_info.trace(
         source_files=request.json["source_files"],
+        object_files={n: b64_to_bytes(c) for n, c in request.json["object_files"].items()},
         stdin=request.json["user_input"],
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
