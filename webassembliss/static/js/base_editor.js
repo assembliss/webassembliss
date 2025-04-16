@@ -60,6 +60,19 @@ function downloadWorkspaceJSON() {
 }
 
 function openTab(tabName) {
+
+    // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
+    const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
+    // To avoid naming conflictions, tabTitles is a list of input elements.
+
+    let filenameTooltip = null;
+
+    let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
+
+
+    // Set up data save
+    let newTabBtn = document.getElementById(`tab${tabName}Btn`);
+
     if (currentTab.name == tabName && !document.getElementById(`tab${currentTab.name}Rename`)) {
         // Tab renaming functionality
         // There might need to exist some sort of character check to make sure the filename isn't something illegal?
@@ -146,21 +159,11 @@ function openTab(tabName) {
     
                 renameTextBox.replaceWith(renamedTab);
     
+
+            
                 // Update python side directly.
                 if (currentTabBtn.value != newTabName) {
-                    fetch('/tab_manager/' + currentTabBtn.value, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            new_filename: newTabName
-                        })
-                    }).then(response => response.json()).then(data => {
-                        console.log("Response data:" + data);
-                    }).catch(error => {
-                        console.error("Error:" + error);
-                    });
+                    localFileStorage.renameTab(currentTabBtn.value, newTabName);
                 }
     
             } else { // if invalid newTabName
@@ -272,29 +275,31 @@ const tabs = {
         if (!unnamedTabExists) {
             // New Tabs are now named uniquely.
             let newName = "NewTab" + this.count;
-    
-            let newTab = document.createElement("input");
-            newTab.type = "button";
-            newTab.className = "tabBtn";
-            newTab.value = newName;
-            newTab.id = `tab${newName}Btn`;
-            newTab.onclick = () => openTab(newName);
-    
-            let newTabX = document.createElement("input");
-            newTabX.type = "button";
-            newTabX.className = "tabBtnX";
-            newTabX.value = "x";
-            newTabX.id = `tab${newName}BtnX`;
-            newTabX.onclick = () => closeTab(newName);
-    
-            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
-            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
-            this.count++;
-            console.log("added tab with name: " + newName);
+            this.createTabButton(newName);
             openTab(newName);
             setTimeout(() => {openTab(newName);}, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
             // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
+    },
+    createTabButton(newName) {
+        let newTab = document.createElement("input");
+        newTab.type = "button";
+        newTab.className = "tabBtn";
+        newTab.value = newName;
+        newTab.id = `tab${newName}Btn`;
+        newTab.onclick = () => openTab(newName);
+
+        let newTabX = document.createElement("input");
+        newTabX.type = "button";
+        newTabX.className = "tabBtnX";
+        newTabX.value = "x";
+        newTabX.id = `tab${newName}BtnX`;
+        newTabX.onclick = () => closeTab(newName);
+
+        document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
+        document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
+        this.count++;
+        console.log("added tab with name: " + newName);
     }
 };
 
@@ -440,6 +445,7 @@ const localFileStorage = {
     },
 
     reloadTabs() {
+        return;
         // Display the stored tabs in the editor.
         if (!this.size) {
             // If there are no tabs stored, keep the default code on editor.
@@ -1450,12 +1456,12 @@ function detectAndHighlightErrors() {
     } else {
         // If it doesn't, open one tab with errors and show them.
         let tabWithErrors = Object.keys(tabErrorHighlights)[0];
-        let tabNum = getTabNumber(tabWithErrors);
-        openTab(tabNum);
+        openTab(tabWithErrors);
     }
 }
 
 function BASE_runCode() {
+    console.log(localFileStorage);
     clearOutput();
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
@@ -2061,7 +2067,7 @@ function updateTraceGUI() {
             let nextFilename = window.lastTrace.sourceFilenames[nextFilenameIdx];
             if (nextFilename && nextFilename != getCurrentTabName()) {
                 // If it isin a different tab, switch to that.
-                openTab(getTabNumber(nextFilename));
+                openTab(nextFilename);
             }
         }
     }
