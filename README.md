@@ -43,6 +43,7 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 	- [x] delete tab_manager route and remove flask_session dependencies
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
+	- could allow them to redirect input/output boxes to a filepath
 - [x] refactor backend to have a single run/trace route that receives the arch as parameter
 - [x] refactor the frontend so the editor is generic and new archs only need to provide the syntax highlighting and help links
 - [ ] handle multiple architectures
