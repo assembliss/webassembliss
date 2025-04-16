@@ -62,7 +62,7 @@ function downloadWorkspaceJSON() {
 function openTab(tabName) {
 
     // Goes through all tab titles, creates a element list of all inputs that do not end in "X" or "Rename". 
-    const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])'); 
+    const tabTitles = document.querySelectorAll('#tabsDiv input:not([id$="X"]):not([id$="Rename"])');
     // To avoid naming conflictions, tabTitles is a list of input elements.
 
     let filenameTooltip = null;
@@ -77,35 +77,35 @@ function openTab(tabName) {
         // Tab renaming functionality
         // There might need to exist some sort of character check to make sure the filename isn't something illegal?
         // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
-            let renameTextBox = document.createElement('input');
-            renameTextBox.type = "text";
-            renameTextBox.className = "activeTabBtn";
-            renameTextBox.id = `tab${tabName}Rename`;
-            renameTextBox.value = currentTabBtn.value;
-            renameTextBox.setAttribute("autocomplete", "off");
-    
-            currentTabBtn.replaceWith(renameTextBox);
-            renameTextBox.focus();
-            renameTextBox.select();
-    
-            // Prevent redundant running of replaceTabRename() by carefully running only 1 instance of the function.
-            let lastKeydownTimestamp = 0;
-    
-            // Only run if "Enter" wasn't pressed in the last 50ms.
-            document.getElementById(`tab${currentTab.name}Rename`).addEventListener("blur", function () {
-                if (Date.now() - lastKeydownTimestamp > 50) {
+        let renameTextBox = document.createElement('input');
+        renameTextBox.type = "text";
+        renameTextBox.className = "activeTabBtn";
+        renameTextBox.id = `tab${tabName}Rename`;
+        renameTextBox.value = currentTabBtn.value;
+        renameTextBox.setAttribute("autocomplete", "off");
+
+        currentTabBtn.replaceWith(renameTextBox);
+        renameTextBox.focus();
+        renameTextBox.select();
+
+        // Prevent redundant running of replaceTabRename() by carefully running only 1 instance of the function.
+        let lastKeydownTimestamp = 0;
+
+        // Only run if "Enter" wasn't pressed in the last 50ms.
+        document.getElementById(`tab${currentTab.name}Rename`).addEventListener("blur", function () {
+            if (Date.now() - lastKeydownTimestamp > 50) {
                 replaceTabRename();
-                }
-            });
-            document.getElementById(`tab${currentTab.name}Rename`).addEventListener("keydown", function (event) {
-                if (event.key === "Enter") {
-                    lastKeydownTimestamp = Date.now();
-                    replaceTabRename();
-                }
-            });
-    
+            }
+        });
+        document.getElementById(`tab${currentTab.name}Rename`).addEventListener("keydown", function (event) {
+            if (event.key === "Enter") {
+                lastKeydownTimestamp = Date.now();
+                replaceTabRename();
+            }
+        });
+
         function replaceTabRename() {
-    
+
             if (filenameTooltip) {
                 try {
                     filenameTooltip.hide();
@@ -115,15 +115,15 @@ function openTab(tabName) {
                 }
                 filenameTooltip = null;
             }
-    
+
             let newTabName = renameTextBox.value;
             // Validate new tab names
             // Allowed file extensions in the editor
-            const extensions = ['.S','.s'];
+            const extensions = ['.S', '.s'];
             let tabNameHasExtension = false;
             let tabNameIsDuplicate = false;
             let tabNameIsExtension = false;
-    
+
             // Make sure newTabName ends with a file extension.
             for (const extension of extensions) {
                 if (newTabName.endsWith(extension)) {
@@ -138,7 +138,7 @@ function openTab(tabName) {
                     break;
                 }
             }
-    
+
             // Make sure newTabName is unique (not the same value as another existing tab name).
             for (const tabTitle of tabTitles) {
                 if (tabTitle.value == newTabName) {
@@ -146,8 +146,8 @@ function openTab(tabName) {
                     break;
                 }
             }
-            
-    
+
+
             // If valid newTabName...
             if (tabNameHasExtension && !tabNameIsDuplicate && !tabNameIsExtension) {
                 let renamedTab = document.createElement('input');
@@ -156,35 +156,35 @@ function openTab(tabName) {
                 renamedTab.id = `tab${currentTab.name}Btn`;
                 renamedTab.value = newTabName;
                 renamedTab.onclick = () => openTab(tabName);
-    
-                renameTextBox.replaceWith(renamedTab);
-    
 
-            
+                renameTextBox.replaceWith(renamedTab);
+
+
+
                 // Update python side directly.
                 if (currentTabBtn.value != newTabName) {
                     localFileStorage.renameTab(currentTabBtn.value, newTabName);
                 }
-    
+
             } else { // if invalid newTabName
                 renameTextBox.setAttribute("data-bs-toggle", "tooltip");
                 renameTextBox.setAttribute("data-bs-placement", "top");
-                
-                       if (tabNameIsDuplicate) {
+
+                if (tabNameIsDuplicate) {
                     renameTextBox.setAttribute("data-bs-title", "Another tab already has this name. File names must be unique!");
                 } else if (!tabNameHasExtension) {
                     renameTextBox.setAttribute("data-bs-title", "File name must contain a valid file extension!");
                 } else if (tabNameIsExtension) {
                     renameTextBox.setAttribute("data-bs-title", "File must have a name beyond an extension!");
                 }
-    
+
                 filenameTooltip = new bootstrap.Tooltip(renameTextBox);
                 filenameTooltip.show();
                 renameTextBox.focus();
-    
+
                 renameTextBox.removeEventListener("input", handleInput);
                 renameTextBox.addEventListener("input", handleInput);
-    
+
                 function handleInput() {
                     if (filenameTooltip) {
                         filenameTooltip.hide();
@@ -195,7 +195,7 @@ function openTab(tabName) {
                 }
             }
         }
-    
+
     } else {
         // Save current tab contents
         localFileStorage.saveCurrentTab();
@@ -261,7 +261,7 @@ function getTabButtonByName(tabName) {
 const tabs = {
     count: document.getElementsByClassName("tabBtn").length + 1,
     addTab() {
-        let tabList = document.querySelectorAll('#tabsDiv input:not([id$="X"])'); 
+        let tabList = document.querySelectorAll('#tabsDiv input:not([id$="X"])');
         let unnamedTabExists = false;
 
         for (const tab of tabList) {
@@ -277,7 +277,7 @@ const tabs = {
             let newName = "NewTab" + this.count;
             this.createTabButton(newName);
             openTab(newName);
-            setTimeout(() => {openTab(newName);}, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
+            setTimeout(() => { openTab(newName); }, 100); // This setTimeout openTab() call will open the rename immediately after creating a new tab. 
             // This time may cause issues if openTab() takes too long to fetch. How can I do .then here?
         }
     },
@@ -445,94 +445,24 @@ const localFileStorage = {
     },
 
     reloadTabs() {
-        return;
-        // Display the stored tabs in the editor.
-        if (!this.size) {
+        if (Object.keys(this.tabs).length == 0) {
             // If there are no tabs stored, keep the default code on editor.
             return;
         }
 
-        // Find the maximum tab number we need to create.
-        // TODO: revisit this logic once tabs are names instead of numbered.
-        let firstTab = true;
-        let maxTabNum = 0;
-        let minTabNum = 0;
+        let defaultTabName = "hello.S";
         for (const filename of Object.keys(this.tabs)) {
-            let newTabNum = parseInt(filename.slice(3));
-            if (firstTab) {
-                maxTabNum = minTabNum = newTabNum;
-                firstTab = false;
-            } else {
-                maxTabNum = (maxTabNum >= newTabNum) ? maxTabNum : newTabNum;
-                minTabNum = (minTabNum <= newTabNum) ? minTabNum : newTabNum;
+            if (filename != defaultTabName) {
+                tabs.createTabButton(filename);
             }
         }
 
-        // Create tabs needed.
-        while (tabs.count <= maxTabNum) {
-            if (!(`Tab${tabs.count}` in this.tabs)) {
-                // If it is not a tab we have contents stored, skip it.
-                tabs.count++;
-                continue;
-            }
-
-            // Add tabs, but don't open them.
-            let tabNum = tabs.count;
-            let newTab = document.createElement("input");
-            newTab.type = "button";
-            newTab.className = "tabBtn";
-            newTab.value = `Tab${tabNum}`;
-            newTab.id = `tab${tabNum}Btn`;
-            newTab.onclick = () => openTab(tabNum);
-
-            let newTabX = document.createElement("input");
-            newTabX.type = "button";
-            newTabX.className = "tabBtnX";
-            newTabX.value = "x";
-            newTabX.id = `tab${tabNum}BtnX`;
-            newTabX.onclick = () => closeTab(tabNum);
-
-            document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
-            document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
-            tabs.count++;
+        // Check if we should open a different tab.
+        if (!(defaultTabName in this.tabs)) {
+            let firstFilename = Object.keys(this.tabs)[0];
+            tabs.open(firstFilename);
+            tabs.closeTab(defaultTabName);
         }
-
-        // Load the code of the first tab we have saved into the editor.
-        // Delay for the editor to load.
-        sleep(200).then(() => {
-            // Same logic as the openTab method, but it does not save the changes locally.
-            // TODO: maybe make this logic a new function that we can call both in here and in openTab; that would make it easier to implement future changes.
-
-            // Update button styles.
-            let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
-            let currentTabBtnX = document.getElementById(`tab${currentTab.name}BtnX`);
-            let newTabBtn = document.getElementById(`tab${maxTabNum}Btn`);
-            let newTabBtnX = document.getElementById(`tab${maxTabNum}BtnX`);
-            // For a background tab, make close button clickable and visible.
-            currentTabBtn.className = "tabBtn";
-            currentTabBtnX.className = "tabBtnX";
-            currentTabBtnX.disabled = false;
-            currentTabBtnX.removeAttribute("hidden");
-            // For the foreground tab, disable the close button and hide it.
-            newTabBtn.className = "activeTabBtn";
-            newTabBtnX.className = "activeTabBtnX";
-            newTabBtnX.disabled = true;
-            newTabBtnX.setAttribute("hidden", "hidden");
-
-            // Update the editor contents.
-            let newTab_filename = newTabBtn.value;
-            let localNewContents = localFileStorage.getTab(newTab_filename);
-            window.editor.setValue(localNewContents);
-
-            // Update active tab number.
-            currentTab.change(maxTabNum);
-        }).then(() => {
-            // Check if we should delete the default tab from html template.
-            if (!('Tab1' in this.tabs)) {
-                // If we don't have contents saved for it, delete it.
-                closeTab(1);
-            }
-        });
     },
 
     addAssembledObj(filename, contents) {
