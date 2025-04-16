@@ -94,6 +94,8 @@ def count_source_instructions(src_path: Union[PathLike, str]) -> int:
 def emulate(
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
+    extra_txt_files: Optional[Dict[str, str]] = None,
+    extra_bin_files: Optional[Dict[str, bytes]] = None,
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     timeout: int = 5_000_000,  # 5 seconds
@@ -105,6 +107,10 @@ def emulate(
     # Create default mutable values if needed.
     if object_files is None:
         object_files = {}
+    if extra_txt_files is None:
+        extra_txt_files = {}
+    if extra_bin_files is None:
+        extra_bin_files = {}
     if as_flags is None:
         as_flags = ["-o"]
     if ld_flags is None:
@@ -117,6 +123,8 @@ def emulate(
     return clean_emulation(
         source_files=source_files,
         object_files=object_files,
+        extra_txt_files=extra_txt_files,
+        extra_bin_files=extra_bin_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,
@@ -135,6 +143,8 @@ def emulate(
 def trace(
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
+    extra_txt_files: Optional[Dict[str, str]] = None,
+    extra_bin_files: Optional[Dict[str, bytes]] = None,
     as_flags: Optional[List[str]] = None,
     ld_flags: Optional[List[str]] = None,
     max_trace_steps: int = 500,
@@ -147,6 +157,10 @@ def trace(
     # Create default mutable values if needed.
     if object_files is None:
         object_files = {}
+    if extra_txt_files is None:
+        extra_txt_files = {}
+    if extra_bin_files is None:
+        extra_bin_files = {}
     if as_flags is None:
         as_flags = ["-g -o"]
     if ld_flags is None:
@@ -157,6 +171,8 @@ def trace(
     return clean_trace(
         source_files=source_files,
         object_files=object_files,
+        extra_txt_files=extra_txt_files,
+        extra_bin_files=extra_bin_files,
         rootfs_path=ROOTFS_PATH,
         as_cmd=AS_CMD,
         ld_cmd=LD_CMD,

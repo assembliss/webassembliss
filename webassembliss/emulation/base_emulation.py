@@ -515,6 +515,8 @@ def clean_emulation(
     *,  # force naming arguments
     source_files: Dict[str, str],
     object_files: Dict[str, bytes],
+    extra_txt_files: Dict[str, str],
+    extra_bin_files: Dict[str, bytes],
     rootfs_path: Union[str, PathLike],
     as_cmd: str,
     ld_cmd: str,
@@ -596,6 +598,15 @@ def clean_emulation(
         )
         if not er.linked_ok:
             return er
+        
+        # If binary was successfully built, create extra data files provided.
+        for filename in extra_txt_files:
+            extra_text_path = join(workpath, filename)
+            create_source(extra_text_path, extra_txt_files[filename])
+        
+        for filename in extra_bin_files:
+            extra_bin_path = join(workpath, filename)
+            create_object(extra_bin_path, extra_bin_files[filename])
 
         # Emulate the generated binary with given timeout.
         (

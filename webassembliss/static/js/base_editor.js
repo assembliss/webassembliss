@@ -159,6 +159,8 @@ const localFileStorage = {
     tabs: null,
     objs: null,
     size: null,
+    txtData: null,
+    binData: null,
 
     getTab(filename) {
         // Get the file contents stored; if there are none, use an empty string.
@@ -224,9 +226,19 @@ const localFileStorage = {
         localStorage.setItem(`objs-${this.archID}`, JSON.stringify(this.objs));
     },
 
+    storeTxtData() {
+        localStorage.setItem(`txtData-${this.archID}`, JSON.stringify(this.txtData));
+    },
+
+    storeBinData() {
+        localStorage.setItem(`binData-${this.archID}`, JSON.stringify(this.binData));
+    },
+
     storeAll() {
         this.storeTabs();
         this.storeObjs();
+        this.storeTxtData();
+        this.storeBinData();
     },
 
     loadFromStorage() {
@@ -238,6 +250,12 @@ const localFileStorage = {
         // Load saved obj files from localStorage.
         let savedObjs = localStorage.getItem(`objs-${this.archID}`);
         this.objs = savedObjs ? JSON.parse(savedObjs) : {};
+        // Load .txt data files from localStorage.
+        let savedTxts = localStorage.getItem(`txtData-${this.archID}`);
+        this.txtData = savedTxts ? JSON.parse(savedTxts) : {};
+        // Load .bin data files from localStorage.
+        let savedBin = localStorage.getItem(`binData-${this.archID}`);
+        this.binData = savedBin ? JSON.parse(savedBin) : {};
         // Calculates storage size.
         this.size = 0;
         // Adds the space for all filenames and contents of the source files.
@@ -256,9 +274,15 @@ const localFileStorage = {
             alert("Invalid workspace; no architecture information found.");
             return;
         }
+        if (contents.archID != ARCH_ID) {
+            alert("The workspace architecture does not match the current editor architecture.");
+            return;
+        }
         this.archID = contents.archID;
         this.tabs = contents.tabs;
         this.objs = contents.objs;
+        this.txtData = contents.txtData;
+        this.binData = contents.binData;
         // Update contents in localStorage.
         this.storeAll();
         // Refresh the page so new tabs are properly created.
@@ -360,6 +384,11 @@ const localFileStorage = {
     },
 
     addAssembledObj(filename, contents) {
+        // Check if the file does not exist already.
+        if (filename in this.objs) {
+            alert(`'${filename}' already exists! You must delete it before uploading a new version.`);
+            return;
+        }
         // Convert file to Base64 so we can send it to the python backend.
         let b64Contents = (new Uint8Array(contents)).toBase64();
         this.objs[filename] = b64Contents;
@@ -378,7 +407,7 @@ const localFileStorage = {
         }
 
         let fileRowID = `uploadedObjTbl-${filename}`;
-        let fileSize = formatHumanSize(this.objs[filename].length, 0);
+        let fileSize = formatHumanSize(this.objs[filename].length, 1);
 
         // Check if the file is already being displayed.
         let existingRow = document.getElementById(fileRowID);
@@ -390,7 +419,7 @@ const localFileStorage = {
             let filenameCell = document.createElement('td');
             filenameCell.innerText = filename;
             newTr.appendChild(filenameCell);
-            // Set the filesize and delete button for the row.
+            // Set the filesize for the row.
             let filesizeCell = document.createElement('td');
             filesizeCell.id = `${fileRowID}-size`;
             filesizeCell.innerText = fileSize;
@@ -436,6 +465,124 @@ const localFileStorage = {
         }
     },
 
+    addTxtFile(filename, contents) {
+        // Check if the file does not exist already.
+        if (filename in this.txtData) {
+            alert(`'${filename}' already exists! You must delete it before uploading a new version.`);
+            return;
+        }
+        // Store the file in our map.
+        this.txtData[filename] = contents;
+        // Update the storage size.
+        this.size += filename.length + contents.length;
+        // Update the text files in localStorage.
+        this.storeTxtData();
+        // Update table with new data file information.
+        this.showDataFileOnTable(filename, true);
+    },
+
+    deleteTxtFile(filename) {
+        if (filename in this.txtData) {
+            // Update the storage size.
+            this.size -= filename.length + this.txtData[filename].length;
+            // Delete the file.
+            delete this.txtData[filename];
+            // Update the objects in localStorage.
+            this.storeTxtData();
+            // Remove this object from the table.
+            this.removeDataFileFromTable(filename);
+        }
+    },
+
+    addBinFile(filename, contents) {
+        // Check if the file does not exist already.
+        if (filename in this.binData) {
+            alert(`'${filename}' already exists! You must delete it before uploading a new version.`);
+            return;
+        }
+        // Convert file to Base64 so we can send it to the python backend.
+        let b64Contents = (new Uint8Array(contents)).toBase64();
+        this.binData[filename] = b64Contents;
+        // Update the storage size.
+        this.size += filename.length + b64Contents.length;
+        // Update the text files in localStorage.
+        this.storeBinData();
+        // Update table with new data file information.
+        this.showDataFileOnTable(filename, false);
+    },
+
+    deleteBinFile(filename) {
+        if (filename in this.binData) {
+            // Update the storage size.
+            this.size -= filename.length + this.binData[filename].length;
+            // Delete the file.
+            delete this.binData[filename];
+            // Update the objects in localStorage.
+            this.storeBinData();
+            // Remove this object from the table.
+            this.removeDataFileFromTable(filename);
+        }
+    },
+
+    showDataFileOnTable(filename, isTxt) {
+        let collection = isTxt ? this.txtData : this.binData;
+        if (!(filename in collection)) {
+            // File is not in storage.
+            return;
+        }
+
+        let fileRowID = `uploadedDataFilesTable-${filename}`;
+        let fileSize = formatHumanSize(collection[filename].length, 1);
+
+        // Check if the file is already being displayed.
+        let existingRow = document.getElementById(fileRowID);
+        if (existingRow === null) {
+            // This is a new file, create a new row to be inserted into the table.
+            let newTr = document.createElement('tr');
+            newTr.id = fileRowID;
+            // Set the filename for the row.
+            let filenameCell = document.createElement('td');
+            filenameCell.innerText = filename;
+            newTr.appendChild(filenameCell);
+            // Set the filesize and the row.
+            let filesizeCell = document.createElement('td');
+            filesizeCell.id = `${fileRowID}-size`;
+            filesizeCell.innerText = fileSize;
+            newTr.appendChild(filesizeCell);
+            // Add a button for the file to be removed later.
+            // TODO: figure out why the tooltip is not working on the trash can.
+            let deleteFun = isTxt ? 'deleteTxtFile' : 'deleteBinFile';
+            let fileDeleteCell = document.createElement('td');
+            fileDeleteCell.innerHTML = `<i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='localFileStorage.${deleteFun}("${filename}")'></i>`;
+            newTr.appendChild(fileDeleteCell);
+            // Add the new row to the table.
+            let tbody = document.getElementById("uploadedDataFilesTBody");
+            tbody.appendChild(newTr);
+        } else {
+            // This file is overwriting an existing the file, only need to update the size.
+            document.getElementById(`${fileRowID}-size`).innerText = fileSize;
+        }
+    },
+
+    removeDataFileFromTable(filename) {
+        let fileRowID = `uploadedDataFilesTable-${filename}`;
+        let existingRow = document.getElementById(fileRowID);
+        if (existingRow !== null) {
+            existingRow.remove();
+        }
+    },
+
+    reloadDataFileTable() {
+        // Show the .txt files stored.
+        for (const filename of Object.keys(this.txtData)) {
+            this.showDataFileOnTable(filename, true);
+        }
+        // Show the .bin files stored.
+        for (const filename of Object.keys(this.binData)) {
+            this.showDataFileOnTable(filename, false);
+        }
+    },
+
     init() {
         // Load tabs information stored in localstorage.
         this.loadFromStorage();
@@ -443,6 +590,8 @@ const localFileStorage = {
         this.reloadTabs();
         // Reload the table of objects uploaded.
         this.reloadObjTable();
+        // Reload the table of data files uploaded.
+        this.reloadDataFileTable();
     }
 }
 
@@ -475,7 +624,7 @@ function importCode(fileUploadTarget) {
         return;
     }
 
-    if (!confirm("This will overwrite the contents of your current.")) {
+    if (!confirm("This will overwrite the contents of your current tab.")) {
         return;
     }
 
@@ -493,6 +642,56 @@ function importCode(fileUploadTarget) {
     fileReader.readAsText(file);
 }
 
+function importDataTxtFile(fileUploadTarget) {
+    let file = fileUploadTarget.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!file.name.endsWith(".txt")) {
+        alert("Invalid file! Please select a .txt file.");
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+        localFileStorage.addTxtFile(file.name, fileContents);
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+    fileReader.readAsText(file);
+}
+
+function importDataBinFile(fileUploadTarget) {
+    let file = fileUploadTarget.files[0];
+
+    if (!file) {
+        return;
+    }
+
+    if (!(file.name.endsWith(".bin"))) {
+        alert("Invalid file! Please select a .bin file.");
+        return;
+    }
+
+    let fileReader = new FileReader();
+    fileReader.onload = function (onLoadEvent) {
+        const fileContents = onLoadEvent.target.result;
+        localFileStorage.addBinFile(file.name, fileContents);
+    };
+
+    fileReader.onerror = function () {
+        alert("Error reading file.");
+    };
+
+    fileReader.readAsArrayBuffer(file);
+}
+
 function importAssembledObject(fileUploadTarget) {
     let file = fileUploadTarget.files[0];
 
@@ -502,10 +701,6 @@ function importAssembledObject(fileUploadTarget) {
 
     if (!(file.name.endsWith(".o") || file.name.endsWith(".obj"))) {
         alert("Invalid file! Please select a .o or .obj file.");
-        return;
-    }
-
-    if (!confirm("If there is already a file with this name, it will be overwritten.")) {
         return;
     }
 
@@ -1134,6 +1329,8 @@ function BASE_runCode() {
             arch: ARCH_ID,
             source_files: localFileStorage.tabs,
             object_files: localFileStorage.objs,
+            extra_txt_files: localFileStorage.txtData,
+            extra_bin_files: localFileStorage.binData,
             user_input: user_input,
             cl_args: window.cl_args,
         }),
@@ -1354,6 +1551,8 @@ function BASE_startTracing() {
             arch: ARCH_ID,
             source_files: localFileStorage.tabs,
             object_files: localFileStorage.objs,
+            extra_txt_files: localFileStorage.txtData,
+            extra_bin_files: localFileStorage.binData,
             user_input: user_input,
             cl_args: window.cl_args,
         }),

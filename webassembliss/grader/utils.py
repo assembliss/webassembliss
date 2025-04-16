@@ -157,7 +157,7 @@ def create_text_file(path: Union[PathLike, str], contents: str) -> None:
 def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -> None:
     """Create the extra files needed to grade the project"""
 
-    for filename, contents in config.extra_text_files.items():
+    for filename, contents in config.extra_txt_files.items():
         create_text_file(join(workspace, filename), contents)
 
     for filename, contents in config.extra_bin_files.items():

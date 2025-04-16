@@ -38,7 +38,10 @@
                 <ul class="dropdown-menu">
                     <li><a class="dropdown-item" href="#" onclick="uploadFile(importCode);return false;">Single Tab (default)</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importAssembledObject);return false;">Pre-Assembled Object</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importAssembledObject);return false;">Object File (.o)</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importDataTxtFile);return false;">Data File (.txt)</a></li>
+                    <li><a class="dropdown-item" href="#" onclick="uploadFile(importDataBinFile);return false;">Data File (.bin)</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);return false;">JSON Workspace</a></li>
                 </ul>
@@ -107,21 +110,38 @@
             </div>
 
         </div>
+        {# Improve the window layout when it cannot fit two columns. #}
         <div class="col-6 col-md-5">
+            <div class="d-flex flex-column flex-md-row gap-4">
+                <div class="smallTableFixHead">
+                    <small>
+                        <table id="uploadedObjectsTable" class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Object File</th>
+                                    <th scope="col">Size</th>
+                                    <th scope="col">Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploadedObjectsTBody" class="uploadedObjects table-group-divider"></tbody>
+                        </table>
+                    </small>
+                </div>
 
-            <div class="smallTableFixHead">
-                <small>
-                    <table id="uploadedObjectsTable" class="table table-hover table-sm">
-                        <thead>
-                            <tr>
-                                <th scope="col">Object File</th>
-                                <th scope="col">Size</th>
-                                <th scope="col">Delete</th>
-                            </tr>
-                        </thead>
-                        <tbody id="uploadedObjectsTBody" class="uploadedObjects table-group-divider"></tbody>
-                    </table>
-                </small>
+                <div class="smallTableFixHead">
+                    <small>
+                        <table id="uploadedDataFilesTable" class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Data File</th>
+                                    <th scope="col">Size</th>
+                                    <th scope="col">Delete</th>
+                                </tr>
+                            </thead>
+                            <tbody id="uploadedDataFilesTBody" class="uploadedDataFiles table-group-divider"></tbody>
+                        </table>
+                    </small>
+                </div>
             </div>
 
             <hr/>
