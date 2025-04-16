@@ -444,25 +444,31 @@ const localFileStorage = {
         return JSON.stringify(this);
     },
 
-    reloadTabs() {
+    reloadTabs(defaultTabName) {
         if (Object.keys(this.tabs).length == 0) {
             // If there are no tabs stored, keep the default code on editor.
             return;
         }
 
-        let defaultTabName = "hello.S";
         for (const filename of Object.keys(this.tabs)) {
             if (filename != defaultTabName) {
                 tabs.createTabButton(filename);
             }
         }
 
-        // Check if we should open a different tab.
-        if (!(defaultTabName in this.tabs)) {
-            let firstFilename = Object.keys(this.tabs)[0];
-            tabs.open(firstFilename);
-            tabs.closeTab(defaultTabName);
-        }
+        // Wait for the editor to load so we can modify its contents.
+        sleep(100).then(() => {
+            // Check if the user has the default tab stored in their workspace.
+            if (defaultTabName in this.tabs) {
+                // If they do, update its contents.
+                window.editor.setValue(this.tabs[defaultTabName]);
+            } else {
+                // If they don't, open a different tab and remove the default one.
+                let firstFilename = Object.keys(this.tabs)[0];
+                openTab(firstFilename);
+                closeTab(defaultTabName);
+            }
+        });
     },
 
     addAssembledObj(filename, contents) {
@@ -665,11 +671,11 @@ const localFileStorage = {
         }
     },
 
-    init() {
+    init(defaultTabName) {
         // Load tabs information stored in localstorage.
         this.loadFromStorage();
         // Reload tabs in the editor.
-        this.reloadTabs();
+        this.reloadTabs(defaultTabName);
         // Reload the table of objects uploaded.
         this.reloadObjTable();
         // Reload the table of data files uploaded.

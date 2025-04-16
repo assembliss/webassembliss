@@ -47,8 +47,8 @@
                 </ul>
             </div>
             <div id="tabsDiv" style="display: flex">
-                <input class="activeTabBtn" type="button" id="tabhello.SBtn" value="hello.S" onclick="openTab('hello.S')"/>
-                <input class="activeTabBtnX" type="button" id="tabhello.SBtnX" value="x" onclick="closeTab('hello.S')" disabled="true" hidden="hidden"/>
+                <input class="activeTabBtn" type="button" id="tab{{ default_tab_name }}Btn" value="{{ default_tab_name }}" onclick="openTab('{{ default_tab_name }}')"/>
+                <input class="activeTabBtnX" type="button" id="tab{{ default_tab_name }}BtnX" value="x" onclick="closeTab('{{ default_tab_name }}')" disabled="true" hidden="hidden"/>
                 <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
             </div>
 
@@ -266,5 +266,5 @@
     {% block archScript %}{% endblock %}
     <script src="/static/vs/loader.js"></script>
     <script>createEditor({{ default_code }})</script>
-    <script>localFileStorage.init()</script>
+    <script>localFileStorage.init('{{ default_tab_name }}')</script>
 {% endblock %}
