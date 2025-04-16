@@ -19,19 +19,19 @@
           {% block tag %}{% endblock %}
         </div>
         <ul class="nav nav-pills red">
-          <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+          <li class="nav-item"><a href="/" class="nav-link"><i class="fa-solid fa-house"></i> Home</a></li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Editor
+              <i class="fa-solid fa-code"></i> Editor
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="/editor/arm64_linux">ARM64 (linux)</a></li>
               <li><a class="dropdown-item" href="/editor/riscv64_linux">RISC-V 64 (linux)</a></li>            
             </ul>
           </li>
-          <li class="nav-item"><a href="/grader" class="nav-link">Grader</a></li>
-          <li class="nav-item"><a href="/about" class="nav-link">About</a></li>
-          <li class="nav-item"><a target="_blank" rel="noopener noreferrer" href="https://github.ncsu.edu/assembliss/webassembliss" class="nav-link">GitHub</a></li>
+          <li class="nav-item"><a href="/grader" class="nav-link"><i class="fa-solid fa-check-double"></i> Grader</a></li>
+          <li class="nav-item"><a href="/about" class="nav-link"><i class="fa-solid fa-circle-info"></i> About</a></li>
+          <li class="nav-item"><a target="_blank" rel="noopener noreferrer" href="https://github.ncsu.edu/assembliss/webassembliss" class="nav-link"><i class="fa-brands fa-github"></i> GitHub</a></li>
           {% block navbar %}{% endblock %}
         </ul>
       </header>
