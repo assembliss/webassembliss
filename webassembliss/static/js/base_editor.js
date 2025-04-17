@@ -482,7 +482,7 @@ const localFileStorage = {
         }
 
         // Wait for the editor to load so we can modify its contents.
-        sleep(100).then(() => {
+        sleep(200).then(() => {
             // Check if the user has the default tab stored in their workspace.
             if (defaultTabName in this.tabs) {
                 // If they do, update its contents.
@@ -1159,7 +1159,7 @@ function insertMemoryAddressRow(address, index) {
         let memValueCell = document.createElement('td');
         memValueCell.id = `memValueCell-${hexAddr}+${hexOffset}`;
         memValueCell.innerHTML = "00";
-        memValueCell.intValue = 0;
+        memValueCell.setAttribute("intValue", 0);
         memValueCell.classList.add('memory-table-value');
         newTr.appendChild(memValueCell);
     }
@@ -1188,7 +1188,7 @@ function updateMemoryTable(mem_values) {
 
     // Go over the memory addresses we received and add any new rows to the table.
     let currentAddresses = mapMemoryTableRowsIndices();
-    let sortedNewAddresses = Object.keys(mem_values).sort();
+    let sortedNewAddresses = Object.keys(mem_values).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
     let curIdx = 0;
     let newIdx = 0;
     while (newIdx < sortedNewAddresses.length) {
@@ -1222,8 +1222,8 @@ function updateMemoryTable(mem_values) {
             let hexOffset = intToHexBytes(i);
             let memValueCell = document.getElementById(`memValueCell-${hexAddr}+${hexOffset}`);
             let newMemValue = (i >= chunk.length) ? 0 : chunk[i];
-            if (memValueCell.intValue != newMemValue) {
-                memValueCell.intValue = newMemValue;
+            if (memValueCell.getAttribute("intValue") != newMemValue) {
+                memValueCell.setAttribute("intValue", newMemValue);
                 let newHexMemValue = intToHexBytes(newMemValue, 1);
                 // Update the table if the value has changed.
                 memValueCell.innerText = newHexMemValue;

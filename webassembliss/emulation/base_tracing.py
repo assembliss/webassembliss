@@ -157,10 +157,10 @@ def stepped_emulation(
     # Redirect standard input.
     ql.os.stdin = stdin
 
-    # Find memory allocated for the user code's execution.
+    # Find memory allocated for the user code's execution and the stack.
     relevant_mem_area = []
     for _start, _end, _, _label, _ in ql.mem.get_mapinfo():
-        if _label != bin_name:
+        if _label not in {bin_name, "[stack]"}:
             continue
         relevant_mem_area.append((_start, _end))
 
