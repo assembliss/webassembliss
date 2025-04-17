@@ -278,7 +278,56 @@ def stepped_emulation(
         if ql.os.exit_code is not None or emulation_error:
             break
 
-    return argv, ql.os.exit_code, step_num == max_steps, steps, relevant_mem_area, ql.arch.bits
+    return (
+        argv,
+        ql.os.exit_code,
+        step_num == max_steps,
+        steps,
+        relevant_mem_area,
+        ql.arch.bits,
+    )
+
+
+def combine_external_steps(execution_steps: List[TraceStep]):
+    """Combine trace steps that have no line information so they behave like a gdb step over."""
+    combined_steps: List[TraceStep] = []
+
+    i = 0
+    while i < len(execution_steps):
+        # Get the current step.
+        cur_step = execution_steps[i]
+        # Advance to the next step.
+        i += 1
+        # While the next step is an external one, combine its changes onto the current step.
+        while (i < len(execution_steps)) and (
+            not execution_steps[i].HasField("line_executed")
+        ):
+            next_external_step = execution_steps[i]
+            # Combine each relevant proto field from this next step into the current one.
+            #   string stdout = 2;
+            cur_step.stdout += next_external_step.stdout
+            #   string stderr = 3;
+            cur_step.stderr += next_external_step.stderr
+            #   optional sint32 exit_code = 4;
+            # Must use HasField because if exit_code is 0, it will check whether it was set to 0 or left blank.
+            if next_external_step.HasField("exit_code"):
+                cur_step.exit_code = next_external_step.exit_code
+            #   map<string, uint64> register_delta = 5;
+            for reg in next_external_step.register_delta:
+                cur_step.register_delta[reg] = next_external_step.register_delta[reg]
+            #   map<string, bool> flag_delta = 6;
+            for flag in next_external_step.flag_delta:
+                cur_step.flag_delta[flag] = next_external_step.flag_delta[flag]
+            #   map<uint64, bytes> memory_delta = 7;
+            for mem in next_external_step.memory_delta:
+                cur_step.memory_delta[mem] = next_external_step.memory_delta[mem]
+            # Advance to the next step.
+            i += 1
+
+        # Add the combined current step to the return list.
+        combined_steps.append(cur_step)
+
+    return combined_steps
 
 
 def clean_trace(
@@ -300,6 +349,7 @@ def clean_trace(
     timeout: int,  # microseconds
     max_trace_steps: int,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
+    step_over_external_steps: bool = True,
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
     """Emulates the given code step by step and return the execution trace."""
@@ -356,12 +406,12 @@ def clean_trace(
         et.linked_ok, *_ = link(ld_cmd, obj_paths, ld_flags, bin_path)
         if not et.linked_ok:
             return et
-        
+
         # If binary was successfully built, create extra data files provided.
         for filename in extra_txt_files:
             extra_text_path = join(workpath, filename)
             create_source(extra_text_path, extra_txt_files[filename])
-        
+
         for filename in extra_bin_files:
             extra_bin_path = join(workpath, filename)
             create_object(extra_bin_path, extra_bin_files[filename])
@@ -387,11 +437,15 @@ def clean_trace(
             objdump_cmd=objdump_cmd,
             source_filenames=source_filenames,
         )
-        
+
         et.arch_num_bits = arch_num_bits
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
-        et.steps.extend(trace_steps)
+        et.steps.extend(
+            combine_external_steps(trace_steps)
+            if step_over_external_steps
+            else trace_steps
+        )
 
         for start, end in mapped_memory:
             et.mapped_memory[start] = end

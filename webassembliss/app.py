@@ -26,6 +26,7 @@ def index():
 def about():
     return render_template("about.html.j2")
 
+
 @app.route("/grader/", methods=["POST", "GET"])
 def grader():
     if request.method == "POST":
@@ -97,9 +98,14 @@ def code_run():
 
     emu_results = arch_info.emulate(
         source_files=request.json["source_files"],
-        object_files={n: b64_to_bytes(c) for n, c in request.json["object_files"].items()},
+        object_files={
+            n: b64_to_bytes(c) for n, c in request.json["object_files"].items()
+        },
         extra_txt_files=request.json.get("extra_txt_files", {}),
-        extra_bin_files={n: b64_to_bytes(c) for n, c in request.json.get("extra_bin_files", {}).items()},
+        extra_bin_files={
+            n: b64_to_bytes(c)
+            for n, c in request.json.get("extra_bin_files", {}).items()
+        },
         stdin=request.json["user_input"],
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
@@ -147,9 +153,14 @@ def code_trace():
 
     emulation_trace = arch_info.trace(
         source_files=request.json["source_files"],
-        object_files={n: b64_to_bytes(c) for n, c in request.json["object_files"].items()},
+        object_files={
+            n: b64_to_bytes(c) for n, c in request.json["object_files"].items()
+        },
         extra_txt_files=request.json.get("extra_txt_files", {}),
-        extra_bin_files={n: b64_to_bytes(c) for n, c in request.json.get("extra_bin_files", {}).items()},
+        extra_bin_files={
+            n: b64_to_bytes(c)
+            for n, c in request.json.get("extra_bin_files", {}).items()
+        },
         stdin=request.json["user_input"],
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
