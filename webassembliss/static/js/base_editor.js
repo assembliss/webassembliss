@@ -737,15 +737,28 @@ function importCode(fileUploadTarget) {
         return;
     }
 
-    if (!confirm("This will overwrite the contents of your current tab.")) {
-        return;
+    // Check if the file is already stored.
+    if (file.name in localFileStorage.tabs) {
+        // If it is, confirm the overwite.
+        if (!confirm(`This will overwrite the contents of '${file.name}'`)) {
+            return;
+        }
     }
 
     let fileReader = new FileReader();
     fileReader.onload = function (onLoadEvent) {
         const fileContents = onLoadEvent.target.result;
-        window.editor.setValue(fileContents);
-        localFileStorage.saveCurrentTab();
+        // Figure out if this is a new file or an update.
+        let isNewFile = !(file.name in localFileStorage.tabs);
+        // Save the contents to our storage.
+        localFileStorage.saveTab(file.name, fileContents);
+        // If it is a new file, add a button for it.
+        if (isNewFile) {
+            tabs.createTabButton(file.name);
+        } else if (file.name == getCurrentTabName()) {
+            // If the file is the one currently opened, update the editor's contents.
+            window.editor.setValue(fileContents);
+        }
     };
 
     fileReader.onerror = function () {
