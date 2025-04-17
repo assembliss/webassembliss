@@ -1188,6 +1188,7 @@ function updateMemoryTable(mem_values) {
 
     // Go over the memory addresses we received and add any new rows to the table.
     let currentAddresses = mapMemoryTableRowsIndices();
+    // Sort string values based on the integers they hold.
     let sortedNewAddresses = Object.keys(mem_values).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
     let curIdx = 0;
     let newIdx = 0;
