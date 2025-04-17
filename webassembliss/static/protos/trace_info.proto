@@ -6,13 +6,17 @@ syntax = "proto3";
 // Message to hold information about the assembling process.
 message AssemblerInfo {
   bool status_ok = 1;
-  repeated string error = 2;
+  repeated string commands = 2;
+  optional string output = 3;
+  optional string errors = 4;
 }
 
 // Message to hold information about the linking process.
 message LinkerInfo {
   bool status_ok = 1;
-  repeated string errors = 2;
+  string command = 2;
+  optional string output = 3;
+  optional string errors = 4;
 }
 
 // Message to hold information about the entire build process.
@@ -47,10 +51,11 @@ message TraceStep {
 message ExecutionTrace {
   string rootfs = 1;
   uint32 arch_num_bits = 2;
-  repeated string source_filenames = 3;
-  BuildInfo build = 4;
-  string argv = 5;
-  optional sint32 exit_code = 6;
-  bool reached_max_steps = 7;
-  repeated TraceStep steps = 8;
+  bool little_endian = 3;
+  repeated string source_filenames = 4;
+  BuildInfo build = 5;
+  string argv = 6;
+  optional sint32 exit_code = 7;
+  bool reached_max_steps = 8;
+  repeated TraceStep steps = 9;
 }
