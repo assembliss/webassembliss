@@ -1,36 +1,31 @@
-from dataclasses import dataclass
-from os.path import dirname, join, pardir, realpath
-from typing import Callable
-
-from .emulation.arm64_linux import emulate as arm64_linux_emulation
-from .emulation.arm64_linux import trace as arm64_linux_trace
-from .emulation.riscv64_linux import emulate as riscv64_linux_emulation
-from .emulation.riscv64_linux import trace as riscv64_linux_trace
+from base64 import decode as b64_decode
+from base64 import encode as b64_encode
+from io import BytesIO
+from os.path import isabs
 
 
-@dataclass
-class ArchMethods:
-    emulate: Callable
-    trace: Callable
-    template_path: str
-    example_path: str
-    example_name: str
+def create_bin_file(path: str, contents: bytes) -> None:
+    """Store the given binary contents into the given path."""
+    with open(path, "wb") as file_out:
+        file_out.write(contents)
 
 
-EXAMPLES_PATH = join(dirname(realpath(__file__)), "examples")
-ARCH_MAP = {
-    "arm64_linux": ArchMethods(
-        emulate=arm64_linux_emulation,
-        trace=arm64_linux_trace,
-        template_path="arm64_linux.html.j2",
-        example_path=join(EXAMPLES_PATH, "arm64_linux", "hello.S"),
-        example_name="hello.S",
-    ),
-    "riscv64_linux": ArchMethods(
-        emulate=riscv64_linux_emulation,
-        trace=riscv64_linux_trace,
-        template_path="riscv64_linux.html.j2",
-        example_path=join(EXAMPLES_PATH, "riscv64_linux", "hello.S"),
-        example_name="hello.S",
-    ),
-}
+def create_text_file(path: str, contents: str) -> None:
+    """Store the given text contents into the given path."""
+    create_bin_file(path, contents.encode())
+
+
+def bytes_to_b64(buf: bytes) -> str:
+    """Convert the given bytes buffer into a base64 encoded string."""
+    in_bio = BytesIO(buf)
+    out_bio = BytesIO()
+    b64_encode(in_bio, out_bio)
+    return out_bio.getvalue().decode()
+
+
+def b64_to_bytes(s64: str) -> bytes:
+    """Convert the given base64-encoded string into bytes."""
+    in_bio = BytesIO(s64.encode())
+    out_bio = BytesIO()
+    b64_decode(in_bio, out_bio)
+    return out_bio.getvalue()

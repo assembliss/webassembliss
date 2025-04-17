@@ -1,13 +1,9 @@
 const WAITING_SYMBOL = "⭕";
 const OK_SYMBOL = "✅";
 const ERROR_SYMBOL = "❌";
-window.lastRunInfo = null;
 window.decorations = null;
-window.gdb_line_decoration = null;
 window.cl_args = "";
-window.nextGDBLine = null;
 
-const activeBreakpoints = {};
 
 var coll = document.getElementsByClassName("collapsible");
 var i;
@@ -872,14 +868,6 @@ function importWorkspace(fileUploadTarget) {
     fileReader.readAsText(file);
 }
 
-/* Parses through the emulation information JSON and returns the string within quotes following the target.
-*/
-function parseEmulationJSON(target) {
-    let json = JSON.parse(getLastRunInfo());
-
-    return json[target] !== undefined ? json[target] : null;
-}
-
 function submitIssue() {
     let title = document.getElementById("issueTitle").value.trim();
     let body = document.getElementById("issueBody").value.trim();
@@ -1386,8 +1374,20 @@ function clearOutput() {
     document.getElementById("outputBox").value = "";
     document.getElementById("errorBox").value = "";
     document.getElementById("emulationInfo").value = "";
-    window.lastRunInfo = null;
     document.getElementById("downloadButton").disabled = true;
+
+    // Delete old trace information.
+    window.lastTrace = null;
+    currentTraceStep.stepNum = null;
+    currentTraceStep.mem_changes = {};
+    currentTraceStep.reg_changes = {};
+    currentTraceStep.stdout = [];
+    currentTraceStep.stderr = [];
+
+    // Delete previous errors we had stored.
+    for (let key in tabErrorHighlights) {
+        delete tabErrorHighlights[key];
+    }
     clearRegTable();
     clearMemoryTable();
     removeAllHighlights();
@@ -1395,23 +1395,17 @@ function clearOutput() {
 
 const tabErrorHighlights = {};
 
-function detectAndHighlightErrors() {
-    // Delete previous errors we had stored.
-    for (let key in tabErrorHighlights) {
-        delete tabErrorHighlights[key];
-    }
-
-    // Find errors, parse through
-    let as_err = parseEmulationJSON("as_err");
-    let lines = as_err.split("\n").map(line => {
-        let match = line.match(/userprograms\/([^:]+):(\d+): Error: (.+)/);
+function detectAndHighlightErrors(stderrContents, onlySummary) {
+    // Parse through the given stderr contents to find errors.
+    // It assumes that user files are stored in the "userprograms" directory inside rootfs.
+    let lines = stderrContents.split("\n").map(line => {
+        let match = line.match(/userprograms\/([^:]+):(\d+): (.+)/);
         if (match) {
             return { filename: match[1], lineNumber: match[2], message: match[3] };
         }
         return null;
 
     }).filter(error => error !== null); // Remove non-error lines
-
     // Highlight lines for each error
     lines.forEach(line => {
         if (!(line.filename in tabErrorHighlights)) {
@@ -1419,7 +1413,10 @@ function detectAndHighlightErrors() {
         }
         let lineNumber = parseInt(line.lineNumber, 10);
         let message = line.message.replace(/`/g, "'");
-        tabErrorHighlights[line.filename].push({ lineNumber: lineNumber, message: message })
+        tabErrorHighlights[line.filename].push({ lineNumber: 0, message: `Line ${lineNumber}: ${message}` });
+        if (!onlySummary) {
+            tabErrorHighlights[line.filename].push({ lineNumber: lineNumber, message: message });
+        }
     });
 
     if (Object.keys(tabErrorHighlights).length == 0) {
@@ -1435,63 +1432,9 @@ function detectAndHighlightErrors() {
     }
 }
 
-function BASE_runCode() {
-    clearOutput();
-    // Create a floating message with a running message.
-    modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
-    // Why not remove highlights at the start of runCode()?
-    removeAllHighlights();
-    window.editor.updateOptions({ readOnly: true });
-    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
-    localFileStorage.saveCurrentTab();
-    let user_input = document.getElementById("inputBox").value;
-    document.getElementById("runStatus").innerHTML = "⏳";
-    fetch('/run/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            arch: ARCH_ID,
-            source_files: localFileStorage.tabs,
-            object_files: localFileStorage.objs,
-            extra_txt_files: localFileStorage.txtData,
-            extra_bin_files: localFileStorage.binData,
-            user_input: user_input,
-            cl_args: window.cl_args,
-        }),
-    }).then(response => response.json())
-        .then(data => {
-            document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            if (data.as_ok !== null) {
-                // Assume everything assembled ok, and then loop through each status to find something broken.
-                document.getElementById("asStatus").innerHTML = OK_SYMBOL;
-                for (const fileAsStatus of Object.values(data.as_ok)) {
-                    if (!fileAsStatus) {
-                        document.getElementById("asStatus").innerHTML = ERROR_SYMBOL;
-                        break;
-                    }
-                }
-            }
-            document.getElementById("ldStatus").innerHTML = data.ld_ok === null ? WAITING_SYMBOL : data.ld_ok ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("timeOut").innerHTML = data.timed_out === null ? WAITING_SYMBOL : data.timed_out ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("exitCode").innerHTML = exitCodeToEmoji(data.exit_code);
-            document.getElementById("outputBox").value = data.stdout;
-            document.getElementById("errorBox").value = data.stderr;
-            document.getElementById("emulationInfo").value = data.all_info;
-            // Update the memory table with new values.
-            updateMemoryTable(parseRunMemoryReport(data.memory));
-            // Update the register table with new values.
-            updateRegisterTable(parseRegisterValues(data.info_obj.registers), data.info_obj.reg_num_bits);
-            lastRunInfo = data.info_obj;
-            // Make sure to highlight detection AFTER lastRunInfo is updated!
-            detectAndHighlightErrors();
-            document.getElementById("downloadButton").disabled = false;
-            window.editor.updateOptions({ readOnly: false });
-        }).then(() =>
-            // TODO: make sure this runs even if the fetch above fails.
-            hideLoading(modal)
-        );
+function runCode() {
+    // Use the same logic as the tracing, but asks the backend to combine all the steps into a single one.
+    startTracing(true);
 }
 
 function setCLArgs() {
@@ -1503,10 +1446,6 @@ function setCLArgs() {
 
 function getSource() {
     return editor.getValue();;
-}
-
-function getLastRunInfo() {
-    return JSON.stringify(lastRunInfo);
 }
 
 function addHighlight(line, options) {
@@ -1529,7 +1468,7 @@ function addErrorHighlight(line, messages) {
 }
 
 function updateNextLine(line) {
-    window.gdb_line_decoration = addHighlight(line, {
+    addHighlight(line, {
         isWholeLine: true,
         className: 'nextLineDecoration',
         hoverMessage: [{ value: "Next line to be executed" }],
@@ -1577,25 +1516,6 @@ function updateTraceLinesHighlights(traceStep, tabName) {
     }
 }
 
-function addBreakpointHighlight(line) {
-    addHighlight(line, {
-        isWholeLine: true,
-        glyphMarginClassName: 'fa-regular fa-circle-pause',
-        glyphMarginHoverMessage: { value: 'breakpoint' },
-        glyphMargin: { position: 2 }
-    });
-}
-
-function addCurrentTabBreakpointsHighlights() {
-    if (currentTab.name in activeBreakpoints) {
-        for (const [line, active] of Object.entries(activeBreakpoints[currentTab.name])) {
-            if (active) {
-                addBreakpointHighlight(parseInt(line));
-            }
-        }
-    }
-}
-
 function removeAllHighlights() {
     decorations.clear();
 }
@@ -1605,23 +1525,15 @@ function showTabErrors(tabName) {
         return;
     }
 
-    let allTabErrors = [];
     let firstError = true;
     for (const error of tabErrorHighlights[tabName]) {
         // Add the error information to the appropriate line.
         addErrorHighlight(error.lineNumber, [{ value: error.message }]);
-        // Add all errors at the top of the file as a summary.
-        allTabErrors.push({ value: `Line ${error.lineNumber}: ${error.message}` });
         if (firstError) {
             // Scroll to the first error in the file.
             firstError = false;
             window.editor.revealLineInCenter(error.lineNumber);
         }
-    }
-
-    // Add a summary of all errors at the top of the file.
-    if (allTabErrors.length) {
-        addErrorHighlight(0, allTabErrors);
     }
 }
 
@@ -1649,22 +1561,14 @@ const currentTraceStep = {
     stderr: [],
 };
 
-function BASE_startTracing() {
+function BASE_startTracing(combineAllSteps) {
     // Clear any old information.
     clearOutput();
-    // Show the trace menu information and disable code action buttons.
-    document.getElementById("statusFlagsDisplay").classList.remove("collapse");
-    document.getElementById("traceMenuDiv").classList.remove("collapse");
-    Array.from(document.getElementsByClassName("codeActionBtn")).forEach((el) => {
-        el.disabled = true;
-    });
+    // Disable code action buttons and editing.
+    disableCodeActions(true);
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
-    removeAllHighlights();
-    document.getElementById("traceStart").disabled = true;
-    document.getElementById("traceStop").disabled = false;
-    window.editor.updateOptions({ readOnly: true });
-    // This source code line should be in a for loop such that it goes through each tab and gets the source of each.
+    // Save any changes in the current tab the user had made.
     localFileStorage.saveCurrentTab();
     let user_input = document.getElementById("inputBox").value;
     document.getElementById("runStatus").innerHTML = "⏳";
@@ -1675,6 +1579,7 @@ function BASE_startTracing() {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
+            combine_all_steps: (combineAllSteps) ? true : false,
             source_files: localFileStorage.tabs,
             object_files: localFileStorage.objs,
             extra_txt_files: localFileStorage.txtData,
@@ -1687,24 +1592,78 @@ function BASE_startTracing() {
             // Parse the protobuf from the backend.
             window.lastTrace = window.ExecutionTrace.decode(new Uint8Array(data));
         }).then(() => {
-            // Update the GUI with execution information.
+            console.log(window.lastTrace);
+            // Mark emulation as completed and parse the information we received.
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
-            document.getElementById("asStatus").innerHTML = window.lastTrace.assembledOk === null ? WAITING_SYMBOL : window.lastTrace.assembledOk ? OK_SYMBOL : ERROR_SYMBOL;
-            document.getElementById("ldStatus").innerHTML = window.lastTrace.linkedOk === null ? WAITING_SYMBOL : window.lastTrace.linkedOk ? OK_SYMBOL : ERROR_SYMBOL;
+
+            // Show all info from the emulation.
+            showAllEmulationInfo();
+
+            // Check if the code has assembled.
+            if (!window.lastTrace.build.asInfo.statusOk) {
+                // If it hasn't, mark if as failed, show errors on the editor, make editor writeable again, enable action buttons, and stop processing.
+                document.getElementById("asStatus").innerHTML = ERROR_SYMBOL;
+                detectAndHighlightErrors(window.lastTrace.build.asInfo.errors, false);
+                disableCodeActions(false);
+                return;
+            }
+            // Mark assembling as successful.
+            document.getElementById("asStatus").innerHTML = OK_SYMBOL;
+
+            // Check if the code has linked.
+            if (!window.lastTrace.build.ldInfo.statusOk) {
+                // If it hasn't, mark if as failed, show errors on the editor, make editor writeable again, enable action buttons, and stop processing.
+                document.getElementById("ldStatus").innerHTML = ERROR_SYMBOL;
+                detectAndHighlightErrors(window.lastTrace.build.ldInfo.errors, true);
+                disableCodeActions(false);
+                return;
+            }
+            // Mark linking as successful.
+            document.getElementById("ldStatus").innerHTML = OK_SYMBOL;
+
+            // Update the tracing information to show the initial state.
+            changeTracingStep(1);
+
+            // If the code has assembled and linked, it *should* have been emulated.
+            // Check if the user wanted to run or trace the code.
+            if (combineAllSteps) {
+                // If the user wanted to run it, reset editor to being actionable and do not show step information.
+                disableCodeActions(false);
+                return;
+            }
+
+            // If the user wanted to trace the code, show menu and allow them to step through it.
+            document.getElementById("statusFlagsDisplay").classList.remove("collapse");
+            document.getElementById("traceMenuDiv").classList.remove("collapse");
             // Mark execution as not exited yet.
             document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
             // Use the timeout indication to show if the trace reached maximum number of steps.
             document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
-            // Allow tracing to be downloaded.
+            // Allow tracing to be downloaded and stopped.
             document.getElementById("traceDownload").disabled = false;
+            document.getElementById("traceStop").disabled = false;
             // Allow user to jump to a specific step.
             document.getElementById("curTraceStepNum").disabled = false;
-            // Update the tracing information to show the initial state.
-            changeTracingStep(1);
         }).then(() => {
             // TODO: make sure this runs even if the fetch above fails.
             hideLoading(modal);
         });
+}
+
+function showAllEmulationInfo() {
+    // Allow user to download the trace.
+    document.getElementById("downloadButton").disabled = false;
+    // Display emulation info in the text area.
+    document.getElementById("emulationInfo").value = JSON.stringify(window.lastTrace, null, 2);
+}
+
+function disableCodeActions(disable) {
+    // Change code action buttons.
+    Array.from(document.getElementsByClassName("codeActionBtn")).forEach((el) => {
+        el.disabled = disable;
+    });
+    // Change editor writeability.
+    window.editor.updateOptions({ readOnly: disable });
 }
 
 function updateFlagIcon(flagName, set) {

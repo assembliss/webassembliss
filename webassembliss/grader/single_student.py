@@ -9,19 +9,21 @@ from typing import Dict, List, Tuple, Union
 
 from werkzeug.datastructures import FileStorage
 
-from ..emulation.base_emulation import assemble, link, timed_emulation
+from ..emulation.base_tracing import assemble, link
+
+timed_emulation = lambda *args, **kwargs: None
 from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
     WrappedProject,
 )
+from ..utils import bytes_to_b64
 from .utils import (
     EXECUTION_AGG_MAP,
     ROOTFS_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
-    bytes_to_b64,
     create_checksum,
     create_extra_files,
     create_test_diff,

@@ -227,7 +227,7 @@
     <button type="button" class="collapsible">Show/hide all emulation information</button>
     <div class="collapsibleContent">
         <textarea id="emulationInfo" name="emulationInfo" readOnly=true rows=10 cols=100 placeholder="emulation info will appear here after your code finishes running..."></textarea>
-       <input id="downloadButton" type="button" value="download as json" onclick='download_file("emulationInfo.json", getLastRunInfo(), "application/json")' disabled="true" />
+        <button type="button" id="downloadButton" class="btn btn-warning" onclick='download_file("emulationInfo.json", JSON.stringify(window.lastTrace), "application/json")' data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="Download the emulation data as a json file" disabled="true">Download <i class="fa-solid fa-download"></i></button>
     </div>
 
     <br/>

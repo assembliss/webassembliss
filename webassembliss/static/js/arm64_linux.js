@@ -11,17 +11,13 @@ function createEditor(default_code) {
     BASE_createEditor(default_code, getARM64SyntaxHighlighting)
 }
 
-function runCode() {
-    BASE_runCode();
-}
-
-function startTracing() {
+function startTracing(combineAllSteps) {
     // Initialize all flags as false.
     document.getElementById("nFlag").innerHTML = ERROR_SYMBOL;
     document.getElementById("zFlag").innerHTML = ERROR_SYMBOL;
     document.getElementById("cFlag").innerHTML = ERROR_SYMBOL;
     document.getElementById("vFlag").innerHTML = ERROR_SYMBOL;
-    BASE_startTracing();
+    BASE_startTracing(combineAllSteps);
 }
 
 function getARM64SyntaxHighlighting() {
