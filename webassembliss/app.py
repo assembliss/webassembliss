@@ -73,6 +73,7 @@ def editor_page(arch):
     return render_template(
         arch_info.template_path,
         default_code=default_source_code.split("\n"),
+        default_tab_name=arch_info.example_name,
     )
 
 

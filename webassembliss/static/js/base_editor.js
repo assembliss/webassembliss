@@ -247,7 +247,7 @@ function closeTab(tabName) {
 }
 
 function getCurrentTabName() {
-    return `Tab${currentTab.name}`;
+    return currentTab.name;
 }
 
 function getTabNumber(tabName) {
@@ -332,9 +332,7 @@ const localFileStorage = {
     },
 
     saveCurrentTab() {
-        console.log(currentTab.name);
         let currentTabBtn = document.getElementById(`tab${currentTab.name}Btn`);
-        console.log(currentTabBtn);
         let currentTab_filename = currentTabBtn.value;
         let currentTab_contents = window.editor.getValue();
         this.saveTab(currentTab_filename, currentTab_contents);
@@ -417,6 +415,13 @@ const localFileStorage = {
         for (const [filename, contents] of Object.entries(this.objs)) {
             this.size += filename.length + contents.length;
         }
+        // Adds the space for all filenames and contents of the data files.
+        for (const [filename, contents] of Object.entries(this.txtData)) {
+            this.size += filename.length + contents.length;
+        }
+        for (const [filename, contents] of Object.entries(this.binData)) {
+            this.size += filename.length + contents.length;
+        }
     },
 
     loadFromJSON(contents) {
@@ -429,11 +434,28 @@ const localFileStorage = {
             alert("The workspace architecture does not match the current editor architecture.");
             return;
         }
-        this.archID = contents.archID;
-        this.tabs = contents.tabs;
-        this.objs = contents.objs;
-        this.txtData = contents.txtData;
-        this.binData = contents.binData;
+        // Delete current contents of the workspace.
+        for (const filename of Object.keys(this.tabs)) {
+            delete this.tabs[filename];
+        }
+        for (const filename of Object.keys(this.objs)) {
+            delete this.objs[filename];
+        }
+        for (const filename of Object.keys(this.txtData)) {
+            delete this.txtData[filename];
+        }
+        for (const filename of Object.keys(this.binData)) {
+            delete this.binData[filename];
+        }
+        // If the size is greater than zero, load in the information.
+        // This allows the user to reset the workspace by uploading a JSON with size=0.
+        if (contents.size > 0) {
+            this.archID = contents.archID;
+            this.tabs = contents.tabs;
+            this.objs = contents.objs;
+            this.txtData = contents.txtData;
+            this.binData = contents.binData;
+        }
         // Update contents in localStorage.
         this.storeAll();
         // Refresh the page so new tabs are properly created.
@@ -444,25 +466,31 @@ const localFileStorage = {
         return JSON.stringify(this);
     },
 
-    reloadTabs() {
+    reloadTabs(defaultTabName) {
         if (Object.keys(this.tabs).length == 0) {
             // If there are no tabs stored, keep the default code on editor.
             return;
         }
 
-        let defaultTabName = "hello.S";
         for (const filename of Object.keys(this.tabs)) {
             if (filename != defaultTabName) {
                 tabs.createTabButton(filename);
             }
         }
 
-        // Check if we should open a different tab.
-        if (!(defaultTabName in this.tabs)) {
-            let firstFilename = Object.keys(this.tabs)[0];
-            tabs.open(firstFilename);
-            tabs.closeTab(defaultTabName);
-        }
+        // Wait for the editor to load so we can modify its contents.
+        sleep(100).then(() => {
+            // Check if the user has the default tab stored in their workspace.
+            if (defaultTabName in this.tabs) {
+                // If they do, update its contents.
+                window.editor.setValue(this.tabs[defaultTabName]);
+            } else {
+                // If they don't, open a different tab and remove the default one.
+                let firstFilename = Object.keys(this.tabs)[0];
+                openTab(firstFilename);
+                closeTab(defaultTabName);
+            }
+        });
     },
 
     addAssembledObj(filename, contents) {
@@ -665,11 +693,11 @@ const localFileStorage = {
         }
     },
 
-    init() {
+    init(defaultTabName) {
         // Load tabs information stored in localstorage.
         this.loadFromStorage();
         // Reload tabs in the editor.
-        this.reloadTabs();
+        this.reloadTabs(defaultTabName);
         // Reload the table of objects uploaded.
         this.reloadObjTable();
         // Reload the table of data files uploaded.
@@ -1391,7 +1419,6 @@ function detectAndHighlightErrors() {
 }
 
 function BASE_runCode() {
-    console.log(localFileStorage);
     clearOutput();
     // Create a floating message with a running message.
     modal = showLoading('Running your code', 'Please wait for the emulation to finish.', 'Running...');
