@@ -434,23 +434,22 @@ const localFileStorage = {
             alert("The workspace architecture does not match the current editor architecture.");
             return;
         }
-        if (contents.size == 0) {
-            // If the given size is 0, delete all stored files.
-            // This works as a way to clean the workspace.
-            for (const filename of Object.keys(this.tabs)) {
-                delete this.tabs[filename];
-            }
-            for (const filename of Object.keys(this.objs)) {
-                delete this.objs[filename];
-            }
-            for (const filename of Object.keys(this.txtData)) {
-                delete this.txtData[filename];
-            }
-            for (const filename of Object.keys(this.binData)) {
-                delete this.binData[filename];
-            }
-            this.size = 0;
-        } else {
+        // Delete current contents of the workspace.
+        for (const filename of Object.keys(this.tabs)) {
+            delete this.tabs[filename];
+        }
+        for (const filename of Object.keys(this.objs)) {
+            delete this.objs[filename];
+        }
+        for (const filename of Object.keys(this.txtData)) {
+            delete this.txtData[filename];
+        }
+        for (const filename of Object.keys(this.binData)) {
+            delete this.binData[filename];
+        }
+        // If the size is greater than zero, load in the information.
+        // This allows the user to reset the workspace by uploading a JSON with size=0.
+        if (contents.size > 0) {
             this.archID = contents.archID;
             this.tabs = contents.tabs;
             this.objs = contents.objs;
