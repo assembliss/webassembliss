@@ -13,7 +13,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10trace_info.proto\"3\n\x08LineInfo\x12\x16\n\x0e\x66ilename_index\x18\x01 \x01(\x05\x12\x0f\n\x07linenum\x18\x02 \x01(\x05\"\xa8\x03\n\tTraceStep\x12 \n\rline_executed\x18\x01 \x01(\x0b\x32\t.LineInfo\x12\x0e\n\x06stdout\x18\x02 \x01(\t\x12\x0e\n\x06stderr\x18\x03 \x01(\t\x12\x16\n\texit_code\x18\x04 \x01(\x11H\x00\x88\x01\x01\x12\x35\n\x0eregister_delta\x18\x05 \x03(\x0b\x32\x1d.TraceStep.RegisterDeltaEntry\x12-\n\nflag_delta\x18\x06 \x03(\x0b\x32\x19.TraceStep.FlagDeltaEntry\x12\x31\n\x0cmemory_delta\x18\x07 \x03(\x0b\x32\x1b.TraceStep.MemoryDeltaEntry\x1a\x34\n\x12RegisterDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\x1a\x30\n\x0e\x46lagDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x08:\x02\x38\x01\x1a\x32\n\x10MemoryDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42\x0c\n\n_exit_code\"\xd3\x02\n\x0e\x45xecutionTrace\x12\x0e\n\x06rootfs\x18\x01 \x01(\t\x12\x18\n\x10source_filenames\x18\x02 \x03(\t\x12\x14\n\x0c\x61ssembled_ok\x18\x03 \x01(\x08\x12\x11\n\tlinked_ok\x18\x04 \x01(\x08\x12\x0c\n\x04\x61rgv\x18\x05 \x01(\t\x12\x16\n\texit_code\x18\x06 \x01(\x11H\x00\x88\x01\x01\x12\x19\n\x11reached_max_steps\x18\x07 \x01(\x08\x12\x38\n\rmapped_memory\x18\x08 \x03(\x0b\x32!.ExecutionTrace.MappedMemoryEntry\x12\x19\n\x05steps\x18\t \x03(\x0b\x32\n.TraceStep\x12\x15\n\rarch_num_bits\x18\n \x01(\r\x1a\x33\n\x11MappedMemoryEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\x42\x0c\n\n_exit_codeb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x10trace_info.proto\"1\n\rAssemblerInfo\x12\x11\n\tstatus_ok\x18\x01 \x01(\x08\x12\r\n\x05\x65rror\x18\x02 \x03(\t\"/\n\nLinkerInfo\x12\x11\n\tstatus_ok\x18\x01 \x01(\x08\x12\x0e\n\x06\x65rrors\x18\x02 \x03(\t\"J\n\tBuildInfo\x12\x1f\n\x07\x61s_info\x18\x01 \x01(\x0b\x32\x0e.AssemblerInfo\x12\x1c\n\x07ld_info\x18\x02 \x01(\x0b\x32\x0b.LinkerInfo\"3\n\x08LineInfo\x12\x16\n\x0e\x66ilename_index\x18\x01 \x01(\x05\x12\x0f\n\x07linenum\x18\x02 \x01(\x05\"\xa8\x03\n\tTraceStep\x12 \n\rline_executed\x18\x01 \x01(\x0b\x32\t.LineInfo\x12\x0e\n\x06stdout\x18\x02 \x01(\t\x12\x0e\n\x06stderr\x18\x03 \x01(\t\x12\x16\n\texit_code\x18\x04 \x01(\x11H\x00\x88\x01\x01\x12\x35\n\x0eregister_delta\x18\x05 \x03(\x0b\x32\x1d.TraceStep.RegisterDeltaEntry\x12-\n\nflag_delta\x18\x06 \x03(\x0b\x32\x19.TraceStep.FlagDeltaEntry\x12\x31\n\x0cmemory_delta\x18\x07 \x03(\x0b\x32\x1b.TraceStep.MemoryDeltaEntry\x1a\x34\n\x12RegisterDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x04:\x02\x38\x01\x1a\x30\n\x0e\x46lagDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x08:\x02\x38\x01\x1a\x32\n\x10MemoryDeltaEntry\x12\x0b\n\x03key\x18\x01 \x01(\x04\x12\r\n\x05value\x18\x02 \x01(\x0c:\x02\x38\x01\x42\x0c\n\n_exit_code\"\xd6\x01\n\x0e\x45xecutionTrace\x12\x0e\n\x06rootfs\x18\x01 \x01(\t\x12\x15\n\rarch_num_bits\x18\x02 \x01(\r\x12\x18\n\x10source_filenames\x18\x03 \x03(\t\x12\x19\n\x05\x62uild\x18\x04 \x01(\x0b\x32\n.BuildInfo\x12\x0c\n\x04\x61rgv\x18\x05 \x01(\t\x12\x16\n\texit_code\x18\x06 \x01(\x11H\x00\x88\x01\x01\x12\x19\n\x11reached_max_steps\x18\x07 \x01(\x08\x12\x19\n\x05steps\x18\x08 \x03(\x0b\x32\n.TraceStepB\x0c\n\n_exit_codeb\x06proto3')
 
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
 _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'trace_info_pb2', globals())
@@ -26,20 +26,22 @@ if _descriptor._USE_C_DESCRIPTORS == False:
   _TRACESTEP_FLAGDELTAENTRY._serialized_options = b'8\001'
   _TRACESTEP_MEMORYDELTAENTRY._options = None
   _TRACESTEP_MEMORYDELTAENTRY._serialized_options = b'8\001'
-  _EXECUTIONTRACE_MAPPEDMEMORYENTRY._options = None
-  _EXECUTIONTRACE_MAPPEDMEMORYENTRY._serialized_options = b'8\001'
-  _LINEINFO._serialized_start=20
-  _LINEINFO._serialized_end=71
-  _TRACESTEP._serialized_start=74
-  _TRACESTEP._serialized_end=498
-  _TRACESTEP_REGISTERDELTAENTRY._serialized_start=330
-  _TRACESTEP_REGISTERDELTAENTRY._serialized_end=382
-  _TRACESTEP_FLAGDELTAENTRY._serialized_start=384
-  _TRACESTEP_FLAGDELTAENTRY._serialized_end=432
-  _TRACESTEP_MEMORYDELTAENTRY._serialized_start=434
-  _TRACESTEP_MEMORYDELTAENTRY._serialized_end=484
-  _EXECUTIONTRACE._serialized_start=501
-  _EXECUTIONTRACE._serialized_end=840
-  _EXECUTIONTRACE_MAPPEDMEMORYENTRY._serialized_start=775
-  _EXECUTIONTRACE_MAPPEDMEMORYENTRY._serialized_end=826
+  _ASSEMBLERINFO._serialized_start=20
+  _ASSEMBLERINFO._serialized_end=69
+  _LINKERINFO._serialized_start=71
+  _LINKERINFO._serialized_end=118
+  _BUILDINFO._serialized_start=120
+  _BUILDINFO._serialized_end=194
+  _LINEINFO._serialized_start=196
+  _LINEINFO._serialized_end=247
+  _TRACESTEP._serialized_start=250
+  _TRACESTEP._serialized_end=674
+  _TRACESTEP_REGISTERDELTAENTRY._serialized_start=506
+  _TRACESTEP_REGISTERDELTAENTRY._serialized_end=558
+  _TRACESTEP_FLAGDELTAENTRY._serialized_start=560
+  _TRACESTEP_FLAGDELTAENTRY._serialized_end=608
+  _TRACESTEP_MEMORYDELTAENTRY._serialized_start=610
+  _TRACESTEP_MEMORYDELTAENTRY._serialized_end=660
+  _EXECUTIONTRACE._serialized_start=677
+  _EXECUTIONTRACE._serialized_end=891
 # @@protoc_insertion_point(module_scope)

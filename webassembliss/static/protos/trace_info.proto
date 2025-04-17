@@ -3,6 +3,26 @@ syntax = "proto3";
 // This file can be compiled with: protoc trace_info.proto --python_out=../../pyprotos
 // That will generate the trace_info_pb2.py file that we can import in the python backend.
 
+// Message to hold information about the assembling process.
+message AssemblerInfo {
+  bool status_ok = 1;
+  repeated string error = 2;
+}
+
+// Message to hold information about the linking process.
+message LinkerInfo {
+  bool status_ok = 1;
+  repeated string errors = 2;
+}
+
+// Message to hold information about the entire build process.
+// It combines the assembler and linker information;
+// For new features, if any new build information is required, it can be included here without having to modify ExecutionTrace.
+message BuildInfo {
+  AssemblerInfo as_info = 1;
+  LinkerInfo ld_info = 2;
+}
+
 // Message to hold information about the line that was executed;
 // It stores an index for the filename inside of ExecutionTrace.source_filenames, and the line number.
 message LineInfo {
@@ -26,15 +46,11 @@ message TraceStep {
 // It stores information about the architecture emulated and a list of TraceSteps.
 message ExecutionTrace {
   string rootfs = 1;
-  repeated string source_filenames = 2;
-  bool assembled_ok = 3;
-  bool linked_ok = 4;
+  uint32 arch_num_bits = 2;
+  repeated string source_filenames = 3;
+  BuildInfo build = 4;
   string argv = 5;
   optional sint32 exit_code = 6;
   bool reached_max_steps = 7;
-  // One entry for each separate memory area that is mapped for the user program;
-  // Entries follow this format: start_address -> end_address
-  map<uint64, uint64> mapped_memory = 8;
-  repeated TraceStep steps = 9;
-  uint32 arch_num_bits = 10;
+  repeated TraceStep steps = 8;
 }
