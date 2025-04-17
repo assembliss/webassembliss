@@ -74,6 +74,9 @@ function openTab(tabName) {
     let newTabBtn = document.getElementById(`tab${tabName}Btn`);
 
     if (currentTab.name == tabName && !document.getElementById(`tab${currentTab.name}Rename`)) {
+        // TODO: Extract all this logic into a separate function we can call independently from openTab.
+        // TODO(BUG): If user enters renaming functionality, they cannot exit and keep the original name (at least on firefox).
+        // TODO(BUG): If user renames a tab, the button's id does not update automatically (at least on firefox).
         // Tab renaming functionality
         // There might need to exist some sort of character check to make sure the filename isn't something illegal?
         // Though it seems that even with special characters, saving files works fine. Not sure if this will matter somewhere else though.
