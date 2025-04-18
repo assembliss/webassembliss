@@ -348,7 +348,7 @@ def stepped_emulation(
                 memory_delta=mem_delta,
                 flag_delta=flag_delta,
                 exit_code=ql.os.exit_code,
-                stdout=out.getvalue().decode(),
+                stdout=out.getvalue(),
                 stderr=execution_error,
             )
         )

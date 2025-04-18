@@ -3,7 +3,7 @@ from io import BytesIO
 import rocher.flask  # type: ignore[import-untyped]
 from flask import Flask, abort, render_template, request, send_file
 
-from .arch_config import ARCH_MAP
+from .emulation.arch_config import ARCH_MAP
 from .grader.single_student import grade_form_submission
 from .utils import b64_to_bytes
 

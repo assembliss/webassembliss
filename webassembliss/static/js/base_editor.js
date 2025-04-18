@@ -298,7 +298,6 @@ const tabs = {
         document.getElementById("tabsDiv").insertBefore(newTab, document.getElementById("addTabBtn"));
         document.getElementById("tabsDiv").insertBefore(newTabX, document.getElementById("addTabBtn"));
         this.count++;
-        console.log("added tab with name: " + newName);
     }
 };
 
@@ -1592,7 +1591,6 @@ function BASE_startTracing(combineAllSteps) {
             // Parse the protobuf from the backend.
             window.lastTrace = window.ExecutionTrace.decode(new Uint8Array(data));
         }).then(() => {
-            console.log(window.lastTrace);
             // Mark emulation as completed and parse the information we received.
             document.getElementById("runStatus").innerHTML = OK_SYMBOL;
 
@@ -1939,11 +1937,17 @@ function formatMemoryChunk(chunk, chunkShowLength, byteSep, showAscii) {
     return chunkStr;
 }
 
+const utf8Decoder = new TextDecoder();
 function updateTraceGUI() {
-    // Show the combined stdout.
+    // Show the combined decoded stdout.
     let combinedStdout = "";
     for (let i in currentTraceStep.stdout) {
-        combinedStdout += currentTraceStep.stdout[i];
+        if (currentTraceStep.stdout[i].length == 0) {
+            // Skip empty arrays.
+            continue;
+        }
+        // Decode and append the UTF-8 bytes into characters we can display in the output box.
+        combinedStdout += utf8Decoder.decode(currentTraceStep.stdout[i]);
     }
     document.getElementById("outputBox").value = combinedStdout;
 

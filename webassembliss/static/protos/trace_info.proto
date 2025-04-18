@@ -38,7 +38,7 @@ message LineInfo {
 // It stores the differences in registers/memory/flags/output this instruction caused.
 message TraceStep {
   LineInfo line_executed = 1;
-  string stdout = 2;
+  bytes stdout = 2;
   string stderr = 3;
   optional sint32 exit_code = 4;
   map<string, uint64> register_delta = 5;
