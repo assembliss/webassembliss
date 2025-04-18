@@ -1624,6 +1624,9 @@ function BASE_startTracing(combineAllSteps) {
             // Update the tracing information to show the initial state.
             changeTracingStep(1);
 
+            // Use the timeout indication to show if the trace reached maximum number of steps.
+            document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
+
             // If the code has assembled and linked, it *should* have been emulated.
             // Check if the user wanted to run or trace the code.
             if (combineAllSteps) {
@@ -1637,8 +1640,6 @@ function BASE_startTracing(combineAllSteps) {
             document.getElementById("traceMenuDiv").classList.remove("collapse");
             // Mark execution as not exited yet.
             document.getElementById("exitCode").innerHTML = WAITING_SYMBOL;
-            // Use the timeout indication to show if the trace reached maximum number of steps.
-            document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
             // Allow tracing to be downloaded and stopped.
             document.getElementById("traceDownload").disabled = false;
             document.getElementById("traceStop").disabled = false;
@@ -1705,7 +1706,7 @@ function exitCodeToEmoji(exitCode) {
 }
 
 function advanceOneTraceStep() {
-    if (currentTraceStep.stepNum + 1 >= window.lastTrace.steps.length) {
+    if (currentTraceStep.stepNum !== null && currentTraceStep.stepNum + 1 >= window.lastTrace.steps.length) {
         // At the last step, cannot move any further.
         return false;
     }
