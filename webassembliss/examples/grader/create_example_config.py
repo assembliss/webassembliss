@@ -3,7 +3,7 @@
 # Add the grader directory to the path so we can load the proto.
 import sys
 
-sys.path.insert(1, "/webassembliss/grader")
+sys.path.insert(1, "/webassembliss/pyprotos")
 
 from bz2 import compress
 from hashlib import sha256
@@ -26,7 +26,7 @@ config = ProjectConfig()
 # Set basic info
 #
 config.name = "Hello World Project (yesMustPass-yesSkip)"
-config.arch = TargetArchitecture.ARM64
+config.arch = TargetArchitecture.arm64_linux
 config.required_files.append("hello.S")
 config.exec_name = "hello.exe"
 config.as_flags.append("-o")
@@ -43,6 +43,7 @@ tc1.name = "Passing test"
 tc1.stdin_s = "input1"
 tc1.expected_out_s = "Hello folks!\n"
 tc1.timeout_ms = 500_000  # 0.5s
+tc1.max_instr_exec = 2_000  # limit test case to 2000 instructions executed
 tc1.hidden = False
 tc1.points = 5
 
@@ -51,6 +52,7 @@ tc2.name = "Passing test with bytes"
 tc2.stdin_b = "input2".encode()
 tc2.expected_out_b = "Hello folks!\n".encode()
 tc2.timeout_ms = 500_000  # 0.5s
+tc2.max_instr_exec = 2_000  # limit test case to 2000 instructions executed
 tc2.hidden = False
 tc2.points = 5
 
@@ -59,6 +61,7 @@ tc3.name = "Failing test"
 tc3.stdin_s = "input3"
 tc3.expected_out_s = "Hello\tfolks!\n"
 tc3.timeout_ms = 500_000  # 0.5s
+tc3.max_instr_exec = 2_000  # limit test case to 2000 instructions executed
 tc3.hidden = False
 tc3.points = 2
 
@@ -68,6 +71,7 @@ tc4.cl_args.extend(["arg1", "arg2"])
 tc4.stdin_s = "input4"
 tc4.expected_out_s = "Hello folks!\r\n"
 tc4.timeout_ms = 500_000  # 0.5s
+tc4.max_instr_exec = 2_000  # limit test case to 2000 instructions executed
 tc4.hidden = False
 tc4.points = 2
 
@@ -77,6 +81,7 @@ tc5.cl_args.extend(["arg3", "arg4"])
 tc5.stdin_s = "input5"
 tc5.expected_out_s = "You can't see me!"
 tc5.timeout_ms = 500_000  # 0.5s
+tc5.max_instr_exec = 2_000  # limit test case to 2000 instructions executed
 tc5.hidden = True
 tc5.points = 1
 

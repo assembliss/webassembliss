@@ -3,7 +3,7 @@ from io import BytesIO
 import rocher.flask  # type: ignore[import-untyped]
 from flask import Flask, abort, render_template, request, send_file
 
-from .emulation.arch_config import ARCH_MAP
+from .emulation import ARCH_CONFIG_MAP
 from .grader.single_student import grade_form_submission
 from .utils import b64_to_bytes
 
@@ -58,10 +58,10 @@ def grader():
 
 @app.route("/editor/<arch>/")
 def editor_page(arch):
-    arch_info = ARCH_MAP.get(arch)
+    arch_info = ARCH_CONFIG_MAP.get(arch)
     if arch_info is None:
         return (
-            f"Invalid architecture config for editor; valid options are {ARCH_MAP.keys()}",
+            f"Invalid architecture config for editor; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
 
@@ -92,10 +92,10 @@ def code_trace():
     if "combine_all_steps" not in request.json:
         return "No combine_all_steps in JSON data", 400
 
-    arch_info = ARCH_MAP.get(request.json["arch"])
+    arch_info = ARCH_CONFIG_MAP.get(request.json["arch"])
     if arch_info is None:
         return (
-            f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}",
+            f"Invalid architecture config in JSON data; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
 

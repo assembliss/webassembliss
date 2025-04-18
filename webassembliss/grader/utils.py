@@ -9,10 +9,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from dataclasses_json import dataclass_json
 
-from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
-from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
-from ..emulation.arm64_linux import ROOTFS_PATH as ARM64_LINUX_ROOTFS
-from ..emulation.arm64_linux import count_source_instructions as ARM64_LINUX_COUNT_FUN
+from ..emulation import ARCH_CONFIG_MAP
 from ..pyprotos.project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
@@ -191,18 +188,6 @@ def create_test_diff(test: TestCase) -> str:
         raise RuntimeError("expected_out and actual_out should have the same type.")
     return HtmlDiff().make_file(expected, actual)
 
-
-# Maps possible rootfs values from project_configs into relevant commands and functions.
-ROOTFS_MAP = {
-    TargetArchitecture.ARM64: ArchConfig(
-        rootfs=ARM64_LINUX_ROOTFS,
-        workdir="userprograms",
-        as_cmd=ARM64_LINUX_AS,
-        ld_cmd=ARM64_LINUX_LD,
-        instr_count_fun=ARM64_LINUX_COUNT_FUN,
-        inline_comment_tokens=["/*", "//"],
-    )
-}
 
 # Maps possible execution count aggregation methods into their corresponding python functions.
 EXECUTION_AGG_MAP = {

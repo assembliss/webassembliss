@@ -9,18 +9,17 @@ from typing import Dict, List, Tuple, Union
 
 from werkzeug.datastructures import FileStorage
 
-from ..emulation.base_tracing import assemble, link
-
-timed_emulation = lambda *args, **kwargs: None
+from ..emulation import ARCH_CONFIG_MAP, ArchConfig
+from ..emulation.base_tracing import RootfsSandbox, assemble, check_for_bad_paths, link
 from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
+    TargetArchitecture,
     WrappedProject,
 )
-from ..utils import bytes_to_b64
+from ..utils import bytes_to_b64, create_bin_file
 from .utils import (
     EXECUTION_AGG_MAP,
-    ROOTFS_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
@@ -38,8 +37,7 @@ from .utils import (
 def run_test_cases(
     *,
     config: ProjectConfig,
-    rootfs: Union[PathLike, str],
-    bin_path: Union[PathLike, str],
+    arch: ArchConfig,
 ) -> Tuple[List[TestCaseResults], List[int]]:
     """Run the test cases from the project config through qiling emulation."""
     results: List[TestCaseResults] = []
@@ -336,38 +334,63 @@ def grade_student(
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
-    # TODO: remove this block once we can assemble/link multiple files together.
-    assert len(student_files) == 1
-    # TODO: allow project to require multiple files.
-    assert len(config.required_files) == 1
     for required_file in config.required_files:
         assert required_file in student_files
 
+    # Make sure that no user or project files are using absolute paths;
+    # That would ignore the rootfs sandbox because of os.path.join's behavior.
+    # Also check for users trying to go outside their workspace.
+    all_path_names = (
+        list(config.required_files)
+        + list(config.provided_objects)
+        + list(config.extra_txt_files)
+        + list(config.extra_bin_files)
+        + [config.exec_name]
+    )
+    try:
+        check_for_bad_paths(all_path_names)
+    except ValueError:
+        # TODO: figure out what we should return here.
+        gr.assembled = False
+        gr.errors = "No provided files can use absolute paths."
+        return gr
+
     # Find config for the project architecture
-    arch = ROOTFS_MAP[config.arch]
+    arch = ARCH_CONFIG_MAP[TargetArchitecture.Name(config.arch)]
 
-    # Create a tempdir to run the user code
-    with TemporaryDirectory(dir=join(arch.rootfs, arch.workdir)) as tmpdirname:
-        # Create the extra files needed to grade
-        create_extra_files(tmpdirname, config)
+    # Create a sandbox to check the user code builds correctly.
+    with RootfsSandbox(arch.rootfs_path) as rootfs_sandbox:
+        workpath = join(rootfs_sandbox, arch.workdir)
 
-        # Create source file in temp directory
-        src_path = join(tmpdirname, config.required_files[0])
-        create_text_file(src_path, student_files[config.required_files[0]])
+        # Create the preassembled object files.
+        for filename in config.provided_objects:
+            create_bin_file(join(workpath, filename), config.provided_objects[filename])
 
-        # Assemble source file
-        obj_path = f"{src_path}.o"
-        gr.assembled, _, _, gr.errors = assemble(
-            as_cmd=arch.as_cmd,
-            src_path=src_path,
-            flags=config.as_flags,
-            obj_path=obj_path,
-        )
-        if not gr.assembled:
-            return gr
+        # Create the source files.
+
+        # Create source files in temp directory.
+        src_paths = []
+        for i in range(len(config.required_files)):
+            src_path = join(workpath, config.required_files[i])
+            create_text_file(src_path, student_files[config.required_files[i]])
+            src_paths.append(src_path)
+
+        # Assemble source files.
+        obj_paths = []
+        for sp in src_paths:
+            obj_path = f"{src_path}.o"
+            gr.assembled, _, _, gr.errors = assemble(
+                as_cmd=arch.as_cmd,
+                src_path=src_path,
+                flags=config.as_flags,
+                obj_path=obj_path,
+            )
+            obj_paths.append(obj_path)
+            if not gr.assembled:
+                return gr
 
         # Link object
-        bin_path = join(tmpdirname, config.exec_name)
+        bin_path = join(workpath, config.exec_name)
         gr.linked, _, _, gr.errors = link(
             ld_cmd=arch.ld_cmd,
             obj_paths=[obj_path],
@@ -377,38 +400,38 @@ def grade_student(
         if not gr.linked:
             return gr
 
-        # Run given test cases
-        gr.tests, all_exec_counts = run_test_cases(
-            config=config, rootfs=arch.rootfs, bin_path=bin_path
-        )
-        gr.test_diffs = [create_test_diff(t) for t in gr.tests]
-        sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
-        sr.max_test_points = sum((t.points for t in config.tests))
-        sr.received_test_points = sum(
-            (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
-        )
+    # Run given test cases
+    gr.tests, all_exec_counts = run_test_cases(
+        config=config, rootfs=arch.rootfs, bin_path=bin_path
+    )
+    gr.test_diffs = [create_test_diff(t) for t in gr.tests]
+    sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
+    sr.max_test_points = sum((t.points for t in config.tests))
+    sr.received_test_points = sum(
+        (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
+    )
 
-        # Find info needed from the source file.
-        sr.instr_count = arch.instr_count_fun(src_path)
-        sr.inline_comment_count = find_inline_comments_count(
-            src_path, arch.inline_comment_tokens
-        )
-        sr.comment_only_lines = find_comment_only_count(src_path)
+    # Find info needed from the source file.
+    sr.instr_count = arch.instr_count_fun(src_path)
+    sr.inline_comment_count = find_inline_comments_count(
+        src_path, arch.inline_comment_tokens
+    )
+    sr.comment_only_lines = find_comment_only_count(src_path)
 
-        # Calculate each category's score
-        gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
-        gr.scores["documentation"] = calculate_docs_score(
-            config=config,
-            instr_count=sr.instr_count,
-            comment_only_count=sr.comment_only_lines,
-            inline_comment_count=sr.inline_comment_count,
-        )
-        gr.scores["source_efficiency"] = calculate_source_eff_score(
-            config=config, source_instruction_count=sr.instr_count
-        )
-        gr.scores["exec_efficiency"] = calculate_execution_eff_score(
-            config=config, instructions_executed=sr.agg_exec_count
-        )
+    # Calculate each category's score
+    gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
+    gr.scores["documentation"] = calculate_docs_score(
+        config=config,
+        instr_count=sr.instr_count,
+        comment_only_count=sr.comment_only_lines,
+        inline_comment_count=sr.inline_comment_count,
+    )
+    gr.scores["source_efficiency"] = calculate_source_eff_score(
+        config=config, source_instruction_count=sr.instr_count
+    )
+    gr.scores["exec_efficiency"] = calculate_execution_eff_score(
+        config=config, instructions_executed=sr.agg_exec_count
+    )
 
     # Combine all categories' weights into percentages.
     gr.weights = combine_category_weights(config=config)
@@ -447,7 +470,8 @@ if __name__ == "__main__":
     example_path = "/webassembliss/examples/grader"
     source_name = "hello.S"
     source_path = join(example_path, source_name)
-    config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
+    # config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
+    config_path = join(example_path, "example_project_config.pb2")
     with open(config_path, "rb") as config_fp, open(source_path) as source_fp:
         config = WrappedProject()
         config.ParseFromString(config_fp.read())
