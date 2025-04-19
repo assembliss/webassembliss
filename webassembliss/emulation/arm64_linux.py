@@ -102,7 +102,7 @@ def trace(
     ld_flags: Optional[List[str]] = None,
     max_trace_steps: int = 500,
     timeout: int = 5_000_000,  # 5 seconds
-    stdin: str = "",
+    stdin: bytes = b"",
     bin_name: str = "usrCode.exe",
     cl_args: str = "",
     registers: Optional[List[str]] = None,
@@ -132,7 +132,7 @@ def trace(
         as_flags=as_flags,
         ld_flags=ld_flags,
         objdump_cmd=OBJDUMP_CMD,
-        stdin=BytesIO(stdin.encode()),
+        stdin=BytesIO(stdin),
         bin_name=bin_name,
         registers=registers,
         cl_args=cl_args.split(),

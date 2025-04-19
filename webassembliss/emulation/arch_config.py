@@ -14,13 +14,11 @@ from .riscv64_linux import trace as riscv64_linux_trace
 class ArchConfig:
     # Main method to emulate this architecture.
     trace: Callable
-    # Information for to serve editor to frontend.
+    # Information to serve the appropriate files for the frontend editor.
     template_path: str
     example_path: str
     example_name: str
     # Information for the grader pipeline.
-    rootfs_path: str
-    default_workspace: str
     inline_comment_tokens: List[str]
     instr_count_fun: Callable
 
@@ -32,8 +30,6 @@ ARCH_CONFIG_MAP = {
         template_path="arm64_linux.html.j2",
         example_path=join(EXAMPLES_PATH, "arm64_linux", "hello.S"),
         example_name="hello.S",
-        rootfs_path=arm64_linux_rootfs,
-        default_workspace="userprograms",
         inline_comment_tokens=["/*", "//"],
         instr_count_fun=arm64_linux_count_fun,
     ),
@@ -42,8 +38,6 @@ ARCH_CONFIG_MAP = {
         template_path="riscv64_linux.html.j2",
         example_path=join(EXAMPLES_PATH, "riscv64_linux", "hello.S"),
         example_name="hello.S",
-        rootfs_path=riscv64_linux_rootfs,
-        default_workspace="userprograms",
         inline_comment_tokens=["#"],
         instr_count_fun=riscv64_linux_count_fun,
     ),

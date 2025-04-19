@@ -7,6 +7,7 @@ from subprocess import PIPE, Popen, run
 from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
 
+from google.protobuf.json_format import MessageToDict
 from werkzeug.datastructures import FileStorage
 
 from ..emulation import ARCH_CONFIG_MAP, ArchConfig
@@ -17,6 +18,7 @@ from ..pyprotos.project_config_pb2 import (
     TargetArchitecture,
     WrappedProject,
 )
+from ..pyprotos.trace_info_pb2 import TraceStep
 from ..utils import bytes_to_b64, create_bin_file
 from .utils import (
     EXECUTION_AGG_MAP,
@@ -34,19 +36,86 @@ from .utils import (
 )
 
 
+def check_project_builds(
+    config: ProjectConfig, arch: ArchConfig, student_files: Dict[str, str]
+) -> Tuple[bool, bool, str]:
+    # Get the input for the first test.
+    is_text, stdin, _ = validate_and_load_testcase_io(config.tests[0])
+    bytes_stdin = stdin if not is_text else stdin.encode()
+
+    # Get the CL args for the first test.
+    cl_args = " ".join(list(config.tests[0].cl_args))
+
+    # Convert the config into a dict for easier access.
+    config_dict = MessageToDict(config)
+
+    # Emulate the first test for only a single step.
+    trace = arch.trace(
+        combine_all_steps=False,
+        source_files=student_files,
+        object_files=config_dict.get("providedObjects", {}),
+        extra_txt_files=config_dict.get("extraTxtFiles", {}),
+        extra_bin_files=config_dict.get("extraBinFiles", {}),
+        as_flags=config_dict.get("asFlags", None),
+        ld_flags=config_dict.get("ldFlags", None),
+        max_trace_steps=1,  # single step, we just want to check if the binary is built
+        timeout=500_000,  # 0.5 second
+        stdin=bytes_stdin,
+        bin_name=config_dict["execName"],
+        cl_args=cl_args,
+    )
+
+    # Return assembler and linker results, and the combined error messages.
+    return (
+        trace.build.as_info.status_ok,
+        trace.build.ld_info.status_ok,
+        trace.build.as_info.errors + trace.build.ld_info.errors,
+    )
+
+
+def combine_stdout(steps: List[TraceStep]) -> bytes:
+    """Combine the stdout for all the steps."""
+    out = b""
+
+    for s in steps:
+        out += s.stdout
+
+    return out
+
+
+def combine_stderr(steps: List[TraceStep]) -> str:
+    """Combine the stderr for all the steps."""
+    err = ""
+
+    for s in steps:
+        err += s.stderr
+
+    return err
+
+
 def run_test_cases(
     *,
     config: ProjectConfig,
     arch: ArchConfig,
+    student_files: Dict[str, str],
 ) -> Tuple[List[TestCaseResults], List[int]]:
     """Run the test cases from the project config through qiling emulation."""
+    # Convert the config into a dict for easier access.
+    config_dict = MessageToDict(config)
+
+    # Create a list to store test results.
     results: List[TestCaseResults] = []
 
+    # Create a list to store instructions executed on each test.
     instructions_executed: List[int] = []
+
+    # Flag to early-stop if project config wants to.
     has_failed_test = False
+
+    # Process each test individually.
     for test in config.tests:
         # Convert command-line arguments into a regular list
-        cl_args = list(test.cl_args)
+        cl_args = " ".join(list(test.cl_args))
         is_text, stdin, stdout = validate_and_load_testcase_io(test)
         bytes_stdin = stdin if isinstance(stdin, bytes) else stdin.encode()
 
@@ -62,32 +131,26 @@ def run_test_cases(
 
         else:
             # Emulate binary to get result
-            # TODO: force a max timeout here.
-            (
-                ran_ok,
-                exit_code,
-                timed_out,
-                _,
-                actual_out,
-                actual_err,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                exec_count,
-            ) = timed_emulation(
-                rootfs_path=rootfs,
-                bin_path=bin_path,
-                cl_args=cl_args,
-                bin_name=config.exec_name,
+            trace = arch.trace(
+                combine_all_steps=False,
+                source_files=student_files,
+                object_files=config_dict.get("providedObjects", {}),
+                extra_txt_files=config_dict.get("extraTxtFiles", {}),
+                extra_bin_files=config_dict.get("extraBinFiles", {}),
+                as_flags=config_dict.get("asFlags", None),
+                ld_flags=config_dict.get("ldFlags", None),
+                max_trace_steps=test.max_instr_exec,
                 timeout=test.timeout_ms,
-                stdin=BytesIO(bytes_stdin),
-                registers=[],
-                get_flags_func=lambda *args, **kwargs: {},
-                decode_io=is_text,
+                stdin=bytes_stdin,
+                bin_name=config_dict["execName"],
+                cl_args=cl_args,
             )
+            timed_out = trace.reached_max_steps
+            exit_code = trace.exit_code if trace.HasField("exit_code") else None
+            ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
+            exec_count = len(trace.steps) - 1
+            actual_out = combine_stdout(trace.steps)
+            actual_err = combine_stderr(trace.steps)
             executed = True
 
         if is_text:
@@ -295,6 +358,9 @@ def grade_student(
     # Make sure the given project config is valid.
     config = validate_and_load_project_config(wrapped_config)
 
+    # Make sure the project config has at least one test case.
+    assert len(config.tests) > 0
+
     # Create result objects
     sr = SubmissionResults(
         project_checksum64=bytes_to_b64(wrapped_config.checksum),
@@ -358,51 +424,17 @@ def grade_student(
     # Find config for the project architecture
     arch = ARCH_CONFIG_MAP[TargetArchitecture.Name(config.arch)]
 
-    # Create a sandbox to check the user code builds correctly.
-    with RootfsSandbox(arch.rootfs_path) as rootfs_sandbox:
-        workpath = join(rootfs_sandbox, arch.workdir)
-
-        # Create the preassembled object files.
-        for filename in config.provided_objects:
-            create_bin_file(join(workpath, filename), config.provided_objects[filename])
-
-        # Create the source files.
-
-        # Create source files in temp directory.
-        src_paths = []
-        for i in range(len(config.required_files)):
-            src_path = join(workpath, config.required_files[i])
-            create_text_file(src_path, student_files[config.required_files[i]])
-            src_paths.append(src_path)
-
-        # Assemble source files.
-        obj_paths = []
-        for sp in src_paths:
-            obj_path = f"{src_path}.o"
-            gr.assembled, _, _, gr.errors = assemble(
-                as_cmd=arch.as_cmd,
-                src_path=src_path,
-                flags=config.as_flags,
-                obj_path=obj_path,
-            )
-            obj_paths.append(obj_path)
-            if not gr.assembled:
-                return gr
-
-        # Link object
-        bin_path = join(workpath, config.exec_name)
-        gr.linked, _, _, gr.errors = link(
-            ld_cmd=arch.ld_cmd,
-            obj_paths=[obj_path],
-            flags=config.ld_flags,
-            bin_path=bin_path,
-        )
-        if not gr.linked:
-            return gr
+    # Check the user code builds with the given config.
+    gr.assembled, gr.linked, gr.errors = check_project_builds(
+        config, arch, student_files
+    )
+    if not (gr.assembled and gr.linked):
+        # If it doesn't stop the grading process.
+        return gr
 
     # Run given test cases
     gr.tests, all_exec_counts = run_test_cases(
-        config=config, rootfs=arch.rootfs, bin_path=bin_path
+        config=config, arch=arch, student_files=student_files
     )
     gr.test_diffs = [create_test_diff(t) for t in gr.tests]
     sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]

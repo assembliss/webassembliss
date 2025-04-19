@@ -110,7 +110,7 @@ def code_trace():
             n: b64_to_bytes(c)
             for n, c in request.json.get("extra_bin_files", {}).items()
         },
-        stdin=request.json["user_input"],
+        stdin=request.json["user_input"].encode(),
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
     )
