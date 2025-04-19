@@ -231,12 +231,17 @@ function openTab(tabName) {
 /* TODO: Before closing a tab, a check should occur to make sure the file was saved or otherwise not completely deleted. 
  * TODO: Prevent last tab from being closed.
  */
-function closeTab(tabName) {
+function closeTab(tabName, noConfirm) {
     if (currentTab.name == tabName) {
         // TODO: if current tab is open when this function is ran, swap to another tab.
         // Meanwhile, we just prevent that from happening... this is probably fine behavior.
         return;
     }
+
+    if (!noConfirm && !confirm(`Are you sure you want to delete '${tabName}'?`)) {
+        return;
+    }
+
     let toBeClosed_filename = document.getElementById(`tab${tabName}Btn`).value;
     // Delete tab locally.
     localFileStorage.deleteTab(toBeClosed_filename);
@@ -486,7 +491,7 @@ const localFileStorage = {
                 // If they don't, open a different tab and remove the default one.
                 let firstFilename = Object.keys(this.tabs)[0];
                 openTab(firstFilename);
-                closeTab(defaultTabName);
+                closeTab(defaultTabName, true);
             }
         });
     },
@@ -498,7 +503,7 @@ const localFileStorage = {
             return;
         }
         // Convert file to Base64 so we can send it to the python backend.
-        let b64Contents = (new Uint8Array(contents)).toBase64();
+        let b64Contents = encodeBase64(contents);
         this.objs[filename] = b64Contents;
         // Update the storage size.
         this.size += filename.length + b64Contents.length;
@@ -533,9 +538,9 @@ const localFileStorage = {
             filesizeCell.innerText = fileSize;
             newTr.appendChild(filesizeCell);
             // Add a button for the file to be removed later.
-            // TODO: figure out why the tooltip is not working on the trash can.
+            // TODO: figure out why the tooltips are not working here.
             let fileDeleteCell = document.createElement('td');
-            fileDeleteCell.innerHTML = `<i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='localFileStorage.deleteAssembledObj("${filename}")'></i>`;
+            fileDeleteCell.innerHTML = `<i class="fa-solid fa-file-arrow-down" data-bs-toggle="tooltip" data-bs-title="Click here to download ${filename}" onclick='download_localstorage_file("${filename}", "obj")')></i> <i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='deleteUploadedFile("${filename}", "obj")'></i>`;
             newTr.appendChild(fileDeleteCell);
             // Add the new row to the table.
             let tbody = document.getElementById("uploadedObjectsTBody");
@@ -609,7 +614,7 @@ const localFileStorage = {
             return;
         }
         // Convert file to Base64 so we can send it to the python backend.
-        let b64Contents = (new Uint8Array(contents)).toBase64();
+        let b64Contents = encodeBase64(contents);
         this.binData[filename] = b64Contents;
         // Update the storage size.
         this.size += filename.length + b64Contents.length;
@@ -659,9 +664,9 @@ const localFileStorage = {
             newTr.appendChild(filesizeCell);
             // Add a button for the file to be removed later.
             // TODO: figure out why the tooltip is not working on the trash can.
-            let deleteFun = isTxt ? 'deleteTxtFile' : 'deleteBinFile';
+            let filetype = isTxt ? 'txt' : 'bin';
             let fileDeleteCell = document.createElement('td');
-            fileDeleteCell.innerHTML = `<i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='localFileStorage.${deleteFun}("${filename}")'></i>`;
+            fileDeleteCell.innerHTML = `<i class="fa-solid fa-file-arrow-down" data-bs-toggle="tooltip" data-bs-title="Click here to download ${filename}" onclick='download_localstorage_file("${filename}", "${filetype}")')></i> <i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='deleteUploadedFile("${filename}", "${filetype}")'></i>`;
             newTr.appendChild(fileDeleteCell);
             // Add the new row to the table.
             let tbody = document.getElementById("uploadedDataFilesTBody");
@@ -712,6 +717,51 @@ function formatHumanSize(bytes, decimals) {
         i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
+
+function download_localstorage_file(filename, filetype) {
+    switch (filetype) {
+        case "obj":
+            download_Base64File(filename, localFileStorage.objs[filename]);
+            break;
+
+        case "bin":
+            download_Base64File(filename, localFileStorage.binData[filename]);
+            break;
+
+        case "txt":
+            download_file(filename, localFileStorage.txtData[filename]);
+            break;
+    }
+}
+
+function deleteUploadedFile(filename, filetype) {
+    if (!confirm(`Are you sure you want to delete '${filename}'?`)) {
+        return;
+    }
+
+    switch (filetype) {
+        case "obj":
+            localFileStorage.deleteAssembledObj(filename);
+            break;
+        case "txt":
+            localFileStorage.deleteTxtFile(filename);
+            break;
+        case "bin":
+            localFileStorage.deleteBinFile(filename);
+            break;
+    }
+}
+
+function encodeBase64(buffer) {
+    var binary = '';
+    var bytes = new Uint8Array(buffer);
+    var len = bytes.byteLength;
+    for (var i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
 
 function uploadFile(callback) {
     let fileUploadEl = document.createElement('input');

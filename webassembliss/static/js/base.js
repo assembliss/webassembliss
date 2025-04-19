@@ -48,3 +48,14 @@ function download_file(name, contents, mime_type) {
     dlink.click();
     dlink.remove();
 }
+
+function download_Base64File(fileName, contentBase64) {
+    const linkSource = `data:application/octet-stream;base64,${contentBase64}`;
+    const downloadLink = document.createElement('a');
+    document.body.appendChild(downloadLink);
+
+    downloadLink.href = linkSource;
+    downloadLink.target = '_self';
+    downloadLink.download = fileName;
+    downloadLink.click();
+}
