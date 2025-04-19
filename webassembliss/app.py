@@ -55,6 +55,16 @@ def grader():
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
 
+@app.route("/project-config-builder/", methods=["POST", "GET"])
+def project_config_builder():
+    if request.method == "POST":
+        # If POST, make sure we got here from the submission form.
+        if request.referrer != request.url:
+            abort(403)
+        abort(403)
+
+    # If not POST, show the submission form.
+    return render_template("project_config_builder.html.j2")
 
 @app.route("/editor/<arch>/")
 def editor_page(arch):

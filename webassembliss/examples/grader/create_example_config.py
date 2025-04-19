@@ -29,7 +29,7 @@ config.name = "Hello World Project (noMustPass-noSkip)"
 config.arch = TargetArchitecture.arm64_linux
 config.required_files.append("hello.S")
 config.exec_name = "hello.exe"
-config.as_flags.append("-g -o")
+config.as_flags.append("-o")
 config.ld_flags.append("-o")
 config.must_pass_all_tests = False
 config.stop_on_first_test_fail = False

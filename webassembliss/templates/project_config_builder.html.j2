@@ -1,0 +1,121 @@
+{% extends "base.html.j2" %}
+{% block title %} - Project Config Builder{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">Project Config Builder</h1>
+      <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
+          enctype=multipart/form-data>
+        <legend>Project Setup</legend>
+        <div class="mb3">
+          <label for="name">Project Name</label>
+          <input type="text" class="form-control" id="project-name" name="project-name" placeholder="Example Project" required>
+          <div class="invalid-feedback">
+            Please enter the project name.
+          </div>
+        </div>
+        <div class="mb3">
+          <label for="arch-select" class="form-label">Project Architecture</label>
+          <select class="form-select" id="arch-select" name="arch-select" aria-label="Project architecture selection.">
+            <option selected>Click to select option.</option>
+          </select>
+          <div class="invalid-feedback">
+            Please select a valid architecture option.
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="name">Executable Name</label>
+          <input type="text" class="form-control" id="executable-name" name="executable-name" placeholder="example.exe" required>
+          <div class="invalid-feedback">
+            Please enter the executable name that will be run.
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="assembler-flags">Assembler Flags</label>
+          <input type="text" class="form-control" id="assembler-flags" name="assembler-flags" placeholder="-o" required>
+          <div class="invalid-feedback">
+            Please assembler flags.
+          </div>
+        </div>
+        <div class="col-md-4">
+          <label for="linker-flags">Linker Flags</label>
+          <input type="text" class="form-control" id="linker-flags" name="linker-flags" placeholder="-o" required>
+          <div class="invalid-feedback">
+            Please enter linker flags.
+          </div>
+        </div>
+
+        <legend>User Required Files</legend>
+        <div class="mb-3">
+          <label for="user-files" class="form-label">Space-separeted List of Files the User Will Submit</label>
+          <input type="text" name="user-files" id="user-files" class="form-control" aria-label="List of files the user will be required to submit." placeholder="example1.S example2.S"></textarea>
+          <div class="invalid-feedback">
+            Please enter a list of files the user will need to submit.
+          </div>
+        </div>
+
+        <legend>Additional Files Provided</legend>
+        <div class="mb-3">
+          <label for="object-files" class="form-label">Pre-Assembled Object Files</label>
+          <input type="file" class="form-control" id="object-files" name="object-files" aria-describedby="object-files" multiple>
+          <div id="objsHelp" class="form-text">These are pre-assembled objects the user can use as libraries in their code.</div>
+        </div>
+        <div class="mb-3">
+          <label for="text-data-files" class="form-label">Text Data Files</label>
+          <input type="file" class="form-control" id="text-data-files" name="text-data-files" aria-describedby="text-data-files" multiple>
+          <div id="txtsHelp" class="form-text">These are .txt files that will be created in the same directory as user code they can access and process.</div>
+        </div>
+        <div class="mb-3">
+          <label for="bin-data-files" class="form-label">Binary Data Files</label>
+          <input type="file" class="form-control" id="bin-data-files" name="bin-data-files" aria-describedby="bin-data-files" multiple>
+          <div id="binsHelp" class="form-text">These are .bin files that will be created in the same directory as user code they can access and process.</div>
+        </div>
+
+        <legend>Grading Settings</legend>
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="must-pass-all-tests">
+            <label class="form-check-label" for="must-pass-all-tests">User must pass all test cases to receive non-zero grade.</label>
+          </div>
+        </div>
+        <div class="mb-3">
+          <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="tests-stop-on-fail">
+            <label class="form-check-label" for="tests-stop-on-fail">Test cases stop executing on first fail.</label>
+          </div>
+        </div>
+
+
+        <legend>Documentation Grading</legend>
+        <legend>Source Effifiency Grading</legend>
+        <legend>Execution Effifiency Grading</legend>
+        <div class="mb3">
+          <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
+          <select class="form-select" id="exec-agg-select" name="exec-agg-select" aria-label="Instructions executed aggregation selection.">
+            <option selected>Click to select option.</option>
+          </select>
+          <div class="invalid-feedback">
+            Please select a valid aggregation option.
+          </div>
+        </div>
+
+
+        <legend>Accuracy Grading</legend>
+        <div class="mb-3">
+          <label for="test-cases-json" class="form-label">Test Cases JSON</label>
+          <input type="file" class="form-control" id="test-cases-json" name="test-cases-json" aria-describedby="test-cases-json">
+          <div id="testsHelp" class="form-text">This is a .json file containing the project test cases. Click here to see an example.</div>
+        </div>
+
+        <legend>Finish</legend>
+        <div class="mb3">
+          <button type="submit" class="btn btn-danger">Create Config Proto</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}"></script>
+{% endblock %}
