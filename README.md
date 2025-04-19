@@ -46,7 +46,7 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 	- could allow them to redirect input/output boxes to a filepath
 - [x] refactor backend to have a single run/trace route that receives the arch as parameter
 - [x] refactor backend to only have trace; if the user wants to run, simply combine all steps
-	- [ ] refactor the grader route (and any other calls) to use the trace route
+	- [x] refactor the grader route (and any other calls) to use the trace route
 - [x] refactor the frontend so the editor is generic and new archs only need to provide the syntax highlighting and help links
 - [ ] handle multiple architectures
 	- overview how to do that: https://github.ncsu.edu/assembliss/webassembliss/pull/9

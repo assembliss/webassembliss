@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from io import BytesIO
 from json import loads
 from os import PathLike
 from os.path import join
@@ -11,7 +10,7 @@ from google.protobuf.json_format import MessageToDict
 from werkzeug.datastructures import FileStorage
 
 from ..emulation import ARCH_CONFIG_MAP, ArchConfig
-from ..emulation.base_tracing import RootfsSandbox, assemble, check_for_bad_paths, link
+from ..emulation.base_tracing import check_for_bad_paths
 from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
@@ -154,7 +153,7 @@ def run_test_cases(
             executed = True
 
         if is_text:
-            actual_out = repr(actual_out)
+            actual_out = repr(actual_out.decode())
             stdout = repr(stdout)
             stdin = repr(stdin)
 
@@ -263,6 +262,31 @@ def find_comment_only_count(src_path: str) -> int:
         data = loads(stdout.decode())
         return data["SUM"]["comment"]
     raise RuntimeError("Unable to calculate documentation score.")
+
+
+def find_comments_counts(
+    student_files: Dict[str, str], inline_comment_tokens: List[str]
+) -> Tuple[int, int]:
+    """Create sources in a temporary folder and count the number of comments in them."""
+
+    # Create a directory to write the files to.
+    with TemporaryDirectory() as workdir:
+        # Create accumulators to find the overall counts.
+        inline_comments_count = comment_only_count = 0
+        # Process each file individually.
+        for filename, contents in student_files.items():
+            # Create file in disk.
+            src_path = join(workdir, filename)
+            with open(src_path, "w") as file_out:
+                file_out.write(contents)
+            # Find the relevant counts for this file.
+            inline_comments_count += find_inline_comments_count(
+                src_path, inline_comment_tokens
+            )
+            comment_only_count += find_comment_only_count(src_path)
+
+        # Return the sum of the counts for all files.
+        return inline_comments_count, comment_only_count
 
 
 def calculate_docs_score(
@@ -443,12 +467,13 @@ def grade_student(
         (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
     )
 
-    # Find info needed from the source file.
-    sr.instr_count = arch.instr_count_fun(src_path)
-    sr.inline_comment_count = find_inline_comments_count(
-        src_path, arch.inline_comment_tokens
+    # Find info needed from the source files.
+    sr.instr_count = sum(
+        (arch.instr_count_fun(code) for code in student_files.values())
     )
-    sr.comment_only_lines = find_comment_only_count(src_path)
+    sr.inline_comment_count, sr.comment_only_lines = find_comments_counts(
+        student_files, arch.inline_comment_tokens
+    )
 
     # Calculate each category's score
     gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points

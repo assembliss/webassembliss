@@ -1,7 +1,8 @@
 import subprocess
+import tempfile
 from io import BytesIO
-from os import PathLike
-from typing import Dict, List, Optional, Union
+from os.path import join
+from typing import Dict, List, Optional
 
 import qiling.arch.riscv_const  # type: ignore[import-untyped]
 
@@ -16,52 +17,59 @@ OBJDUMP_CMD = "riscv64-linux-gnu-objdump"
 RISCV64_REGISTERS = list(qiling.arch.riscv_const.reg_map)
 
 
-def count_source_instructions(src_path: Union[PathLike, str]) -> int:
-    """Count the number of instructions in an riscv64 assembly source file."""
+def count_source_instructions(source_contents: str) -> int:
+    """Count the number of instructions of a riscv64 assembly source code."""
 
-    # Assemble source file into an object.
-    obj_path = f"{src_path}.aux_obj"
-    assembled_ok, *_ = assemble(
-        as_cmd=AS_CMD, src_path=src_path, flags=["-o"], obj_path=obj_path
-    )
-    if not assembled_ok:
-        raise RuntimeError("Not able to assemble source into an object.")
+    # Create a tempdir to create the file.
+    with tempfile.TemporaryDirectory() as workdir:
+        # Write the file contents into the folder.
+        src_path = join(workdir, "source.S")
+        with open(src_path, "w") as file_out:
+            file_out.write(source_contents)
 
-    # Run object dump to find only the instructions in the source.
-    objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
-    with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
-        stdout, _ = process.communicate()
+        # Assemble source file into an object.
+        obj_path = f"{src_path}.aux_obj"
+        assembled_ok, *_ = assemble(
+            as_cmd=AS_CMD, src_path=src_path, flags=["-o"], obj_path=obj_path
+        )
+        if not assembled_ok:
+            raise RuntimeError("Not able to assemble source into an object.")
 
-    # Parse the objdump's output to count instructions.
-    lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
+        # Run object dump to find only the instructions in the source.
+        objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
+        with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
+            stdout, _ = process.communicate()
 
-    # Find the first instruction in the code; it has the address of 0 in the text segment.
-    first_line = 0
-    while first_line < len(lines_as_tokens):
-        if not lines_as_tokens[first_line]:
-            first_line += 1
-        elif lines_as_tokens[first_line][0] != "0:":
-            first_line += 1
-        else:
-            break
+        # Parse the objdump's output to count instructions.
+        lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
 
-    # Count lines that have instruction information.
-    instruction_count = 0
-    for i in range(first_line, len(lines_as_tokens)):
-        # Ignore empty lines.
-        if not lines_as_tokens[i]:
-            continue
-        # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
-        if lines_as_tokens[i][0] == "...":
-            break
-        # Ignore lines that do not have enough information.
-        if len(lines_as_tokens[i]) < 3:
-            continue
+        # Find the first instruction in the code; it has the address of 0 in the text segment.
+        first_line = 0
+        while first_line < len(lines_as_tokens):
+            if not lines_as_tokens[first_line]:
+                first_line += 1
+            elif lines_as_tokens[first_line][0] != "0:":
+                first_line += 1
+            else:
+                break
 
-        # Count this line as one instruction.
-        instruction_count += 1
+        # Count lines that have instruction information.
+        instruction_count = 0
+        for i in range(first_line, len(lines_as_tokens)):
+            # Ignore empty lines.
+            if not lines_as_tokens[i]:
+                continue
+            # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
+            if lines_as_tokens[i][0] == "...":
+                break
+            # Ignore lines that do not have enough information.
+            if len(lines_as_tokens[i]) < 3:
+                continue
 
-    return instruction_count
+            # Count this line as one instruction.
+            instruction_count += 1
+
+        return instruction_count
 
 
 def trace(
