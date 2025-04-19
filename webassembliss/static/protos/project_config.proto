@@ -6,7 +6,9 @@ syntax = "proto3";
 // Define available architectures for the grader.
 enum TargetArchitecture {
   TARGETARCHITECTURE_UNSPECIFIED = 0;
-  ARM64 = 1;
+  // These should match the names in webassembliss.emulation.arch_config.ARCH_CONFIG_MAP so the grader can see new architectures automatically.
+  arm64_linux = 1;
+  riscv64_linux = 2;
 }
 
 // Message to hold information for a single test case.
@@ -22,9 +24,10 @@ message TestCase {
     bytes expected_out_b = 5;
   }
   uint32 timeout_ms = 6;
-  repeated string cl_args = 7;
-  bool hidden = 8;
-  uint32 points = 9;
+  uint32 max_instr_exec= 7;
+  repeated string cl_args = 8;
+  bool hidden = 9;
+  uint32 points = 10;
 }
 
 // Message with information on how to measure the source code documentation.
@@ -78,18 +81,19 @@ message ProjectConfig {
   string name = 1;
   TargetArchitecture arch = 2;
   repeated string required_files = 3;
-  string exec_name = 4;
-  repeated string as_flags = 5;
-  repeated string ld_flags = 6;
-  repeated TestCase tests = 7;
-  bool stop_on_first_test_fail = 8;
-  bool must_pass_all_tests = 9;
-  optional MeasureSourceDocumentation docs = 10;
-  optional MeasureSourceEfficiency source_eff = 11;
-  optional MeasureExecEfficiency exec_eff = 12;
-  map<string, uint32> weights = 13;
-  map<string, string> extra_txt_files = 14;
-  map<string, bytes> extra_bin_files = 15;
+  map<string, bytes> provided_objects = 4;
+  string exec_name = 5;
+  repeated string as_flags = 6;
+  repeated string ld_flags = 7;
+  repeated TestCase tests = 8;
+  bool stop_on_first_test_fail = 9;
+  bool must_pass_all_tests = 10;
+  optional MeasureSourceDocumentation docs = 11;
+  optional MeasureSourceEfficiency source_eff = 12;
+  optional MeasureExecEfficiency exec_eff = 13;
+  map<string, uint32> weights = 14;
+  map<string, string> extra_txt_files = 15;
+  map<string, bytes> extra_bin_files = 16;
 }
 
 // Define what compression algorithm was used to compress the project config message.

@@ -25,13 +25,9 @@ from tempfile import TemporaryDirectory
 from typing import List, Union
 
 from ..pyprotos.project_config_pb2 import WrappedProject
+from ..utils import b64_to_bytes
 from .single_student import grade_student
-from .utils import (
-    SubmissionResults,
-    b64_to_bytes,
-    create_checksum,
-    load_wrapped_project,
-)
+from .utils import SubmissionResults, create_checksum, load_wrapped_project
 
 # Get a logger to export execution information to the user.
 logger = logging.getLogger(__name__)

@@ -1,21 +1,15 @@
-from base64 import decode as b64_decode
-from base64 import encode as b64_encode
 from bz2 import decompress as bz2_decompress
 from dataclasses import dataclass, field
 from difflib import HtmlDiff
 from hashlib import sha256
 from hmac import compare_digest
-from io import BytesIO
 from os import PathLike
 from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from dataclasses_json import dataclass_json
 
-from ..emulation.arm64_linux import AS_CMD as ARM64_LINUX_AS
-from ..emulation.arm64_linux import LD_CMD as ARM64_LINUX_LD
-from ..emulation.arm64_linux import ROOTFS_PATH as ARM64_LINUX_ROOTFS
-from ..emulation.arm64_linux import count_source_instructions as ARM64_LINUX_COUNT_FUN
+from ..emulation import ARCH_CONFIG_MAP
 from ..pyprotos.project_config_pb2 import (
     CompressionAlgorithm,
     ExecutedInstructionsAggregation,
@@ -24,6 +18,7 @@ from ..pyprotos.project_config_pb2 import (
     TestCase,
     WrappedProject,
 )
+from ..utils import create_bin_file, create_text_file
 
 
 @dataclass_json
@@ -143,17 +138,6 @@ def validate_and_load_testcase_io(
         return False, tc.stdin_b, tc.expected_out_b
 
 
-def create_bin_file(path: Union[PathLike, str], contents: bytes) -> None:
-    """Store the given binary contents into the given path."""
-    with open(path, "wb") as file_out:
-        file_out.write(contents)
-
-
-def create_text_file(path: Union[PathLike, str], contents: str) -> None:
-    """Store the given text contents into the given path."""
-    create_bin_file(path, contents.encode())
-
-
 def create_extra_files(workspace: Union[PathLike, str], config: ProjectConfig) -> None:
     """Create the extra files needed to grade the project"""
 
@@ -170,22 +154,6 @@ def load_wrapped_project(buffer: bytes) -> WrappedProject:
     # TODO: handle possible parsing error.
     wp.ParseFromString(buffer)
     return wp
-
-
-def bytes_to_b64(buf: bytes) -> str:
-    """Convert the given bytes buffer into a base64 encoded string."""
-    in_bio = BytesIO(buf)
-    out_bio = BytesIO()
-    b64_encode(in_bio, out_bio)
-    return out_bio.getvalue().decode()
-
-
-def b64_to_bytes(s64: str) -> bytes:
-    """Convert the given base64-encoded string into bytes."""
-    in_bio = BytesIO(s64.encode())
-    out_bio = BytesIO()
-    b64_decode(in_bio, out_bio)
-    return out_bio.getvalue()
 
 
 def format_points_scale(
@@ -220,18 +188,6 @@ def create_test_diff(test: TestCase) -> str:
         raise RuntimeError("expected_out and actual_out should have the same type.")
     return HtmlDiff().make_file(expected, actual)
 
-
-# Maps possible rootfs values from project_configs into relevant commands and functions.
-ROOTFS_MAP = {
-    TargetArchitecture.ARM64: ArchConfig(
-        rootfs=ARM64_LINUX_ROOTFS,
-        workdir="userprograms",
-        as_cmd=ARM64_LINUX_AS,
-        ld_cmd=ARM64_LINUX_LD,
-        instr_count_fun=ARM64_LINUX_COUNT_FUN,
-        inline_comment_tokens=["/*", "//"],
-    )
-}
 
 # Maps possible execution count aggregation methods into their corresponding python functions.
 EXECUTION_AGG_MAP = {

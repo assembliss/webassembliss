@@ -3,9 +3,9 @@ from io import BytesIO
 import rocher.flask  # type: ignore[import-untyped]
 from flask import Flask, abort, render_template, request, send_file
 
+from .emulation import ARCH_CONFIG_MAP
 from .grader.single_student import grade_form_submission
-from .grader.utils import b64_to_bytes
-from .utils import ARCH_MAP
+from .utils import b64_to_bytes
 
 app = Flask(__name__)
 
@@ -58,10 +58,10 @@ def grader():
 
 @app.route("/editor/<arch>/")
 def editor_page(arch):
-    arch_info = ARCH_MAP.get(arch)
+    arch_info = ARCH_CONFIG_MAP.get(arch)
     if arch_info is None:
         return (
-            f"Invalid architecture config for editor; valid options are {ARCH_MAP.keys()}",
+            f"Invalid architecture config for editor; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
 
@@ -77,61 +77,6 @@ def editor_page(arch):
     )
 
 
-@app.route("/run/", methods=["POST"])
-def code_run():
-    if request.json is None:
-        return "No JSON data received", 400
-    if "arch" not in request.json:
-        return "No architecture config in JSON data", 400
-    if "source_files" not in request.json:
-        return "No source_files in JSON data", 400
-    if "object_files" not in request.json:
-        return "No object_files in JSON data", 400
-    if "user_input" not in request.json:
-        return "No user_input in JSON data", 400
-
-    arch_info = ARCH_MAP.get(request.json["arch"])
-    if arch_info is None:
-        return (
-            f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}",
-            400,
-        )
-
-    emu_results = arch_info.emulate(
-        source_files=request.json["source_files"],
-        object_files={
-            n: b64_to_bytes(c) for n, c in request.json["object_files"].items()
-        },
-        extra_txt_files=request.json.get("extra_txt_files", {}),
-        extra_bin_files={
-            n: b64_to_bytes(c)
-            for n, c in request.json.get("extra_bin_files", {}).items()
-        },
-        stdin=request.json["user_input"],
-        cl_args=request.json["cl_args"],
-        registers=request.json.get("registers", "").split(),
-    )
-
-    # TODO: return simply emu_results and do parsing of results on javascript side;
-    #        would make it easier/cleaner to add new archs later on in the app.py.
-    return {
-        "stdout": emu_results.run_stdout,
-        "stderr": emu_results.print_stderr(),
-        "as_ok": emu_results.assembled_ok,
-        "ld_ok": emu_results.linked_ok,
-        "ran_ok": emu_results.run_ok,
-        "registers": emu_results.print_registers(
-            change_token=" <--- changed", byte_split_token="_"
-        ),
-        "memory": emu_results.print_memory(show_ascii=True),
-        "flags": emu_results.flags,
-        "exit_code": emu_results.run_exit_code,
-        "timed_out": emu_results.run_timeout,
-        "all_info": emu_results.print(),
-        "info_obj": emu_results,
-    }
-
-
 @app.route("/trace/", methods=["POST"])
 def code_trace():
     if request.json is None:
@@ -144,15 +89,19 @@ def code_trace():
         return "No object_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
+    if "combine_all_steps" not in request.json:
+        return "No combine_all_steps in JSON data", 400
 
-    arch_info = ARCH_MAP.get(request.json["arch"])
+    arch_info = ARCH_CONFIG_MAP.get(request.json["arch"])
     if arch_info is None:
         return (
-            f"Invalid architecture config in JSON data; valid options are {ARCH_MAP.keys()}",
+            f"Invalid architecture config in JSON data; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
 
     emulation_trace = arch_info.trace(
+        combine_all_steps=request.json["combine_all_steps"],
+        combine_external_steps=True,
         source_files=request.json["source_files"],
         object_files={
             n: b64_to_bytes(c) for n, c in request.json["object_files"].items()
@@ -162,7 +111,7 @@ def code_trace():
             n: b64_to_bytes(c)
             for n, c in request.json.get("extra_bin_files", {}).items()
         },
-        stdin=request.json["user_input"],
+        stdin=request.json["user_input"].encode(),
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
     )

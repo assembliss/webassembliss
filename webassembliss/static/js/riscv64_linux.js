@@ -13,12 +13,8 @@ function createEditor(default_code) {
     BASE_createEditor(default_code, getRISCVSyntaxHighlighting)
 }
 
-function runCode() {
-    BASE_runCode();
-}
-
-function startTracing() {
-    BASE_startTracing();
+function startTracing(combineAllSteps) {
+    BASE_startTracing(combineAllSteps);
 }
 
 function getRISCVSyntaxHighlighting() {

@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from io import BytesIO
 from json import loads
 from os import PathLike
 from os.path import join
@@ -7,25 +6,26 @@ from subprocess import PIPE, Popen, run
 from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
 
+from google.protobuf.json_format import MessageToDict
 from werkzeug.datastructures import FileStorage
 
-from ..emulation.base_emulation import assemble, link, timed_emulation
+from ..emulation import ARCH_CONFIG_MAP, ArchConfig
+from ..emulation.base_tracing import check_for_bad_paths
 from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
+    TargetArchitecture,
     WrappedProject,
 )
+from ..pyprotos.trace_info_pb2 import TraceStep
+from ..utils import bytes_to_b64
 from .utils import (
     EXECUTION_AGG_MAP,
-    ROOTFS_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
-    bytes_to_b64,
     create_checksum,
-    create_extra_files,
     create_test_diff,
-    create_text_file,
     format_points_scale,
     load_wrapped_project,
     validate_and_load_project_config,
@@ -33,20 +33,87 @@ from .utils import (
 )
 
 
+def check_project_builds(
+    config: ProjectConfig, arch: ArchConfig, student_files: Dict[str, str]
+) -> Tuple[bool, bool, str]:
+    # Get the input for the first test.
+    is_text, stdin, _ = validate_and_load_testcase_io(config.tests[0])
+    bytes_stdin = stdin if not is_text else stdin.encode()
+
+    # Get the CL args for the first test.
+    cl_args = " ".join(list(config.tests[0].cl_args))
+
+    # Convert the config into a dict for easier access.
+    config_dict = MessageToDict(config)
+
+    # Emulate the first test for only a single step.
+    trace = arch.trace(
+        combine_all_steps=False,
+        combine_external_steps=False,
+        source_files=student_files,
+        object_files=config_dict.get("providedObjects", {}),
+        extra_txt_files=config_dict.get("extraTxtFiles", {}),
+        extra_bin_files=config_dict.get("extraBinFiles", {}),
+        as_flags=config_dict.get("asFlags", None),
+        ld_flags=config_dict.get("ldFlags", None),
+        max_trace_steps=1,  # single step, we just want to check if the binary is built
+        timeout=500_000,  # 0.5 second
+        stdin=bytes_stdin,
+        bin_name=config_dict["execName"],
+        cl_args=cl_args,
+    )
+
+    # Return assembler and linker results, and the combined error messages.
+    return (
+        trace.build.as_info.status_ok,
+        trace.build.ld_info.status_ok,
+        trace.build.as_info.errors + trace.build.ld_info.errors,
+    )
+
+
+def combine_stdout(steps: List[TraceStep]) -> bytes:
+    """Combine the stdout for all the steps."""
+    out = b""
+
+    for s in steps:
+        out += s.stdout
+
+    return out
+
+
+def combine_stderr(steps: List[TraceStep]) -> str:
+    """Combine the stderr for all the steps."""
+    err = ""
+
+    for s in steps:
+        err += s.stderr
+
+    return err
+
+
 def run_test_cases(
     *,
     config: ProjectConfig,
-    rootfs: Union[PathLike, str],
-    bin_path: Union[PathLike, str],
+    arch: ArchConfig,
+    student_files: Dict[str, str],
 ) -> Tuple[List[TestCaseResults], List[int]]:
     """Run the test cases from the project config through qiling emulation."""
+    # Convert the config into a dict for easier access.
+    config_dict = MessageToDict(config)
+
+    # Create a list to store test results.
     results: List[TestCaseResults] = []
 
+    # Create a list to store instructions executed on each test.
     instructions_executed: List[int] = []
+
+    # Flag to early-stop if project config wants to.
     has_failed_test = False
+
+    # Process each test individually.
     for test in config.tests:
         # Convert command-line arguments into a regular list
-        cl_args = list(test.cl_args)
+        cl_args = " ".join(list(test.cl_args))
         is_text, stdin, stdout = validate_and_load_testcase_io(test)
         bytes_stdin = stdin if isinstance(stdin, bytes) else stdin.encode()
 
@@ -62,36 +129,31 @@ def run_test_cases(
 
         else:
             # Emulate binary to get result
-            # TODO: force a max timeout here.
-            (
-                ran_ok,
-                exit_code,
-                timed_out,
-                _,
-                actual_out,
-                actual_err,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                exec_count,
-            ) = timed_emulation(
-                rootfs_path=rootfs,
-                bin_path=bin_path,
-                cl_args=cl_args,
-                bin_name=config.exec_name,
+            trace = arch.trace(
+                combine_all_steps=False,
+                combine_external_steps=False,
+                source_files=student_files,
+                object_files=config_dict.get("providedObjects", {}),
+                extra_txt_files=config_dict.get("extraTxtFiles", {}),
+                extra_bin_files=config_dict.get("extraBinFiles", {}),
+                as_flags=config_dict.get("asFlags", None),
+                ld_flags=config_dict.get("ldFlags", None),
+                max_trace_steps=test.max_instr_exec,
                 timeout=test.timeout_ms,
-                stdin=BytesIO(bytes_stdin),
-                registers=[],
-                get_flags_func=lambda *args, **kwargs: {},
-                decode_io=is_text,
+                stdin=bytes_stdin,
+                bin_name=config_dict["execName"],
+                cl_args=cl_args,
             )
+            timed_out = trace.reached_max_steps
+            exit_code = trace.exit_code if trace.HasField("exit_code") else None
+            ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
+            exec_count = len(trace.steps) - 1
+            actual_out = combine_stdout(trace.steps)
+            actual_err = combine_stderr(trace.steps)
             executed = True
 
         if is_text:
-            actual_out = repr(actual_out)
+            actual_out = repr(actual_out.decode())
             stdout = repr(stdout)
             stdin = repr(stdin)
 
@@ -202,6 +264,31 @@ def find_comment_only_count(src_path: str) -> int:
     raise RuntimeError("Unable to calculate documentation score.")
 
 
+def find_comments_counts(
+    student_files: Dict[str, str], inline_comment_tokens: List[str]
+) -> Tuple[int, int]:
+    """Create sources in a temporary folder and count the number of comments in them."""
+
+    # Create a directory to write the files to.
+    with TemporaryDirectory() as workdir:
+        # Create accumulators to find the overall counts.
+        inline_comments_count = comment_only_count = 0
+        # Process each file individually.
+        for filename, contents in student_files.items():
+            # Create file in disk.
+            src_path = join(workdir, filename)
+            with open(src_path, "w") as file_out:
+                file_out.write(contents)
+            # Find the relevant counts for this file.
+            inline_comments_count += find_inline_comments_count(
+                src_path, inline_comment_tokens
+            )
+            comment_only_count += find_comment_only_count(src_path)
+
+        # Return the sum of the counts for all files.
+        return inline_comments_count, comment_only_count
+
+
 def calculate_docs_score(
     *,
     config: ProjectConfig,
@@ -295,6 +382,9 @@ def grade_student(
     # Make sure the given project config is valid.
     config = validate_and_load_project_config(wrapped_config)
 
+    # Make sure the project config has at least one test case.
+    assert len(config.tests) > 0
+
     # Create result objects
     sr = SubmissionResults(
         project_checksum64=bytes_to_b64(wrapped_config.checksum),
@@ -334,79 +424,71 @@ def grade_student(
 
     # Check that the user provided the required file
     # TODO: create custom error for grader pipeline.
-    # TODO: remove this block once we can assemble/link multiple files together.
-    assert len(student_files) == 1
-    # TODO: allow project to require multiple files.
-    assert len(config.required_files) == 1
     for required_file in config.required_files:
         assert required_file in student_files
 
+    # Make sure that no user or project files are using absolute paths;
+    # That would ignore the rootfs sandbox because of os.path.join's behavior.
+    # Also check for users trying to go outside their workspace.
+    all_path_names = (
+        list(config.required_files)
+        + list(config.provided_objects)
+        + list(config.extra_txt_files)
+        + list(config.extra_bin_files)
+        + [config.exec_name]
+    )
+    try:
+        check_for_bad_paths(all_path_names)
+    except ValueError:
+        # TODO: figure out what we should return here.
+        gr.assembled = False
+        gr.errors = "No provided files can use absolute paths."
+        return gr
+
     # Find config for the project architecture
-    arch = ROOTFS_MAP[config.arch]
+    arch = ARCH_CONFIG_MAP[TargetArchitecture.Name(config.arch)]
 
-    # Create a tempdir to run the user code
-    with TemporaryDirectory(dir=join(arch.rootfs, arch.workdir)) as tmpdirname:
-        # Create the extra files needed to grade
-        create_extra_files(tmpdirname, config)
+    # Check the user code builds with the given config.
+    gr.assembled, gr.linked, gr.errors = check_project_builds(
+        config, arch, student_files
+    )
+    if not (gr.assembled and gr.linked):
+        # If it doesn't stop the grading process.
+        return gr
 
-        # Create source file in temp directory
-        src_path = join(tmpdirname, config.required_files[0])
-        create_text_file(src_path, student_files[config.required_files[0]])
+    # Run given test cases
+    gr.tests, all_exec_counts = run_test_cases(
+        config=config, arch=arch, student_files=student_files
+    )
+    gr.test_diffs = [create_test_diff(t) for t in gr.tests]
+    sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
+    sr.max_test_points = sum((t.points for t in config.tests))
+    sr.received_test_points = sum(
+        (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
+    )
 
-        # Assemble source file
-        obj_path = f"{src_path}.o"
-        gr.assembled, _, _, gr.errors = assemble(
-            as_cmd=arch.as_cmd,
-            src_path=src_path,
-            flags=config.as_flags,
-            obj_path=obj_path,
-        )
-        if not gr.assembled:
-            return gr
+    # Find info needed from the source files.
+    sr.instr_count = sum(
+        (arch.instr_count_fun(code) for code in student_files.values())
+    )
+    sr.inline_comment_count, sr.comment_only_lines = find_comments_counts(
+        student_files, arch.inline_comment_tokens
+    )
 
-        # Link object
-        bin_path = join(tmpdirname, config.exec_name)
-        gr.linked, _, _, gr.errors = link(
-            ld_cmd=arch.ld_cmd,
-            obj_paths=[obj_path],
-            flags=config.ld_flags,
-            bin_path=bin_path,
-        )
-        if not gr.linked:
-            return gr
-
-        # Run given test cases
-        gr.tests, all_exec_counts = run_test_cases(
-            config=config, rootfs=arch.rootfs, bin_path=bin_path
-        )
-        gr.test_diffs = [create_test_diff(t) for t in gr.tests]
-        sr.agg_exec_count = EXECUTION_AGG_MAP[config.exec_eff.aggregation](all_exec_counts)  # type: ignore[operator]
-        sr.max_test_points = sum((t.points for t in config.tests))
-        sr.received_test_points = sum(
-            (t.points for (t, r) in zip(config.tests, gr.tests) if r.passed)
-        )
-
-        # Find info needed from the source file.
-        sr.instr_count = arch.instr_count_fun(src_path)
-        sr.inline_comment_count = find_inline_comments_count(
-            src_path, arch.inline_comment_tokens
-        )
-        sr.comment_only_lines = find_comment_only_count(src_path)
-
-        # Calculate each category's score
-        gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
-        gr.scores["documentation"] = calculate_docs_score(
-            config=config,
-            instr_count=sr.instr_count,
-            comment_only_count=sr.comment_only_lines,
-            inline_comment_count=sr.inline_comment_count,
-        )
-        gr.scores["source_efficiency"] = calculate_source_eff_score(
-            config=config, source_instruction_count=sr.instr_count
-        )
-        gr.scores["exec_efficiency"] = calculate_execution_eff_score(
-            config=config, instructions_executed=sr.agg_exec_count
-        )
+    # Calculate each category's score
+    gr.scores["accuracy"] = sr.received_test_points / sr.max_test_points
+    gr.scores["documentation"] = calculate_docs_score(
+        config=config,
+        instr_count=sr.instr_count,
+        comment_only_count=sr.comment_only_lines,
+        inline_comment_count=sr.inline_comment_count,
+    )
+    gr.scores["source_efficiency"] = calculate_source_eff_score(
+        config=config, source_instruction_count=sr.instr_count
+    )
+    gr.scores["exec_efficiency"] = calculate_execution_eff_score(
+        config=config, instructions_executed=sr.agg_exec_count
+    )
 
     # Combine all categories' weights into percentages.
     gr.weights = combine_category_weights(config=config)
@@ -445,7 +527,8 @@ if __name__ == "__main__":
     example_path = "/webassembliss/examples/grader"
     source_name = "hello.S"
     source_path = join(example_path, source_name)
-    config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
+    # config_path = join(example_path, "configs", "helloProject_noMustPass_noSkip.pb2")
+    config_path = join(example_path, "example_project_config.pb2")
     with open(config_path, "rb") as config_fp, open(source_path) as source_fp:
         config = WrappedProject()
         config.ParseFromString(config_fp.read())

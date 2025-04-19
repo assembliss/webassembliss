@@ -1,7 +1,9 @@
+import shutil
 import subprocess
+import tempfile
 from io import BytesIO
 from os import PathLike
-from os.path import getsize, isabs, join
+from os.path import getsize, isabs, join, pardir
 from typing import Callable, Dict, List, Tuple, Union
 
 from qiling import Qiling  # type: ignore[import-untyped]
@@ -12,7 +14,84 @@ from qiling.extensions.pipe import SimpleOutStream  # type: ignore[import-untype
 from unicorn.unicorn import UcError  # type: ignore[import-untyped]
 
 from ..pyprotos.trace_info_pb2 import ExecutionTrace, LineInfo, TraceStep
-from .base_emulation import RootfsSandbox, assemble, create_object, create_source, link
+from ..utils import create_bin_file, create_text_file
+
+
+class RootfsSandbox:
+    """Class to provide a context manager that creates a rootfs sandbox."""
+
+    def __init__(self, rootfs_path: Union[str, PathLike]):
+        """Creates a temporary directory and copies the rootfs contents into it."""
+        self._sandbox = tempfile.TemporaryDirectory()
+        shutil.copytree(rootfs_path, self._sandbox.name, dirs_exist_ok=True)
+
+    def __enter__(self):
+        """Provides the path for the user sandbox."""
+        return self._sandbox.name
+
+    def __exit__(self, *args):
+        """Cleans up the temporary directory when exiting the context."""
+        self._sandbox.cleanup()
+
+
+def assemble(
+    as_cmd: str,
+    src_path: Union[str, PathLike],
+    flags: List[str],
+    obj_path: Union[str, PathLike],
+    as_cmd_format: str = "{as_cmd} {src_path} {joined_flags} {obj_path}",
+) -> Tuple[bool, str, str, str]:
+    """Use the given assembler command to process the source file and create an object."""
+    # TODO: add tests to make sure this function works as expected.
+
+    # Combine the different pieces into a complete assembling command.
+    as_full_cmd = as_cmd_format.format(
+        as_cmd=as_cmd,
+        src_path=src_path,
+        joined_flags=" ".join(flags),
+        obj_path=obj_path,
+    ).split()
+
+    with subprocess.Popen(
+        as_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as process:
+        stdout, stderr = process.communicate()
+        return (
+            process.returncode == 0,
+            " ".join(process.args),  # type: ignore[arg-type]
+            stdout.decode(),
+            stderr.decode(),
+        )
+
+
+def link(
+    ld_cmd: str,
+    obj_paths: List[str],
+    flags: List[str],
+    bin_path: Union[str, PathLike],
+    ld_cmd_format: str = "{ld_cmd} {obj_paths} {joined_flags} {bin_path}",
+) -> Tuple[bool, str, str, str]:
+    """Use the given linker command to process the object file and create a binary."""
+    # TODO: add tests to make sure this function works as expected.
+
+    # Combine the different pieces into a complete linking command.
+    ld_full_cmd = ld_cmd_format.format(
+        ld_cmd=ld_cmd,
+        obj_paths=" ".join(obj_paths),
+        joined_flags=" ".join(flags),
+        bin_path=bin_path,
+    ).split()
+
+    with subprocess.Popen(
+        ld_full_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    ) as process:
+        stdout, stderr = process.communicate()
+        return (
+            process.returncode == 0,
+            " ".join(process.args),  # type: ignore[arg-type]
+            stdout.decode(),
+            stderr.decode(),
+        )
 
 
 def find_next_addr(ql: Qiling) -> int:
@@ -269,7 +348,7 @@ def stepped_emulation(
                 memory_delta=mem_delta,
                 flag_delta=flag_delta,
                 exit_code=ql.os.exit_code,
-                stdout=out.getvalue().decode(),
+                stdout=out.getvalue(),
                 stderr=execution_error,
             )
         )
@@ -283,8 +362,8 @@ def stepped_emulation(
         ql.os.exit_code,
         step_num == max_steps,
         steps,
-        relevant_mem_area,
         ql.arch.bits,
+        ql.arch.endian == QL_ENDIAN.EL,
     )
 
 
@@ -330,6 +409,46 @@ def combine_external_steps(execution_steps: List[TraceStep]):
     return combined_steps
 
 
+def flatten_all_steps(execution_steps: List[TraceStep]):
+    """Combine all trace steps into a single one so it mimics a normal run without tracing."""
+    if not execution_steps:
+        return execution_steps
+
+    # Use the first step as a base.
+    combined_step = execution_steps[0]
+
+    # Combine all next steps into our base.
+    for i in range(1, len(execution_steps)):
+        next_step = execution_steps[i]
+        # Combine each relevant proto field from this next step into the current one.
+        #   string stdout = 2;
+        combined_step.stdout += next_step.stdout
+        #   string stderr = 3;
+        combined_step.stderr += next_step.stderr
+        #   optional sint32 exit_code = 4;
+        # Must use HasField because if exit_code is 0, it will check whether it was set to 0 or left blank.
+        if next_step.HasField("exit_code"):
+            combined_step.exit_code = next_step.exit_code
+        #   map<string, uint64> register_delta = 5;
+        for reg in next_step.register_delta:
+            combined_step.register_delta[reg] = next_step.register_delta[reg]
+        #   map<string, bool> flag_delta = 6;
+        for flag in next_step.flag_delta:
+            combined_step.flag_delta[flag] = next_step.flag_delta[flag]
+        #   map<uint64, bytes> memory_delta = 7;
+        for mem in next_step.memory_delta:
+            combined_step.memory_delta[mem] = next_step.memory_delta[mem]
+
+    # Return a list containing our single step.
+    return [combined_step]
+
+
+def check_for_bad_paths(path_names):
+    """Make sure there are no aboslute paths in the given path names; throws an exception if there is."""
+    if any(((isabs(pn) or pardir in pn) for pn in path_names)):
+        raise ValueError("Path names for user files cannot be absolute paths.")
+
+
 def clean_trace(
     *,  # force naming arguments
     source_files: Dict[str, str],
@@ -348,8 +467,9 @@ def clean_trace(
     cl_args: List[str],
     timeout: int,  # microseconds
     max_trace_steps: int,
+    step_over_external_steps: bool,
+    combine_all_steps: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
-    step_over_external_steps: bool = True,
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
     """Emulates the given code step by step and return the execution trace."""
@@ -361,10 +481,16 @@ def clean_trace(
     et.source_filenames.extend(source_filenames)
 
     # Make sure that no user files are using absolute paths;
-    # That would ignore the sandbox because of os.path.join's behavior.
-    all_path_names = list(source_files.keys()) + [bin_name, workdir]
-    if any((isabs(pn) for pn in all_path_names)):
-        return et
+    # That would ignore the rootfs sandbox because of os.path.join's behavior.
+    # Also check for users trying to go outside their workspace.
+    all_path_names = (
+        list(source_files)
+        + list(object_files)
+        + list(extra_txt_files)
+        + list(extra_bin_files)
+        + [bin_name, workdir]
+    )
+    check_for_bad_paths(all_path_names)
 
     # Create a rootfs sandbox to run user code.
     with RootfsSandbox(rootfs_path) as rootfs_sandbox:
@@ -381,40 +507,52 @@ def clean_trace(
             obj_paths.append(obj_path)
 
             # Create a source file in the temp dir and go through the steps to emulate it.
-            create_source_ok, _ = create_source(src_path, source_files[filename])
-            if not create_source_ok:
-                return et
+            create_text_file(src_path, source_files[filename])
 
             # Try assembling the created source.
             (
                 assembled_ok,
-                *_,
+                assembler_cmd,
+                assembler_stdout,
+                assembler_stderr,
             ) = assemble(as_cmd, src_path, as_flags, obj_path)
 
+            # Store assembly information for this source in our result proto.
+            et.build.as_info.commands.append(assembler_cmd)
+            et.build.as_info.output += assembler_stdout
+            et.build.as_info.errors += assembler_stderr
+
+            # If could not assemble this source file, stop the tracing.
             if not assembled_ok:
                 return et
 
-        et.assembled_ok = True
+        # If able to assemble all given sources, mark assembly as successful.
+        et.build.as_info.status_ok = True
 
         # Create all the pre-assembled object files that were given.
         for filename in object_files:
             obj_path = join(workpath, filename)
             obj_paths.append(obj_path)
-            create_object(obj_path, object_files[filename])
+            create_bin_file(obj_path, object_files[filename])
 
         # Try linking all objects into a single binary.
-        et.linked_ok, *_ = link(ld_cmd, obj_paths, ld_flags, bin_path)
-        if not et.linked_ok:
+        (
+            et.build.ld_info.status_ok,
+            et.build.ld_info.command,
+            et.build.ld_info.output,
+            et.build.ld_info.errors,
+        ) = link(ld_cmd, obj_paths, ld_flags, bin_path)
+        if not et.build.ld_info.status_ok:
             return et
 
         # If binary was successfully built, create extra data files provided.
         for filename in extra_txt_files:
             extra_text_path = join(workpath, filename)
-            create_source(extra_text_path, extra_txt_files[filename])
+            create_text_file(extra_text_path, extra_txt_files[filename])
 
         for filename in extra_bin_files:
             extra_bin_path = join(workpath, filename)
-            create_object(extra_bin_path, extra_bin_files[filename])
+            create_bin_file(extra_bin_path, extra_bin_files[filename])
 
         # Emulate the generated binary with given timeout.
         (
@@ -422,8 +560,8 @@ def clean_trace(
             exit_code,
             reached_max_steps,
             trace_steps,
-            mapped_memory,
             arch_num_bits,
+            is_little_endian,
         ) = stepped_emulation(
             rootfs_path=rootfs_sandbox,
             bin_path=bin_path,
@@ -439,17 +577,24 @@ def clean_trace(
         )
 
         et.arch_num_bits = arch_num_bits
+        et.little_endian = is_little_endian
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
-        et.steps.extend(
-            combine_external_steps(trace_steps)
-            if step_over_external_steps
-            else trace_steps
-        )
 
-        for start, end in mapped_memory:
-            et.mapped_memory[start] = end
+        # Check if we should merge any/all steps.
+        if combine_all_steps:
+            # Merge all steps into a single one, similar to a run without tracing.
+            trace_steps = flatten_all_steps(trace_steps)
 
+        elif step_over_external_steps:
+            # Merge external steps into one so it acts like a step over in gdb.
+            trace_steps = combine_external_steps(trace_steps)
+
+        # Add the final list of steps into our result object.
+        et.steps.extend(trace_steps)
+
+        # Check if we should set the exit code or not;
+        # It's possible to differentiate not set vs. 0 when processing the proto.
         if exit_code is not None:
             et.exit_code = exit_code
 
@@ -475,6 +620,8 @@ if __name__ == "__main__":
         et = clean_trace(
             source_files={filename1: file_in.read(), filename2: file_in2.read()},
             object_files={},
+            extra_txt_files={},
+            extra_bin_files={},
             rootfs_path=ROOTFS_PATH,
             as_cmd=AS_CMD,
             ld_cmd=LD_CMD,
@@ -492,13 +639,13 @@ if __name__ == "__main__":
 
     print("ARM64 Emulation info:")
     print(f"{et.rootfs=}")
+    print(f"{et.arch_num_bits=}")
+    print(f"{et.little_endian=}")
     print(f"{et.source_filenames=}")
-    print(f"{et.assembled_ok=}")
-    print(f"{et.linked_ok=}")
+    print(f"{et.build=}")
     print(f"{et.argv=}")
     print(f"{et.exit_code=}")
     print(f"{et.reached_max_steps=}")
-    print(f"{et.mapped_memory=}")
     print("Steps:")
     for i, s in enumerate(et.steps):
         print(f"[#{i}] {s}\n")
