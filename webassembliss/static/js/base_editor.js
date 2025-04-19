@@ -1091,24 +1091,6 @@ function updateRegisterTable(reg_value_map) {
     };
 }
 
-function parseRegisterValues(emulation_reg_values) {
-    // This method extracts the first value of the array of values in the map.
-    // For the runCode method, this removes the boolean that indicates if this value has changed or not.
-    // TODO: remove the bool from the source; make base_emulation stop keeping track of registers that have changed.
-
-    if (!emulation_reg_values) {
-        // If nothing given, simply return.
-        return;
-    }
-
-    // Creates a new object so we can map the values.
-    let reg_map = {};
-    for (const [reg, val] of Object.entries(emulation_reg_values)) {
-        reg_map[reg] = val[0];
-    }
-    return reg_map;
-}
-
 function parseRegisterDeltaMap(reg_delta) {
     // This functions creates a register map for the tracing deltas.
     // For any registers that do not have values, it adds a zero for it.
@@ -1246,63 +1228,6 @@ function updateMemoryTable(mem_values) {
             i++;
         }
     }
-}
-
-function parseRunMemoryReport(mem_report) {
-    // This functions creates a memory map by parsing the memory report given by base_emulation.
-    // TODO: modify base_emulation to output something similar to the mem_delta that we use in the trace proto.
-
-    if (!mem_report) {
-        // If nothing given, simply return.
-        return;
-    }
-
-    // Creates a new object so we can map the values.
-    let mem_map = {};
-
-    // The memory report is a string on this format:
-    // "[Hex Address]: 'H' 'E' 'Y' 04 05 06 07 08 09 0A 0B 0C 0D 0E 0E"
-    for (const line of mem_report.split("\n").slice(1)) {
-        // Split line into address and values.
-        let tokens = line.split(":");
-        if (tokens.length < 2) {
-            // Ignore lines that have too few elements.
-            continue;
-        }
-
-        // Separate the byte values for this chunk.
-        let byteValues = tokens[1].split(" ").filter((item) => item);
-        if (byteValues.length != 16) {
-            // Ignore lines that do not have 16 byte values for that address.
-            continue;
-        }
-
-        // Parse the hex address into decimal so we can compare it with the table rows.
-        let hexAddress = tokens[0].trim();
-        let intDecimalAddress = parseInt(hexAddress, 16);
-
-        // Parse the byte values into decimals so we can parse them for the table.
-        let bytesArray = [];
-        let nonEmptyAddress = false;
-        for (const val of byteValues) {
-            let trimmedVal = val.trim();
-            nonEmptyAddress |= trimmedVal != "00";
-            if (trimmedVal.length == 2) {
-                // Parse raw byte (value should be in "XY" format).
-                bytesArray.push(parseInt(trimmedVal, 16));
-            } else {
-                // Parse ASCII char (value should be in "'?'" format).
-                bytesArray.push(trimmedVal.charCodeAt(1));
-            }
-        }
-
-        // Assign the byte values to the memory address.
-        if (nonEmptyAddress) {
-            mem_map[intDecimalAddress] = bytesArray;
-        }
-    }
-
-    return mem_map;
 }
 
 function parseMemoryDeltaMap(mem_delta) {
