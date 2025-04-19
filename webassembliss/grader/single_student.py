@@ -18,16 +18,14 @@ from ..pyprotos.project_config_pb2 import (
     WrappedProject,
 )
 from ..pyprotos.trace_info_pb2 import TraceStep
-from ..utils import bytes_to_b64, create_bin_file
+from ..utils import bytes_to_b64
 from .utils import (
     EXECUTION_AGG_MAP,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
     create_checksum,
-    create_extra_files,
     create_test_diff,
-    create_text_file,
     format_points_scale,
     load_wrapped_project,
     validate_and_load_project_config,
@@ -51,6 +49,7 @@ def check_project_builds(
     # Emulate the first test for only a single step.
     trace = arch.trace(
         combine_all_steps=False,
+        combine_external_steps=False,
         source_files=student_files,
         object_files=config_dict.get("providedObjects", {}),
         extra_txt_files=config_dict.get("extraTxtFiles", {}),
@@ -132,6 +131,7 @@ def run_test_cases(
             # Emulate binary to get result
             trace = arch.trace(
                 combine_all_steps=False,
+                combine_external_steps=False,
                 source_files=student_files,
                 object_files=config_dict.get("providedObjects", {}),
                 extra_txt_files=config_dict.get("extraTxtFiles", {}),

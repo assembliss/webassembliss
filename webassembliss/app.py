@@ -101,6 +101,7 @@ def code_trace():
 
     emulation_trace = arch_info.trace(
         combine_all_steps=request.json["combine_all_steps"],
+        combine_external_steps=True,
         source_files=request.json["source_files"],
         object_files={
             n: b64_to_bytes(c) for n, c in request.json["object_files"].items()

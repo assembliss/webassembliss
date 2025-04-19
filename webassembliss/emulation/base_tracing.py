@@ -467,9 +467,9 @@ def clean_trace(
     cl_args: List[str],
     timeout: int,  # microseconds
     max_trace_steps: int,
+    step_over_external_steps: bool,
+    combine_all_steps: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
-    step_over_external_steps: bool = True,
-    combine_all_steps: bool = False,
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
     """Emulates the given code step by step and return the execution trace."""
@@ -580,6 +580,7 @@ def clean_trace(
         et.little_endian = is_little_endian
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
+
         # Check if we should merge any/all steps.
         if combine_all_steps:
             # Merge all steps into a single one, similar to a run without tracing.
