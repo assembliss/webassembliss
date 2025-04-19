@@ -1577,6 +1577,7 @@ function BASE_startTracing(combineAllSteps) {
                 // If it hasn't, mark if as failed, show errors on the editor, make editor writeable again, enable action buttons, and stop processing.
                 document.getElementById("asStatus").innerHTML = ERROR_SYMBOL;
                 detectAndHighlightErrors(window.lastTrace.build.asInfo.errors, false);
+                document.getElementById("errorBox").value = window.lastTrace.build.asInfo.errors;
                 disableCodeActions(false);
                 return;
             }
@@ -1588,6 +1589,7 @@ function BASE_startTracing(combineAllSteps) {
                 // If it hasn't, mark if as failed, show errors on the editor, make editor writeable again, enable action buttons, and stop processing.
                 document.getElementById("ldStatus").innerHTML = ERROR_SYMBOL;
                 detectAndHighlightErrors(window.lastTrace.build.ldInfo.errors, true);
+                document.getElementById("errorBox").value = window.lastTrace.build.ldInfo.errors;
                 disableCodeActions(false);
                 return;
             }
