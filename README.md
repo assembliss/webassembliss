@@ -33,8 +33,12 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 	- [x] backend is able to handle it
 	- [ ] allow user to upload objects
-- [ ] remove as/ld and just use gcc
+- [x] remove as/ld and just use gcc
 	- have to consider all pros (e.g., can throw sources and objects at it) and cons (some archs might need separate commands)
+	- not planned right now -- if we assume that clients use the `trace` method, each arch should be able to choose their build
+- [ ] figure out why `printf` isn't working
+- [ ] show instructions executed after running/tracing code
+- [ ] show instructions written after running/tracing code
 - [x] remove flask-session
 	- [x] store everything client-side with [localstorage](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
 	- [x] receive all files in the request json body
