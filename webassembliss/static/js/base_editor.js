@@ -664,9 +664,13 @@ const localFileStorage = {
             newTr.appendChild(filesizeCell);
             // Add a button for the file to be removed later.
             // TODO: figure out why the tooltip is not working on the trash can.
-            let filetype = isTxt ? 'txt' : 'bin';
             let fileDeleteCell = document.createElement('td');
-            fileDeleteCell.innerHTML = `<i class="fa-solid fa-file-arrow-down" data-bs-toggle="tooltip" data-bs-title="Click here to download ${filename}" onclick='download_localstorage_file("${filename}", "${filetype}")')></i> <i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='deleteUploadedFile("${filename}", "${filetype}")'></i>`;
+            if (isTxt) {
+                fileDeleteCell.innerHTML = `<i class="fa-solid fa-eye" data-bs-toggle="tooltip" data-bs-title="Click here to see the contents of ${filename}" onclick='show_local_file("${filename}", "txt")')></i> <i class="fa-solid fa-file-arrow-down" data-bs-toggle="tooltip" data-bs-title="Click here to download ${filename}" onclick='download_localstorage_file("${filename}", "txt")')></i> <i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='deleteUploadedFile("${filename}", "txt")'></i>`;
+
+            } else {
+                fileDeleteCell.innerHTML = `<i class="fa-solid fa-file-arrow-down" data-bs-toggle="tooltip" data-bs-title="Click here to download ${filename}" onclick='download_localstorage_file("${filename}", "bin")')></i> <i class="fa-regular fa-trash-can" data-bs-toggle="tooltip" data-bs-title="Click here to delete ${filename}" onclick='deleteUploadedFile("${filename}", "bin")'></i>`;
+            }
             newTr.appendChild(fileDeleteCell);
             // Add the new row to the table.
             let tbody = document.getElementById("uploadedDataFilesTBody");
@@ -730,6 +734,14 @@ function download_localstorage_file(filename, filetype) {
 
         case "txt":
             download_file(filename, localFileStorage.txtData[filename]);
+            break;
+    }
+}
+
+function show_local_file(filename, filetype) {
+    switch (filetype) {
+        case "txt":
+            showMessage(`Contents of '${filename}'`, localFileStorage.txtData[filename]);
             break;
     }
 }
