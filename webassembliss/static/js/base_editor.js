@@ -1361,6 +1361,8 @@ function clearOutput() {
     document.getElementById("errorBox").value = "";
     document.getElementById("emulationInfo").value = "";
     document.getElementById("downloadButton").disabled = true;
+    document.getElementById("instructions-written").value = "";
+    document.getElementById("instructions-executed").value = "";
 
     // Delete old trace information.
     window.lastTrace = null;
@@ -1607,10 +1609,15 @@ function BASE_startTracing(combineAllSteps) {
             // Mark linking as successful.
             document.getElementById("ldStatus").innerHTML = OK_SYMBOL;
 
+            // If the code has assembled and linked, it *should* have been emulated.
+
             // Use the timeout indication to show if the trace reached maximum number of steps.
             document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
 
-            // If the code has assembled and linked, it *should* have been emulated.
+            // Update the efficiency metrics from the run.
+            document.getElementById("instructions-written").value = window.lastTrace.instructionsWritten;
+            document.getElementById("instructions-executed").value = window.lastTrace.instructionsExecuted;
+
             // Check if the user wanted to run or trace the code.
             if (combineAllSteps) {
                 // If the user wanted to run it, advance trace to last step, remove code highlights, and reset editor to being actionable and do not show step information.
