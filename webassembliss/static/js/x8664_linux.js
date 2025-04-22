@@ -2,12 +2,12 @@ const ARCH_ID = "x8664_linux";
 const ARCH_NUM_BITS = 64;
 
 // Add registers we want to display to the register table.
-const qilingX8664Registers = ["rax", "rbx", "rcx", "rsi", "rbp", "rsp", "r8", "r9", "r10",
-    "r11", "r12", "r13", "r14", "r15", "rip", "cs", "ss", "ds", "es", "fs", "gs", "eflags",];
+const qilingX8664Registers = ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "rsp", "r8", "r9",
+    "r10", "r11", "r12", "r13", "r14", "r15", "rip", "cs", "ss", "ds", "es", "fs", "gs", "eflags"];
 populateRegisterTable(qilingX8664Registers);
 
 function createEditor(default_code) {
-    BASE_createEditor(default_code, getARM64SyntaxHighlighting)
+    BASE_createEditor(default_code, getX8664SyntaxHighlighting)
 }
 
 function startTracing(combineAllSteps) {
@@ -19,85 +19,102 @@ function startTracing(combineAllSteps) {
     BASE_startTracing(combineAllSteps);
 }
 
-function getARM64SyntaxHighlighting() {
+function getX8664SyntaxHighlighting() {
     return {
-        // First draft of an ARM64 assembly syntax.
-        // Instructions taken from: https://developer.arm.com/documentation/ddi0602/2024-12/Base-Instructions
+        // First draft of a x86-64 assembly syntax.
+        // Instructions taken from: http://ref.x86asm.net/coder64-abc.html
         instructions: [
-            "ABS", "abs", "ADC", "adc", "ADCS", "adcs", "add", "ADD", "ADDG", "addg", "ADDPT", "addpt", "adds", "ADDS", "ADR", "adr", "ADRP", "adrp", "AND", "and", "ands", "ANDS", "apas", "APAS", "ASR", "asr", "asrv", "ASRV", "at", "AT",
-            "AUTDA", "autda", "AUTDB", "autdb", "AUTIA", "autia", "autia171615", "AUTIA171615", "AUTIASPPC", "autiasppc", "autiasppcr", "AUTIASPPCR", "autib", "AUTIB", "AUTIB171615", "autib171615", "AUTIBSPPC", "autibsppc", "autibsppcr", "AUTIBSPPCR", "axflag", "AXFLAG", "b", "B", "bc", "BC", "BFC", "bfc", "BFI", "bfi",
-            "bfm", "BFM", "bfxil", "BFXIL", "bic", "BIC", "BICS", "bics", "bl", "BL", "BLR", "blr", "blraa", "BLRAA", "BR", "br", "BRAA", "braa", "BRB", "brb", "brk", "BRK", "bti", "BTI", "cas", "CAS", "CASB", "casb", "CASH", "cash",
-            "CASP", "casp", "caspt", "CASPT", "cast", "CAST", "CB", "cb", "cbb", "CBB", "cbble", "CBBLE", "cbblo", "CBBLO", "CBBLS", "cbbls", "cbblt", "CBBLT", "CBGE", "cbge", "cbh", "CBH", "CBHLE", "cbhle", "CBHLO", "cbhlo", "cbhls", "CBHLS", "cbhlt", "CBHLT",
-            "cbhs", "CBHS", "CBLE", "cble", "cblo", "CBLO", "cbls", "CBLS", "cblt", "CBLT", "cbnz", "CBNZ", "cbz", "CBZ", "ccmn", "CCMN", "ccmp", "CCMP", "cfinv", "CFINV", "cfp", "CFP", "chkfeat", "CHKFEAT", "CINC", "cinc", "CINV", "cinv", "clrbhb", "CLRBHB",
-            "CLREX", "clrex", "cls", "CLS", "CLZ", "clz", "CMN", "cmn", "CMP", "cmp", "CMPP", "cmpp", "cneg", "CNEG", "CNT", "cnt", "COSP", "cosp", "cpp", "CPP", "cpyfp", "CPYFP", "cpyfpn", "CPYFPN", "cpyfprn", "CPYFPRN", "CPYFPRT", "cpyfprt", "cpyfprtn", "CPYFPRTN",
-            "CPYFPRTRN", "cpyfprtrn", "CPYFPRTWN", "cpyfprtwn", "CPYFPT", "cpyfpt", "CPYFPTN", "cpyfptn", "cpyfptrn", "CPYFPTRN", "cpyfptwn", "CPYFPTWN", "cpyfpwn", "CPYFPWN", "cpyfpwt", "CPYFPWT", "cpyfpwtn", "CPYFPWTN", "CPYFPWTRN", "cpyfpwtrn", "CPYFPWTWN", "cpyfpwtwn", "CPYP", "cpyp", "cpypn", "CPYPN", "CPYPRN", "cpyprn", "CPYPRT", "cpyprt",
-            "CPYPRTN", "cpyprtn", "CPYPRTRN", "cpyprtrn", "CPYPRTWN", "cpyprtwn", "cpypt", "CPYPT", "cpyptn", "CPYPTN", "cpyptrn", "CPYPTRN", "cpyptwn", "CPYPTWN", "cpypwn", "CPYPWN", "cpypwt", "CPYPWT", "CPYPWTN", "cpypwtn", "CPYPWTRN", "cpypwtrn", "CPYPWTWN", "cpypwtwn", "CRC32B", "crc32b", "CRC32CB", "crc32cb", "csdb", "CSDB",
-            "csel", "CSEL", "cset", "CSET", "CSETM", "csetm", "csinc", "CSINC", "csinv", "CSINV", "CSNEG", "csneg", "ctz", "CTZ", "DC", "dc", "DCPS1", "dcps1", "dcps2", "DCPS2", "DCPS3", "dcps3", "DGH", "dgh", "dmb", "DMB", "DRPS", "drps", "DSB", "dsb",
-            "dvp", "DVP", "eon", "EON", "EOR", "eor", "eret", "ERET", "eretaa", "ERETAA", "esb", "ESB", "EXTR", "extr", "GCSB", "gcsb", "gcspopcx", "GCSPOPCX", "GCSPOPM", "gcspopm", "GCSPOPX", "gcspopx", "GCSPUSHM", "gcspushm", "GCSPUSHX", "gcspushx", "GCSSS1", "gcsss1", "gcsss2", "GCSSS2",
-            "GCSSTR", "gcsstr", "gcssttr", "GCSSTTR", "gmi", "GMI", "hint", "HINT", "hlt", "HLT", "HVC", "hvc", "ic", "IC", "irg", "IRG", "ISB", "isb", "LD64B", "ld64b", "LDADD", "ldadd", "ldaddb", "LDADDB", "ldaddh", "LDADDH", "LDAPR", "ldapr", "LDAPRB", "ldaprb",
-            "ldaprh", "LDAPRH", "ldapur", "LDAPUR", "ldapurb", "LDAPURB", "ldapurh", "LDAPURH", "ldapursb", "LDAPURSB", "ldapursh", "LDAPURSH", "LDAPURSW", "ldapursw", "ldar", "LDAR", "LDARB", "ldarb", "LDARH", "ldarh", "LDATXR", "ldatxr", "ldaxp", "LDAXP", "ldaxr", "LDAXR", "LDAXRB", "ldaxrb", "ldaxrh", "LDAXRH",
-            "LDCLR", "ldclr", "LDCLRB", "ldclrb", "LDCLRH", "ldclrh", "ldclrp", "LDCLRP", "ldeor", "LDEOR", "ldeorb", "LDEORB", "ldeorh", "LDEORH", "LDG", "ldg", "LDGM", "ldgm", "LDIAPP", "ldiapp", "ldlar", "LDLAR", "ldlarb", "LDLARB", "LDLARH", "ldlarh", "ldnp", "LDNP", "ldp", "LDP",
-            "ldpsw", "LDPSW", "LDR", "ldr", "LDRAA", "ldraa", "ldrb", "LDRB", "ldrh", "LDRH", "ldrsb", "LDRSB", "ldrsh", "LDRSH", "ldrsw", "LDRSW", "ldset", "LDSET", "ldsetb", "LDSETB", "ldseth", "LDSETH", "ldsetp", "LDSETP", "LDSMAX", "ldsmax", "LDSMAXB", "ldsmaxb", "LDSMAXH", "ldsmaxh",
-            "LDSMIN", "ldsmin", "ldsminb", "LDSMINB", "LDSMINH", "ldsminh", "LDTADD", "ldtadd", "ldtclr", "LDTCLR", "ldtnp", "LDTNP", "LDTP", "ldtp", "ldtr", "LDTR", "ldtrb", "LDTRB", "LDTRH", "ldtrh", "LDTRSB", "ldtrsb", "LDTRSH", "ldtrsh", "ldtrsw", "LDTRSW", "LDTSET", "ldtset", "LDTXR", "ldtxr",
-            "ldumax", "LDUMAX", "LDUMAXB", "ldumaxb", "LDUMAXH", "ldumaxh", "LDUMIN", "ldumin", "lduminb", "LDUMINB", "lduminh", "LDUMINH", "LDUR", "ldur", "LDURB", "ldurb", "ldurh", "LDURH", "ldursb", "LDURSB", "ldursh", "LDURSH", "LDURSW", "ldursw", "LDXP", "ldxp", "ldxr", "LDXR", "ldxrb", "LDXRB",
-            "ldxrh", "LDXRH", "LSL", "lsl", "lslv", "LSLV", "LSR", "lsr", "lsrv", "LSRV", "madd", "MADD", "maddpt", "MADDPT", "mneg", "MNEG", "MOV", "mov", "movk", "MOVK", "movn", "MOVN", "movz", "MOVZ", "MRRS", "mrrs", "MRS", "mrs", "msr", "MSR",
-            "MSRR", "msrr", "MSUB", "msub", "MSUBPT", "msubpt", "mul", "MUL", "MVN", "mvn", "neg", "NEG", "NEGS", "negs", "NGC", "ngc", "ngcs", "NGCS", "nop", "NOP", "orn", "ORN", "orr", "ORR", "PACDA", "pacda", "pacdb", "PACDB", "PACGA", "pacga",
-            "pacia", "PACIA", "PACIA171615", "pacia171615", "paciasppc", "PACIASPPC", "pacib", "PACIB", "PACIB171615", "pacib171615", "PACIBSPPC", "pacibsppc", "PACM", "pacm", "pacnbiasppc", "PACNBIASPPC", "pacnbibsppc", "PACNBIBSPPC", "prfm", "PRFM", "PRFUM", "prfum", "psb", "PSB", "PSSBB", "pssbb", "rbit", "RBIT", "RCWCAS", "rcwcas",
-            "rcwcasp", "RCWCASP", "rcwclr", "RCWCLR", "rcwclrp", "RCWCLRP", "rcwscas", "RCWSCAS", "RCWSCASP", "rcwscasp", "RCWSCLR", "rcwsclr", "RCWSCLRP", "rcwsclrp", "RCWSET", "rcwset", "rcwsetp", "RCWSETP", "rcwsset", "RCWSSET", "RCWSSETP", "rcwssetp", "rcwsswp", "RCWSSWP", "rcwsswpp", "RCWSSWPP", "RCWSWP", "rcwswp", "RCWSWPP", "rcwswpp",
-            "ret", "RET", "retaa", "RETAA", "RETAASPPC", "retaasppc", "RETAASPPCR", "retaasppcr", "rev", "REV", "rev16", "REV16", "rev32", "REV32", "REV64", "rev64", "RMIF", "rmif", "ROR", "ror", "rorv", "RORV", "RPRFM", "rprfm", "SB", "sb", "SBC", "sbc", "sbcs", "SBCS",
-            "sbfiz", "SBFIZ", "SBFM", "sbfm", "sbfx", "SBFX", "sdiv", "SDIV", "SETF8", "setf8", "SETGP", "setgp", "SETGPN", "setgpn", "SETGPT", "setgpt", "setgptn", "SETGPTN", "setp", "SETP", "SETPN", "setpn", "SETPT", "setpt", "setptn", "SETPTN", "sev", "SEV", "sevl", "SEVL",
-            "SMADDL", "smaddl", "SMAX", "smax", "smc", "SMC", "SMIN", "smin", "SMNEGL", "smnegl", "smstart", "SMSTART", "SMSTOP", "smstop", "SMSUBL", "smsubl", "SMULH", "smulh", "smull", "SMULL", "SSBB", "ssbb", "ST2G", "st2g", "st64b", "ST64B", "st64bv", "ST64BV", "st64bv0", "ST64BV0",
-            "STADD", "stadd", "STADDB", "staddb", "STADDH", "staddh", "STCLR", "stclr", "STCLRB", "stclrb", "stclrh", "STCLRH", "steor", "STEOR", "steorb", "STEORB", "STEORH", "steorh", "stg", "STG", "stgm", "STGM", "stgp", "STGP", "stilp", "STILP", "stllr", "STLLR", "STLLRB", "stllrb",
-            "stllrh", "STLLRH", "stlr", "STLR", "STLRB", "stlrb", "stlrh", "STLRH", "STLTXR", "stltxr", "STLUR", "stlur", "STLURB", "stlurb", "STLURH", "stlurh", "STLXP", "stlxp", "stlxr", "STLXR", "stlxrb", "STLXRB", "STLXRH", "stlxrh", "STNP", "stnp", "stp", "STP", "str", "STR",
-            "STRB", "strb", "STRH", "strh", "STSET", "stset", "STSETB", "stsetb", "STSETH", "stseth", "stshh", "STSHH", "stsmax", "STSMAX", "stsmaxb", "STSMAXB", "stsmaxh", "STSMAXH", "stsmin", "STSMIN", "stsminb", "STSMINB", "stsminh", "STSMINH", "STTADD", "sttadd", "sttclr", "STTCLR", "STTNP", "sttnp",
-            "STTP", "sttp", "sttr", "STTR", "sttrb", "STTRB", "sttrh", "STTRH", "STTSET", "sttset", "STTXR", "sttxr", "STUMAX", "stumax", "STUMAXB", "stumaxb", "stumaxh", "STUMAXH", "stumin", "STUMIN", "stuminb", "STUMINB", "stuminh", "STUMINH", "stur", "STUR", "sturb", "STURB", "sturh", "STURH",
-            "stxp", "STXP", "STXR", "stxr", "STXRB", "stxrb", "stxrh", "STXRH", "stz2g", "STZ2G", "stzg", "STZG", "stzgm", "STZGM", "SUB", "sub", "SUBG", "subg", "SUBP", "subp", "subps", "SUBPS", "subpt", "SUBPT", "subs", "SUBS", "SVC", "svc", "SWP", "swp",
-            "swpb", "SWPB", "swph", "SWPH", "swpp", "SWPP", "SWPT", "swpt", "sxtb", "SXTB", "SXTH", "sxth", "SXTW", "sxtw", "sys", "SYS", "sysl", "SYSL", "SYSP", "sysp", "tbnz", "TBNZ", "TBZ", "tbz", "tcancel", "TCANCEL", "tcommit", "TCOMMIT", "TLBI", "tlbi",
-            "TLBIP", "tlbip", "trcit", "TRCIT", "TSB", "tsb", "TST", "tst", "tstart", "TSTART", "ttest", "TTEST", "ubfiz", "UBFIZ", "UBFM", "ubfm", "UBFX", "ubfx", "UDF", "udf", "UDIV", "udiv", "UMADDL", "umaddl", "umax", "UMAX", "UMIN", "umin", "UMNEGL", "umnegl",
-            "umsubl", "UMSUBL", "UMULH", "umulh", "umull", "UMULL", "UXTB", "uxtb", "UXTH", "uxth", "WFE", "wfe", "WFET", "wfet", "wfi", "WFI", "wfit", "WFIT", "XAFLAG", "xaflag", "xpacd", "XPACD", "yield", "YIELD"
+            "adc", "ADC", "add", "ADD", "addpd", "ADDPD", "addps", "ADDPS", "addsd", "ADDSD", "addss", "ADDSS", "addsubpd", "ADDSUBPD", "addsubps", "ADDSUBPS", "and", "AND", "andnpd", "ANDNPD",
+            "andnps", "ANDNPS", "andpd", "ANDPD", "andps", "ANDPS", "blendpd", "BLENDPD", "blendps", "BLENDPS", "bsf", "BSF", "bsr", "BSR", "bswap", "BSWAP", "bt", "BT", "btc", "BTC", "btr", "BTR",
+            "bts", "BTS", "call", "CALL", "callf", "CALLF", "cbw", "CBW", "cdq", "CDQ", "cdqe", "CDQE", "clc", "CLC", "cld", "CLD", "clflush", "CLFLUSH", "cli", "CLI", "clts", "CLTS", "cmc", "CMC",
+            "cmova", "CMOVA", "cmovae", "CMOVAE", "cmovb", "CMOVB", "cmovbe", "CMOVBE", "cmovc", "CMOVC", "cmove", "CMOVE", "cmovg", "CMOVG", "cmovge", "CMOVGE", "cmovl", "CMOVL", "cmovle", "CMOVLE",
+            "cmovna", "CMOVNA", "cmovnae", "CMOVNAE", "cmovnb", "CMOVNB", "cmovnbe", "CMOVNBE", "cmovnc", "CMOVNC", "cmovne", "CMOVNE", "cmovng", "CMOVNG", "cmovnge", "CMOVNGE", "cmovnl", "CMOVNL",
+            "cmovnle", "CMOVNLE", "cmovno", "CMOVNO", "cmovnp", "CMOVNP", "cmovns", "CMOVNS", "cmovnz", "CMOVNZ", "cmovo", "CMOVO", "cmovp", "CMOVP", "cmovpe", "CMOVPE", "cmovpo", "CMOVPO",
+            "cmovs", "CMOVS", "cmovz", "CMOVZ", "cmp", "CMP", "cmppd", "CMPPD", "cmpps", "CMPPS", "cmps", "CMPS", "cmpsb", "CMPSB", "cmpsd", "CMPSD", "cmpsq", "CMPSQ", "cmpss", "CMPSS", "cmpsw", "CMPSW",
+            "cmpxchg", "CMPXCHG", "cmpxchg16b", "CMPXCHG16B", "cmpxchg8b", "CMPXCHG8B", "comisd", "COMISD", "comiss", "COMISS", "cpuid", "CPUID", "cqo", "CQO", "crc32", "CRC32", "cvtdq2pd", "CVTDQ2PD",
+            "cvtdq2ps", "CVTDQ2PS", "cvtpd2dq", "CVTPD2DQ", "cvtpd2pi", "CVTPD2PI", "cvtpd2ps", "CVTPD2PS", "cvtpi2pd", "CVTPI2PD", "cvtpi2ps", "CVTPI2PS", "cvtps2dq", "CVTPS2DQ", "cvtps2pd", "CVTPS2PD",
+            "cvtps2pi", "CVTPS2PI", "cvtsd2si", "CVTSD2SI", "cvtsd2ss", "CVTSD2SS", "cvtsi2sd", "CVTSI2SD", "cvtsi2ss", "CVTSI2SS", "cvtss2sd", "CVTSS2SD", "cvtss2si", "CVTSS2SI", "cvttpd2dq", "CVTTPD2DQ",
+            "cvttpd2pi", "CVTTPD2PI", "cvttps2dq", "CVTTPS2DQ", "cvttps2pi", "CVTTPS2PI", "cvttsd2si", "CVTTSD2SI", "cvttss2si", "CVTTSS2SI", "cwd", "CWD", "cwde", "CWDE", "dec", "DEC", "div", "DIV",
+            "divpd", "DIVPD", "divps", "DIVPS", "divsd", "DIVSD", "divss", "DIVSS", "dppd", "DPPD", "dpps", "DPPS", "emms", "EMMS", "enter", "ENTER", "extractps", "EXTRACTPS", "f2xm1", "F2XM1", "fabs", "FABS",
+            "fadd", "FADD", "faddp", "FADDP", "fbld", "FBLD", "fbstp", "FBSTP", "fchs", "FCHS", "fclex", "FCLEX", "fcmovb", "FCMOVB", "fcmovbe", "FCMOVBE", "fcmove", "FCMOVE", "fcmovnb", "FCMOVNB", "fcmovnbe", "FCMOVNBE",
+            "fcmovne", "FCMOVNE", "fcmovnu", "FCMOVNU", "fcmovu", "FCMOVU", "fcom", "FCOM", "fcom2", "FCOM2", "fcomi", "FCOMI", "fcomip", "FCOMIP", "fcomp", "FCOMP", "fcomp3", "FCOMP3", "fcomp5", "FCOMP5", "fcompp", "FCOMPP",
+            "fcos", "FCOS", "fdecstp", "FDECSTP", "fdiv", "FDIV", "fdivp", "FDIVP", "fdivr", "FDIVR", "fdivrp", "FDIVRP", "ffree", "FFREE", "ffreep", "FFREEP", "fiadd", "FIADD", "ficom", "FICOM", "ficomp", "FICOMP",
+            "fidiv", "FIDIV", "fidivr", "FIDIVR", "fild", "FILD", "fimul", "FIMUL", "fincstp", "FINCSTP", "finit", "FINIT", "fist", "FIST", "fistp", "FISTP", "fisttp", "FISTTP", "fisub", "FISUB", "fisubr", "FISUBR",
+            "fld", "FLD", "fld1", "FLD1", "fldcw", "FLDCW", "fldenv", "FLDENV", "fldl2e", "FLDL2E", "fldl2t", "FLDL2T", "fldlg2", "FLDLG2", "fldln2", "FLDLN2", "fldpi", "FLDPI", "fldz", "FLDZ", "fmul", "FMUL", "fmulp", "FMULP",
+            "fnclex", "FNCLEX", "fndisi", "FNDISI", "fneni", "FNENI", "fninit", "FNINIT", "fnop", "FNOP", "fnsave", "FNSAVE", "fnsetpm", "FNSETPM", "fnstcw", "FNSTCW", "fnstenv", "FNSTENV", "fnstsw", "FNSTSW", "fpatan", "FPATAN",
+            "fprem", "FPREM", "fprem1", "FPREM1", "fptan", "FPTAN", "frndint", "FRNDINT", "frstor", "FRSTOR", "fs", "FS", "fsave", "FSAVE", "fscale", "FSCALE", "fsin", "FSIN", "fsincos", "FSINCOS", "fsqrt", "FSQRT", "fst", "FST",
+            "fstcw", "FSTCW", "fstenv", "FSTENV", "fstp", "FSTP", "fstp1", "FSTP1", "fstp8", "FSTP8", "fstp9", "FSTP9", "fstsw", "FSTSW", "fsub", "FSUB", "fsubp", "FSUBP", "fsubr", "FSUBR", "fsubrp", "FSUBRP", "ftst", "FTST",
+            "fucom", "FUCOM", "fucomi", "FUCOMI", "fucomip", "FUCOMIP", "fucomp", "FUCOMP", "fucompp", "FUCOMPP", "fwait", "FWAIT", "fxam", "FXAM", "fxch", "FXCH", "fxch4", "FXCH4", "fxch7", "FXCH7", "fxrstor", "FXRSTOR",
+            "fxsave", "FXSAVE", "fxtract", "FXTRACT", "fyl2x", "FYL2X", "fyl2xp1", "FYL2XP1", "getsec", "GETSEC", "gs", "GS", "haddpd", "HADDPD", "haddps", "HADDPS", "hint_nop", "HINT_NOP", "hlt", "HLT", "hsubpd", "HSUBPD",
+            "hsubps", "HSUBPS", "icebp", "ICEBP", "idiv", "IDIV", "imul", "IMUL", "in", "IN", "inc", "INC", "ins", "INS", "insb", "INSB", "insd", "INSD", "insertps", "INSERTPS", "insw", "INSW", "int", "INT", "int1", "INT1",
+            "into", "INTO", "invd", "INVD", "invept", "INVEPT", "invlpg", "INVLPG", "invvpid", "INVVPID", "iret", "IRET", "iretd", "IRETD", "iretq", "IRETQ", "ja", "JA", "jae", "JAE", "jb", "JB", "jbe", "JBE", "jc", "JC",
+            "je", "JE", "jecxz", "JECXZ", "jg", "JG", "jge", "JGE", "jl", "JL", "jle", "JLE", "jmp", "JMP", "jmpf", "JMPF", "jna", "JNA", "jnae", "JNAE", "jnb", "JNB", "jnbe", "JNBE", "jnc", "JNC", "jne", "JNE", "jng", "JNG",
+            "jnge", "JNGE", "jnl", "JNL", "jnle", "JNLE", "jno", "JNO", "jnp", "JNP", "jns", "JNS", "jnz", "JNZ", "jo", "JO", "jp", "JP", "jpe", "JPE", "jpo", "JPO", "jrcxz", "JRCXZ", "js", "JS", "jz", "JZ", "lahf", "LAHF",
+            "lar", "LAR", "lddqu", "LDDQU", "ldmxcsr", "LDMXCSR", "lea", "LEA", "leave", "LEAVE", "lfence", "LFENCE", "lfs", "LFS", "lgdt", "LGDT", "lgs", "LGS", "lidt", "LIDT", "lldt", "LLDT", "lmsw", "LMSW", "lock", "LOCK",
+            "lods", "LODS", "lodsb", "LODSB", "lodsd", "LODSD", "lodsq", "LODSQ", "lodsw", "LODSW", "loop", "LOOP", "loope", "LOOPE", "loopne", "LOOPNE", "loopnz", "LOOPNZ", "loopz", "LOOPZ", "lsl", "LSL", "lss", "LSS",
+            "ltr", "LTR", "maskmovdqu", "MASKMOVDQU", "maskmovq", "MASKMOVQ", "maxpd", "MAXPD", "maxps", "MAXPS", "maxsd", "MAXSD", "maxss", "MAXSS", "mfence", "MFENCE", "minpd", "MINPD", "minps", "MINPS", "minsd", "MINSD",
+            "minss", "MINSS", "monitor", "MONITOR", "mov", "MOV", "movapd", "MOVAPD", "movaps", "MOVAPS", "movbe", "MOVBE", "movd", "MOVD", "movddup", "MOVDDUP", "movdq2q", "MOVDQ2Q", "movdqa", "MOVDQA", "movdqu", "MOVDQU",
+            "movhlps", "MOVHLPS", "movhpd", "MOVHPD", "movhps", "MOVHPS", "movlhps", "MOVLHPS", "movlpd", "MOVLPD", "movlps", "MOVLPS", "movmskpd", "MOVMSKPD", "movmskps", "MOVMSKPS", "movntdq", "MOVNTDQ", "movnti", "MOVNTI",
+            "movntpd", "MOVNTPD", "movntps", "MOVNTPS", "movntq", "MOVNTQ", "movq", "MOVQ", "movq2dq", "MOVQ2DQ", "movs", "MOVS", "movsb", "MOVSB", "movsd", "MOVSD", "movshdup", "MOVSHDUP", "movsldup", "MOVSLDUP", "movsq", "MOVSQ",
+            "movss", "MOVSS", "movsw", "MOVSW", "movsx", "MOVSX", "movsxd", "MOVSXD", "movupd", "MOVUPD", "movups", "MOVUPS", "movzx", "MOVZX", "mpsadbw", "MPSADBW", "mul", "MUL", "mulpd", "MULPD", "mulps", "MULPS", "mulsd", "MULSD",
+            "mulss", "MULSS", "mwait", "MWAIT", "neg", "NEG", "nop", "NOP", "not", "NOT", "or", "OR", "orpd", "ORPD", "orps", "ORPS", "out", "OUT", "outs", "OUTS", "outsb", "OUTSB", "outsd", "OUTSD", "outsw", "OUTSW",
+            "packssdw", "PACKSSDW", "packsswb", "PACKSSWB", "packuswb", "PACKUSWB", "paddb", "PADDB", "paddd", "PADDD", "paddq", "PADDQ", "paddsb", "PADDSB", "paddsw", "PADDSW", "paddusb", "PADDUSB", "paddusw", "PADDUSW",
+            "paddw", "PADDW", "palignr", "PALIGNR", "pand", "PAND", "pandn", "PANDN", "pause", "PAUSE", "pavgb", "PAVGB", "pavgw", "PAVGW", "pblendw", "PBLENDW", "pcmpeqb", "PCMPEQB", "pcmpeqd", "PCMPEQD", "pcmpeqw", "PCMPEQW",
+            "pcmpestri", "PCMPESTRI", "pcmpestrm", "PCMPESTRM", "pcmpgtb", "PCMPGTB", "pcmpgtd", "PCMPGTD", "pcmpgtw", "PCMPGTW", "pcmpistri", "PCMPISTRI", "pcmpistrm", "PCMPISTRM", "pextrb", "PEXTRB", "pextrd", "PEXTRD",
+            "pextrq", "PEXTRQ", "pextrw", "PEXTRW", "pinsrb", "PINSRB", "pinsrd", "PINSRD", "pinsrq", "PINSRQ", "pinsrw", "PINSRW", "pmaddwd", "PMADDWD", "pmaxsw", "PMAXSW", "pmaxub", "PMAXUB", "pminsw", "PMINSW", "pminub", "PMINUB",
+            "pmovmskb", "PMOVMSKB", "pmulhuw", "PMULHUW", "pmulhw", "PMULHW", "pmullw", "PMULLW", "pmuludq", "PMULUDQ", "pop", "POP", "popcnt", "POPCNT", "popf", "POPF", "popfq", "POPFQ", "por", "POR", "prefetchnta", "PREFETCHNTA",
+            "prefetcht0", "PREFETCHT0", "prefetcht1", "PREFETCHT1", "prefetcht2", "PREFETCHT2", "psadbw", "PSADBW", "pshufd", "PSHUFD", "pshufhw", "PSHUFHW", "pshuflw", "PSHUFLW", "pshufw", "PSHUFW", "pslld", "PSLLD", "pslldq", "PSLLDQ",
+            "psllq", "PSLLQ", "psllw", "PSLLW", "psrad", "PSRAD", "psraw", "PSRAW", "psrld", "PSRLD", "psrldq", "PSRLDQ", "psrlq", "PSRLQ", "psrlw", "PSRLW", "psubb", "PSUBB", "psubd", "PSUBD", "psubq", "PSUBQ", "psubsb", "PSUBSB",
+            "psubsw", "PSUBSW", "psubusb", "PSUBUSB", "psubusw", "PSUBUSW", "psubw", "PSUBW", "punpckhbw", "PUNPCKHBW", "punpckhdq", "PUNPCKHDQ", "punpckhqdq", "PUNPCKHQDQ", "punpckhwd", "PUNPCKHWD", "punpcklbw", "PUNPCKLBW",
+            "punpckldq", "PUNPCKLDQ", "punpcklqdq", "PUNPCKLQDQ", "punpcklwd", "PUNPCKLWD", "push", "PUSH", "pushf", "PUSHF", "pushfq", "PUSHFQ", "pxor", "PXOR", "rcl", "RCL", "rcpps", "RCPPS", "rcpss", "RCPSS", "rcr", "RCR",
+            "rdmsr", "RDMSR", "rdpmc", "RDPMC", "rdtsc", "RDTSC", "rdtscp", "RDTSCP", "rep", "REP", "repe", "REPE", "repne", "REPNE", "repnz", "REPNZ", "repz", "REPZ", "retf", "RETF", "retn", "RETN", "rex", "REX", "rol", "ROL",
+            "ror", "ROR", "roundpd", "ROUNDPD", "roundps", "ROUNDPS", "roundsd", "ROUNDSD", "roundss", "ROUNDSS", "rsm", "RSM", "rsqrtps", "RSQRTPS", "rsqrtss", "RSQRTSS", "sahf", "SAHF", "sal", "SAL", "sar", "SAR", "sbb", "SBB",
+            "scas", "SCAS", "scasb", "SCASB", "scasd", "SCASD", "scasq", "SCASQ", "scasw", "SCASW", "seta", "SETA", "setae", "SETAE", "setb", "SETB", "setbe", "SETBE", "setc", "SETC", "sete", "SETE", "setg", "SETG", "setge", "SETGE",
+            "setl", "SETL", "setle", "SETLE", "setna", "SETNA", "setnae", "SETNAE", "setnb", "SETNB", "setnbe", "SETNBE", "setnc", "SETNC", "setne", "SETNE", "setng", "SETNG", "setnge", "SETNGE", "setnl", "SETNL", "setnle", "SETNLE",
+            "setno", "SETNO", "setnp", "SETNP", "setns", "SETNS", "setnz", "SETNZ", "seto", "SETO", "setp", "SETP", "setpe", "SETPE", "setpo", "SETPO", "sets", "SETS", "setz", "SETZ", "sfence", "SFENCE", "sgdt", "SGDT", "shl", "SHL",
+            "shld", "SHLD", "shr", "SHR", "shrd", "SHRD", "shufpd", "SHUFPD", "shufps", "SHUFPS", "sidt", "SIDT", "sldt", "SLDT", "smsw", "SMSW", "sqrtpd", "SQRTPD", "sqrtps", "SQRTPS", "sqrtsd", "SQRTSD", "sqrtss", "SQRTSS", "stc",
+            "STC", "std", "STD", "sti", "STI", "stmxcsr", "STMXCSR", "stos", "STOS", "stosb", "STOSB", "stosd", "STOSD", "stosq", "STOSQ", "stosw", "STOSW", "str", "STR", "sub", "SUB", "subpd", "SUBPD", "subps", "SUBPS", "subsd", "SUBSD",
+            "subss", "SUBSS", "swapgs", "SWAPGS", "syscall", "SYSCALL", "sysenter", "SYSENTER", "sysexit", "SYSEXIT", "sysret", "SYSRET", "test", "TEST", "ucomisd", "UCOMISD", "ucomiss", "UCOMISS", "ud", "UD", "ud2", "UD2",
+            "unpckhpd", "UNPCKHPD", "unpckhps", "UNPCKHPS", "unpcklpd", "UNPCKLPD", "unpcklps", "UNPCKLPS", "verr", "VERR", "verw", "VERW", "vmcall", "VMCALL", "vmclear", "VMCLEAR", "vmlaunch", "VMLAUNCH", "vmptrld", "VMPTRLD",
+            "vmptrst", "VMPTRST", "vmread", "VMREAD", "vmresume", "VMRESUME", "vmwrite", "VMWRITE", "vmxoff", "VMXOFF", "vmxon", "VMXON", "wait", "WAIT", "wbinvd", "WBINVD", "wrmsr", "WRMSR", "xadd", "XADD", "xchg", "XCHG",
+            "xgetbv", "XGETBV", "xlat", "XLAT", "xlatb", "XLATB", "xor", "XOR", "xorpd", "XORPD", "xorps", "XORPS", "xrstor", "XRSTOR", "xsave", "XSAVE", "xsetbv", "XSETBV",
         ],
 
-        // Registers taken from: https://github.com/qilingframework/qiling/blob/master/qiling/arch/arm64_const.py
+        // Registers taken from: https://web.stanford.edu/class/cs107/resources/x86-64-reference.pdf
         registers: [
-            "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
-            "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29", "x30",
-            "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate",
-            "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
-            "b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31",
-            "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
-            "d16", "d17", "d18", "d19", "d20", "d21", "d22", "d23", "d24", "d25", "d26", "d27", "d28", "d29", "d30", "d31",
-            "h0", "h1", "h2", "h3", "h4", "h5", "h6", "h7", "h8", "h9", "h10", "h11", "h12", "h13", "h14", "h15",
-            "h16", "h17", "h18", "h19", "h20", "h21", "h22", "h23", "h24", "h25", "h26", "h27", "h28", "h29", "h30", "h31",
-            "q0", "q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10", "q11", "q12", "q13", "q14", "q15",
-            "q16", "q17", "q18", "q19", "q20", "q21", "q22", "q23", "q24", "q25", "q26", "q27", "q28", "q29", "q30", "q31",
-            "s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11", "s12", "s13", "s14", "s15",
-            "s16", "s17", "s18", "s19", "s20", "s21", "s22", "s23", "s24", "s25", "s26", "s27", "s28", "s29", "s30", "s31",
-            "w0", "w1", "w2", "w3", "w4", "w5", "w6", "w7", "w8", "w9", "w10", "w11", "w12", "w13", "w14", "w15",
-            "w16", "w17", "w18", "w19", "w20", "w21", "w22", "w23", "w24", "w25", "w26", "w27", "w28", "w29", "w30",
-            "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",
-            "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23", "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31"
+            "rax", "eax", "ax", "al", "rbx", "ebx", "bx", "bl", "rcx", "ecx", "cx", "cl", "rdx", "edx", "dx", "dl",
+            "rsi", "esi", "si", "sil", "rdi", "edi", "di", "dil", "rbp", "ebp", "bp", "bpl", "rsp", "esp", "sp", "spl",
+            "r8", "r8d", "r8w", "r8b", "r9", "r9d", "r9w", "r9b", "r10", "r10d", "r10w", "r10b", "r11", "r11d", "r11w", "r11b",
+            "r12", "r12d", "r12w", "r12b", "r13", "r13d", "r13w", "r13b", "r14", "r14d", "r14w", "r14b", "r15", "r15d", "r15w", "r15b",
         ],
 
-        // Directives taken from:https://developer.arm.com/documentation/den0013/d/Introduction-to-Assembly-Language/Introduction-to-the-GNU-Assembler/Assembler-directives
+        // Directives taken from: https://sourceware.org/binutils/docs/as/Pseudo-Ops.html
         directives: [
-            ".align", ".ascii", ".asciz", ".byte", ".hword", ".word", ".data", ".end", ".equ", ".extern", ".global", ".include", ".text"
+            ".abort", ".ABORT", ".align", ".altmacro", ".ascii", ".asciz", ".attach_to_group", ".balign", ".base64", ".bss", ".byte", ".comm",
+            ".data", ".dc", ".dcb", ".ds", ".def", ".desc", ".dim", ".double", ".eject", ".else", ".elseif", ".end", ".endef", ".endfunc", ".endif",
+            ".equ", ".equiv", ".eqv", ".err", ".error", ".exitm", ".extern", ".fail", ".file", ".fill", ".float", ".func", ".global", ".globl", ".gnu_attribute",
+            ".hidden", ".hword", ".ident", ".if", ".incbin", ".include", ".int", ".internal", ".irp", ".irpc", ".lcomm", ".lflags", ".line", ".linkonce",
+            ".list", ".ln", ".loc", ".loc_mark_labels", ".local", ".long", ".macro", ".mri", ".noaltmacro", ".nolist", ".nop", ".nops", ".octa", ".offset",
+            ".org", ".p2align", ".popsection", ".previous", ".print", ".protected", ".psize", ".purgem", ".pushsection", ".quad", ".reloc", ".rept", ".sbttl",
+            ".scl", ".section", ".set", ".short", ".single", ".size", ".skip", ".sleb128", ".space", ".stabd", ".string", ".struct", ".subsection", ".symver",
+            ".tag", ".text", ".title", ".tls_common", ".type", ".uleb128", ".val", ".version", ".vtable_entry", ".vtable_inherit", ".warning", ".weak",
+            ".weakref", ".word", ".zero", ".2byte", ".4byte", ".8byte",
         ],
 
         // Operators, symbols, and escapes from default monarch example.
         operators: [
             '[', ']', '#', '!', '~', '?', ':', '==', '<=', '>=', '!=',
-            '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
-            '<<', '>>', '>>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=',
-            '%=', '<<=', '>>=', '>>>='
+            '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^',
+            '<<', '>>', '>>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=', '<<=', '>>=', '>>>='
         ],
-        symbols: /[=><!~?:&|+\-*\/\^%]+\./,
+        symbols: /[=><!~?:&|+\-*\/\^]+\./,
         escapes: /\\(?:[abfnrtv\\"']|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/,
 
         // The main tokenizer for our languages.
         tokenizer: {
             root: [
                 // Instructions, directives, registers to color things differently.
-                [/(\.)?[a-zA-Z_$][\w$]*(\d+)?/, {
+                [/(\.)?[a-zA-Z_][\w$]*(\d+)?/, {
                     cases: {
                         '@instructions': 'keyword',
                         '@directives': 'constant',
@@ -106,9 +123,9 @@ function getARM64SyntaxHighlighting() {
                     }
                 }],
                 // Numbers to handle possible negative and the leading # sign.
-                [/(\#)?\d*\.\d+([eE][\-+]?\d+)?/, 'number'],
-                [/(\#)?0[xX][0-9a-fA-F]+/, 'number'],
-                [/(\#)?(-)?\d+/, 'number'],
+                [/(\$)?\d*\.\d+([eE][\-+]?\d+)?/, 'number'],
+                [/(\$)?0[xX][0-9a-fA-F]+/, 'number'],
+                [/(\$)?(-)?\d+/, 'number'],
 
                 // Whitespace, delimiters, strings, characters from default monarch exammple.
                 // whitespace
@@ -134,10 +151,7 @@ function getARM64SyntaxHighlighting() {
             ],
             // Comments, strings, whitespace taken from default monarch example.
             comment: [
-                [/[^\/*]+/, 'comment'],
-                [/\/\*/, 'comment', '@push'],    // nested comment
-                ["\\*/", 'comment', '@pop'],
-                [/[\/*]/, 'comment']
+                [/\#.*$/, 'comment'],
             ],
             string: [
                 [/[^\\"]+/, 'string'],
@@ -147,8 +161,7 @@ function getARM64SyntaxHighlighting() {
             ],
             whitespace: [
                 [/[ \t\r\n]+/, 'white'],
-                [/\/\*/, 'comment', '@comment'],
-                [/\/\/.*$/, 'comment']
+                [/\#.*$/, 'comment'],
             ]
         }
     };

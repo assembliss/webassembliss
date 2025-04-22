@@ -1,7 +1,7 @@
 {% extends "base_editor.html.j2" %}
 
 
-{% block title %} - X8664{% endblock %}
+{% block title %} - x86-64{% endblock %}
 
 
 {% block archTag %}x86-64{% endblock %}
@@ -10,15 +10,16 @@
 {% block navbar %}
     <li class="nav-item dropdown">
         <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fa-solid fa-book"></i> ARM64 Resources
+            <i class="fa-solid fa-book"></i> x86-64 Resources
         </a>
         <ul class="dropdown-menu">
-            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://developer.arm.com/documentation/102374/latest/">Official Documentation</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="http://ref.x86asm.net/coder64-abc.html">Instruction List</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf">Swarthmore's Reference Sheet</a></li>
-            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://courses.cs.washington.edu/courses/cse469/19wi/arm64.pdf">UW's Quick Reference</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://cs.brown.edu/courses/cs033/docs/guides/x64_cheatsheet.pdf">Brown's Cheat Sheet</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://web.stanford.edu/class/cs107/resources/x86-64-reference.pdf">Stanford's Reference Sheet</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://www.cs.cmu.edu/afs/cs/academic/class/15213-s20/www/recitations/x86-cheat-sheet.pdf">CMU's Reference Sheet</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://blog.xhyeax.com/2022/04/28/arm64-syscall-table/">Syscalls for ARM64 - Linux</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/">Syscalls for x86-64 - Linux</a></li>
             <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html">Linux syscalls for many architectures</a></li>
         </ul>
     </li>

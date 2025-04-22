@@ -47,7 +47,7 @@ ARCH_CONFIG_MAP = {
         template_path="x8664_linux.html.j2",
         example_path=join(EXAMPLES_PATH, "x8664_linux", "hello.s"),
         example_name="hello.s",
-        inline_comment_tokens=["#", ";"],
+        inline_comment_tokens=["#"],
         instr_count_fun=x8664_linux_count_fun,
     ),
 }
