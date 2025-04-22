@@ -415,6 +415,46 @@ def check_for_bad_paths(path_names):
         raise ValueError("Path names for user files cannot be absolute paths.")
 
 
+def count_obj_instructions(OBJDUMP_CMD: str, obj_path: str) -> int:
+    """Count the number of instructions in an object file."""
+
+    # Run object dump to find only the instructions in the source.
+    objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
+    with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
+        stdout, _ = process.communicate()
+
+    # Parse the objdump's output to count instructions.
+    lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
+
+    # Find the first instruction in the code; it has the address of 0 in the text segment.
+    first_line = 0
+    while first_line < len(lines_as_tokens):
+        if not lines_as_tokens[first_line]:
+            first_line += 1
+        elif lines_as_tokens[first_line][0] != "0:":
+            first_line += 1
+        else:
+            break
+
+    # Count lines that have instruction information.
+    instruction_count = 0
+    for i in range(first_line, len(lines_as_tokens)):
+        # Ignore empty lines.
+        if not lines_as_tokens[i]:
+            continue
+        # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
+        if lines_as_tokens[i][0] == "...":
+            break
+        # Ignore lines that do not have enough information.
+        if len(lines_as_tokens[i]) < 3:
+            continue
+
+        # Count this line as one instruction.
+        instruction_count += 1
+
+    return instruction_count
+
+
 def clean_trace(
     *,  # force naming arguments
     source_files: Dict[str, str],
@@ -434,6 +474,7 @@ def clean_trace(
     timeout: int,  # microseconds
     max_trace_steps: int,
     step_over_external_steps: bool,
+    count_user_written_instructions: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
@@ -493,6 +534,13 @@ def clean_trace(
 
         # If able to assemble all given sources, mark assembly as successful.
         et.build.as_info.status_ok = True
+
+        # Check if client asked to count number of instructions the user wrote.
+        if count_user_written_instructions:
+            # Go through the generated objects and find the sum of instructions in them.
+            et.instructions_written = 0
+            for obj in obj_paths:
+                et.instructions_written += count_obj_instructions(objdump_cmd, obj)
 
         # Create all the pre-assembled object files that were given.
         for filename in object_files:

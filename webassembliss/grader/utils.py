@@ -76,16 +76,6 @@ class GraderResults:
     exec_agg_method: str = ""
 
 
-@dataclass
-class ArchConfig:
-    rootfs: str
-    workdir: str
-    as_cmd: str
-    ld_cmd: str
-    instr_count_fun: Callable[[Union[PathLike, str]], int]
-    inline_comment_tokens: List[str]
-
-
 def create_checksum(buff: bytes) -> bytes:
     """Create a checksum of the given bytes."""
     return sha256(buff).digest()

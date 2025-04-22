@@ -35,7 +35,7 @@ from .utils import (
 
 def check_project_builds(
     config: ProjectConfig, arch: ArchConfig, student_files: Dict[str, str]
-) -> Tuple[bool, bool, str]:
+) -> Tuple[bool, bool, str, int]:
     # Get the input for the first test.
     is_text, stdin, _ = validate_and_load_testcase_io(config.tests[0])
     bytes_stdin = stdin if not is_text else stdin.encode()
@@ -48,7 +48,6 @@ def check_project_builds(
 
     # Emulate the first test for only a single step.
     trace = arch.trace(
-        combine_all_steps=False,
         combine_external_steps=False,
         source_files=student_files,
         object_files=config_dict.get("providedObjects", {}),
@@ -68,6 +67,7 @@ def check_project_builds(
         trace.build.as_info.status_ok,
         trace.build.ld_info.status_ok,
         trace.build.as_info.errors + trace.build.ld_info.errors,
+        trace.instructions_written,
     )
 
 
@@ -130,7 +130,6 @@ def run_test_cases(
         else:
             # Emulate binary to get result
             trace = arch.trace(
-                combine_all_steps=False,
                 combine_external_steps=False,
                 source_files=student_files,
                 object_files=config_dict.get("providedObjects", {}),
@@ -143,6 +142,7 @@ def run_test_cases(
                 stdin=bytes_stdin,
                 bin_name=config_dict["execName"],
                 cl_args=cl_args,
+                count_user_written_instructions=False,
             )
             timed_out = trace.reached_max_steps
             exit_code = trace.exit_code if trace.HasField("exit_code") else None
@@ -449,12 +449,15 @@ def grade_student(
     arch = ARCH_CONFIG_MAP[TargetArchitecture.Name(config.arch)]
 
     # Check the user code builds with the given config.
-    gr.assembled, gr.linked, gr.errors = check_project_builds(
+    gr.assembled, gr.linked, gr.errors, src_instr_count = check_project_builds(
         config, arch, student_files
     )
     if not (gr.assembled and gr.linked):
         # If it doesn't stop the grading process.
         return gr
+
+    # If user code builds correctly, store the number of instruction they wrote.
+    sr.instr_count = src_instr_count
 
     # Run given test cases
     gr.tests, all_exec_counts = run_test_cases(
@@ -468,9 +471,6 @@ def grade_student(
     )
 
     # Find info needed from the source files.
-    sr.instr_count = sum(
-        (arch.instr_count_fun(code) for code in student_files.values())
-    )
     sr.inline_comment_count, sr.comment_only_lines = find_comments_counts(
         student_files, arch.inline_comment_tokens
     )

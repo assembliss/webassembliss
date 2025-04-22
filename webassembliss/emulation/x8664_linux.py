@@ -36,61 +36,6 @@ def get_flags(ql: Qiling) -> Dict[str, bool]:
     return _parse_flags_from_eflags(ql.arch.regs.read("eflags"))
 
 
-def count_source_instructions(source_contents: str) -> int:
-    """Count the number of instructions of an x86-64 assembly source code."""
-
-    # Create a tempdir to create the file.
-    with tempfile.TemporaryDirectory() as workdir:
-        # Write the file contents into the folder.
-        src_path = join(workdir, "source.S")
-        with open(src_path, "w") as file_out:
-            file_out.write(source_contents)
-
-        # Assemble source file into an object.
-        obj_path = f"{src_path}.aux_obj"
-        assembled_ok, *_ = assemble(
-            as_cmd=AS_CMD, src_path=src_path, flags=["-o"], obj_path=obj_path
-        )
-        if not assembled_ok:
-            raise RuntimeError("Not able to assemble source into an object.")
-
-        # Run object dump to find only the instructions in the source.
-        objdump_cmd = [OBJDUMP_CMD, "-d", obj_path]
-        with subprocess.Popen(objdump_cmd, stdout=subprocess.PIPE) as process:
-            stdout, _ = process.communicate()
-
-        # Parse the objdump's output to count instructions.
-        lines_as_tokens = [line.split() for line in stdout.decode().split("\n")]
-
-        # Find the first instruction in the code; it has the address of 0 in the text segment.
-        first_line = 0
-        while first_line < len(lines_as_tokens):
-            if not lines_as_tokens[first_line]:
-                first_line += 1
-            elif lines_as_tokens[first_line][0] != "0:":
-                first_line += 1
-            else:
-                break
-
-        # Count lines that have instruction information.
-        instruction_count = 0
-        for i in range(first_line, len(lines_as_tokens)):
-            # Ignore empty lines.
-            if not lines_as_tokens[i]:
-                continue
-            # Stop counting when we reach end of code; objdump has one line with '...' to indicate that.
-            if lines_as_tokens[i][0] == "...":
-                break
-            # Ignore lines that do not have enough information.
-            if len(lines_as_tokens[i]) < 3:
-                continue
-
-            # Count this line as one instruction.
-            instruction_count += 1
-
-        return instruction_count
-
-
 def trace(
     *,  # Force arguments to be named.
     combine_external_steps: bool,
@@ -106,6 +51,7 @@ def trace(
     bin_name: str = "usrCode.exe",
     cl_args: str = "",
     registers: Optional[List[str]] = None,
+    count_user_written_instructions: bool = True,
 ) -> ExecutionTrace:
     # Create default mutable values if needed.
     if object_files is None:
@@ -140,4 +86,5 @@ def trace(
         timeout=timeout,
         max_trace_steps=max_trace_steps,
         step_over_external_steps=combine_external_steps,
+        count_user_written_instructions=count_user_written_instructions,
     )
