@@ -11,6 +11,7 @@ from .riscv64_linux import trace as riscv64_linux_trace
 from .x8664_linux import trace as x8664_linux_trace
 from .x8664_linux import count_source_instructions as x8664_linux_count_fun
 
+
 @dataclass
 class ArchConfig:
     # Main method to emulate this architecture.
@@ -42,7 +43,7 @@ ARCH_CONFIG_MAP = {
         inline_comment_tokens=["#"],
         instr_count_fun=riscv64_linux_count_fun,
     ),
-        "x8664_linux": ArchConfig(
+    "x8664_linux": ArchConfig(
         trace=x8664_linux_trace,
         template_path="x8664_linux.html.j2",
         example_path=join(EXAMPLES_PATH, "x8664_linux", "hello.s"),

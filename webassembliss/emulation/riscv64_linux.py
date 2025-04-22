@@ -74,7 +74,6 @@ def count_source_instructions(source_contents: str) -> int:
 
 def trace(
     *,  # Force arguments to be named.
-    combine_all_steps: bool,
     combine_external_steps: bool,
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
@@ -120,6 +119,5 @@ def trace(
         cl_args=cl_args.split(),
         timeout=timeout,
         max_trace_steps=max_trace_steps,
-        combine_all_steps=combine_all_steps,
         step_over_external_steps=combine_external_steps,
     )

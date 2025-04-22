@@ -7,10 +7,6 @@ from typing import Dict, List, Optional
 import qiling.arch.x86_const  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 
-# TODO
-from unicorn.x86_const import UC_X86_REG_EFLAGS
-#UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
-
 from ..pyprotos.trace_info_pb2 import ExecutionTrace
 from .base_tracing import assemble, clean_trace
 
@@ -19,7 +15,9 @@ AS_CMD = "x86_64-linux-gnu-as"
 LD_CMD = "x86_64-linux-gnu-ld"
 OBJDUMP_CMD = "x86_64-linux-gnu-objdump"
 
-X8664_REGISTERS = list(qiling.arch.x86_const.reg_map_64.keys()) + list(qiling.arch.x86_const.reg_map_misc.keys())
+X8664_REGISTERS = list(qiling.arch.x86_const.reg_map_64.keys()) + list(
+    qiling.arch.x86_const.reg_map_misc.keys()
+)
 
 
 def _parse_flags_from_eflags(eflags: int) -> Dict[str, bool]:
@@ -95,7 +93,6 @@ def count_source_instructions(source_contents: str) -> int:
 
 def trace(
     *,  # Force arguments to be named.
-    combine_all_steps: bool,
     combine_external_steps: bool,
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
@@ -142,6 +139,5 @@ def trace(
         get_flags_func=get_flags,
         timeout=timeout,
         max_trace_steps=max_trace_steps,
-        combine_all_steps=combine_all_steps,
         step_over_external_steps=combine_external_steps,
     )

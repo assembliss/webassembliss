@@ -147,7 +147,7 @@ def run_test_cases(
             timed_out = trace.reached_max_steps
             exit_code = trace.exit_code if trace.HasField("exit_code") else None
             ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
-            exec_count = len(trace.steps) - 1
+            exec_count = trace.instructions_executed
             actual_out = combine_stdout(trace.steps)
             actual_err = combine_stderr(trace.steps)
             executed = True

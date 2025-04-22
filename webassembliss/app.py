@@ -89,8 +89,6 @@ def code_trace():
         return "No object_files in JSON data", 400
     if "user_input" not in request.json:
         return "No user_input in JSON data", 400
-    if "combine_all_steps" not in request.json:
-        return "No combine_all_steps in JSON data", 400
 
     arch_info = ARCH_CONFIG_MAP.get(request.json["arch"])
     if arch_info is None:
@@ -100,7 +98,6 @@ def code_trace():
         )
 
     emulation_trace = arch_info.trace(
-        combine_all_steps=request.json["combine_all_steps"],
         combine_external_steps=True,
         source_files=request.json["source_files"],
         object_files={

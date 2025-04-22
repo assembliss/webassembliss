@@ -1565,7 +1565,6 @@ function BASE_startTracing(combineAllSteps) {
         },
         body: JSON.stringify({
             arch: ARCH_ID,
-            combine_all_steps: (combineAllSteps) ? true : false,
             source_files: localFileStorage.tabs,
             object_files: localFileStorage.objs,
             extra_txt_files: localFileStorage.txtData,
@@ -1608,19 +1607,21 @@ function BASE_startTracing(combineAllSteps) {
             // Mark linking as successful.
             document.getElementById("ldStatus").innerHTML = OK_SYMBOL;
 
-            // Update the tracing information to show the initial state.
-            changeTracingStep(1);
-
             // Use the timeout indication to show if the trace reached maximum number of steps.
             document.getElementById("timeOut").innerHTML = window.lastTrace.reachedMaxSteps === null ? WAITING_SYMBOL : window.lastTrace.reachedMaxSteps ? OK_SYMBOL : ERROR_SYMBOL;
 
             // If the code has assembled and linked, it *should* have been emulated.
             // Check if the user wanted to run or trace the code.
             if (combineAllSteps) {
-                // If the user wanted to run it, reset editor to being actionable and do not show step information.
+                // If the user wanted to run it, advance trace to last step, remove code highlights, and reset editor to being actionable and do not show step information.
+                changeTracingStep(Infinity);
+                removeAllHighlights();
                 disableCodeActions(false);
                 return;
             }
+
+            // Update the tracing information to show the initial state.
+            changeTracingStep(1);
 
             // If the user wanted to trace the code, show menu and allow them to step through it.
             document.getElementById("statusFlagsDisplay").classList.remove("collapse");

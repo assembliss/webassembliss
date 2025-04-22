@@ -409,40 +409,6 @@ def combine_external_steps(execution_steps: List[TraceStep]):
     return combined_steps
 
 
-def flatten_all_steps(execution_steps: List[TraceStep]):
-    """Combine all trace steps into a single one so it mimics a normal run without tracing."""
-    if not execution_steps:
-        return execution_steps
-
-    # Use the first step as a base.
-    combined_step = execution_steps[0]
-
-    # Combine all next steps into our base.
-    for i in range(1, len(execution_steps)):
-        next_step = execution_steps[i]
-        # Combine each relevant proto field from this next step into the current one.
-        #   string stdout = 2;
-        combined_step.stdout += next_step.stdout
-        #   string stderr = 3;
-        combined_step.stderr += next_step.stderr
-        #   optional sint32 exit_code = 4;
-        # Must use HasField because if exit_code is 0, it will check whether it was set to 0 or left blank.
-        if next_step.HasField("exit_code"):
-            combined_step.exit_code = next_step.exit_code
-        #   map<string, uint64> register_delta = 5;
-        for reg in next_step.register_delta:
-            combined_step.register_delta[reg] = next_step.register_delta[reg]
-        #   map<string, bool> flag_delta = 6;
-        for flag in next_step.flag_delta:
-            combined_step.flag_delta[flag] = next_step.flag_delta[flag]
-        #   map<uint64, bytes> memory_delta = 7;
-        for mem in next_step.memory_delta:
-            combined_step.memory_delta[mem] = next_step.memory_delta[mem]
-
-    # Return a list containing our single step.
-    return [combined_step]
-
-
 def check_for_bad_paths(path_names):
     """Make sure there are no aboslute paths in the given path names; throws an exception if there is."""
     if any(((isabs(pn) or pardir in pn) for pn in path_names)):
@@ -468,7 +434,6 @@ def clean_trace(
     timeout: int,  # microseconds
     max_trace_steps: int,
     step_over_external_steps: bool,
-    combine_all_steps: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
@@ -580,13 +545,11 @@ def clean_trace(
         et.little_endian = is_little_endian
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
+        # Program should have executed one instruction per step (- the initial setup).
+        et.instructions_executed = len(trace_steps) - 1
 
-        # Check if we should merge any/all steps.
-        if combine_all_steps:
-            # Merge all steps into a single one, similar to a run without tracing.
-            trace_steps = flatten_all_steps(trace_steps)
-
-        elif step_over_external_steps:
+        # Check if we should merge external steps.
+        if step_over_external_steps:
             # Merge external steps into one so it acts like a step over in gdb.
             trace_steps = combine_external_steps(trace_steps)
 
@@ -599,55 +562,3 @@ def clean_trace(
             et.exit_code = exit_code
 
         return et
-
-
-if __name__ == "__main__":
-    from .arm64_linux import (
-        ARM64_REGISTERS,
-        AS_CMD,
-        LD_CMD,
-        OBJDUMP_CMD,
-        ROOTFS_PATH,
-        get_nzcv,
-    )
-
-    path = "/webassembliss/examples/arm64_linux/"
-    filename1 = "multiDriver.S"
-    filename2 = "sampleLib.S"
-    with open(join(path, filename1)) as file_in, open(
-        join(path, filename2)
-    ) as file_in2:
-        et = clean_trace(
-            source_files={filename1: file_in.read(), filename2: file_in2.read()},
-            object_files={},
-            extra_txt_files={},
-            extra_bin_files={},
-            rootfs_path=ROOTFS_PATH,
-            as_cmd=AS_CMD,
-            ld_cmd=LD_CMD,
-            as_flags=["-g -o"],
-            ld_flags=["-o"],
-            objdump_cmd=OBJDUMP_CMD,
-            stdin=BytesIO("test test".encode()),
-            bin_name="multiDriver.out",
-            registers=ARM64_REGISTERS,
-            cl_args=[],
-            get_flags_func=get_nzcv,
-            timeout=5_000_000,
-            max_trace_steps=200,
-        )
-
-    print("ARM64 Emulation info:")
-    print(f"{et.rootfs=}")
-    print(f"{et.arch_num_bits=}")
-    print(f"{et.little_endian=}")
-    print(f"{et.source_filenames=}")
-    print(f"{et.build=}")
-    print(f"{et.argv=}")
-    print(f"{et.exit_code=}")
-    print(f"{et.reached_max_steps=}")
-    print("Steps:")
-    for i, s in enumerate(et.steps):
-        print(f"[#{i}] {s}\n")
-
-    print(f"Total size of result object: {len(et.SerializeToString())}")
