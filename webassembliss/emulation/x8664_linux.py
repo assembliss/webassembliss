@@ -8,7 +8,7 @@ import qiling.arch.x86_const  # type: ignore[import-untyped]
 from qiling import Qiling  # type: ignore[import-untyped]
 
 # TODO
-from unicorn.x86_const import UC_X86_REG_RFLAGS
+from unicorn.x86_const import UC_X86_REG_EFLAGS
 #UC_ARM64_REG_NZCV  # type: ignore[import-untyped]
 
 from ..pyprotos.trace_info_pb2 import ExecutionTrace
@@ -19,25 +19,23 @@ AS_CMD = "x86_64-linux-gnu-as"
 LD_CMD = "x86_64-linux-gnu-ld"
 OBJDUMP_CMD = "x86_64-linux-gnu-objdump"
 
-
-qiling.arch.x86_const.reg_map_64.update({"cpsr": UC_X86_REG_RFLAGS})
-X8664_REGISTERS = list(qiling.arch.x86_const.reg_map_64)
+X8664_REGISTERS = list(qiling.arch.x86_const.reg_map_64.keys()) + list(qiling.arch.x86_const.reg_map_misc.keys())
 
 
-def _parse_flags_from_cpsr(cpsr: int) -> Dict[str, bool]:
-    """Parse the flag values from the CPSR register."""
+def _parse_flags_from_eflags(eflags: int) -> Dict[str, bool]:
+    """Parse the flag values from the EFLAGS register."""
     # Ref: https://en.wikipedia.org/wiki/FLAGS_register
     return {
-        "CF": bool(cpsr & (1 << 0)),
-        "ZF": bool(cpsr & (1 << 6)),
-        "SF": bool(cpsr & (1 << 7)),
-        "OF": bool(cpsr & (1 << 11)),
+        "CF": bool(eflags & (1 << 0)),
+        "ZF": bool(eflags & (1 << 6)),
+        "SF": bool(eflags & (1 << 7)),
+        "OF": bool(eflags & (1 << 11)),
     }
 
 
 def get_flags(ql: Qiling) -> Dict[str, bool]:
     """Parses the flag condition codes from the given qiling instance."""
-    return _parse_flags_from_cpsr(ql.arch.regs.read("cpsr"))
+    return _parse_flags_from_eflags(ql.arch.regs.read("eflags"))
 
 
 def count_source_instructions(source_contents: str) -> int:
