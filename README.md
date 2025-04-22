@@ -30,11 +30,8 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [x] allow multiple sources to work together
 	- [x] backend is able to handle it
 	- [x] process all sources from frontend
-- [ ] allow user to provide pre-assembled object file(s) to be linked with editor's sources
-	- [x] backend is able to handle it
-	- [ ] allow user to upload objects
+- [x] allow user to provide pre-assembled object file(s) to be linked with editor's sources
 - [x] remove as/ld and just use gcc
-	- have to consider all pros (e.g., can throw sources and objects at it) and cons (some archs might need separate commands)
 	- not planned right now -- if we assume that clients use the `trace` method, each arch should be able to choose their build
 - [ ] figure out why `printf` isn't working
 - [ ] show instructions executed after running/tracing code
