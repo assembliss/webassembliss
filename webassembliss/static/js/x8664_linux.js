@@ -2,14 +2,9 @@ const ARCH_ID = "x8664_linux";
 const ARCH_NUM_BITS = 64;
 
 // Add registers we want to display to the register table.
-const qilingARM64Registers = ["rax", "rbx", "rcx", "rsi", "rbp", "rsp", "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "rip",     "eflags",
-    "cs",
-    "ss",
-    "ds",
-    "es",
-    "fs",
-    "gs"];
-populateRegisterTable(qilingARM64Registers);
+const qilingX8664Registers = ["rax", "rbx", "rcx", "rsi", "rbp", "rsp", "r8", "r9", "r10",
+    "r11", "r12", "r13", "r14", "r15", "rip", "cs", "ss", "ds", "es", "fs", "gs", "eflags",];
+populateRegisterTable(qilingX8664Registers);
 
 function createEditor(default_code) {
     BASE_createEditor(default_code, getARM64SyntaxHighlighting)
