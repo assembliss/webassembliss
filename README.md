@@ -12,12 +12,10 @@ This project is under active development.
 
 ### General Functionality
 - [ ] figure out why `printf` isn't working
-- [ ] show instructions executed after running/tracing code
-- [ ] show instructions written after running/tracing code
 - [ ] show user output of a specific file they create/modify with their code
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 	- could allow them to redirect input/output boxes to a filepath
-- [ ] handle multiple architectures
+- [ ] add support for more architectures
 	- overview how to do that: https://github.ncsu.edu/assembliss/webassembliss/pull/9
  	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
  	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
@@ -54,7 +52,6 @@ This project is under active development.
 	- https://docs.gunicorn.org/en/stable/design.html
 
 ### User Experience
-- [ ] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] add a button to load code from examples
@@ -119,3 +116,6 @@ This project is under active development.
 - [x] preserve source code between refreshes
 - [x] allow user to change registers shown
 - [x] add a production deployment server
+- [x] allow user to upload other files to be processed (e.g., a csv file to be read)
+- [x] show instructions executed after running/tracing code
+- [x] show instructions written after running/tracing code
