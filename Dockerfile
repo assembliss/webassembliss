@@ -19,6 +19,8 @@ RUN apt update && \
     make gcc-aarch64-linux-gnu\
     # riscv64 toolchain (assemble/link riscv64 assembly code)
     make gcc-riscv64-linux-gnu\
+    # x8664 linux toolchain (assemble/link x8664 linux assembly code)
+    make gcc-x86-64-linux-gnu\
     # tmux (for dev debugging in container)
     tmux\
     # protobuf to handle project grading config files

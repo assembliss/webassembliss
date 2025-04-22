@@ -1,0 +1,41 @@
+{% extends "base_editor.html.j2" %}
+
+
+{% block title %} - x86-64{% endblock %}
+
+
+{% block archTag %}x86-64{% endblock %}
+
+
+{% block navbar %}
+    <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-book"></i> x86-64 Resources
+        </a>
+        <ul class="dropdown-menu">
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="http://ref.x86asm.net/coder64-abc.html">Instruction List</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://cs.brown.edu/courses/cs033/docs/guides/x64_cheatsheet.pdf">Brown's Cheat Sheet</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://web.stanford.edu/class/cs107/resources/x86-64-reference.pdf">Stanford's Reference Sheet</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://www.cs.cmu.edu/afs/cs/academic/class/15213-s20/www/recitations/x86-cheat-sheet.pdf">CMU's Reference Sheet</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://blog.rchapman.org/posts/Linux_System_Call_Table_for_x86_64/">Syscalls for x86-64 - Linux</a></li>
+            <li><a target="_blank" class="dropdown-item" rel="noopener noreferrer" href="https://gpages.juszkiewicz.com.pl/syscalls-table/syscalls.html">Linux syscalls for many architectures</a></li>
+        </ul>
+    </li>
+{% endblock %}
+
+
+{% block statusFlags %}
+    <th>Status Flags</th>
+    {# The ID should be formatted as "<flag name>Flag" so the tracing logic can update values without changes. #}
+    <td>SF: <span id="sfFlag">⭕</span></td>
+    <td>ZF: <span id="zfFlag">⭕</span></td>
+    <td>CF: <span id="cfFlag">⭕</span></td>
+    <td>OF: <span id="ofFlag">⭕</span></td>
+{% endblock %}
+
+
+{% block archScript %}
+    <script src="{{ url_for('static', filename='js/x8664_linux.js') }}"></script>
+{% endblock %}

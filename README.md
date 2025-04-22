@@ -85,6 +85,8 @@ The goal is to have a webapp that allows users to edit, run, and trace ARM64 ass
 - [ ] add auto-typehint-checker
 	- https://github.com/python/mypy
 - [x] add a production deployment server
+- [ ] cleanup the language syntax for each architecture
+	- [maybe helpful? (monarch)](https://microsoft.github.io/monaco-editor/monarch.html)
 - [ ] move these TODOs to the projects tab
 - [ ] update Dockerfile to use newer python version
 - [ ] add unit tests for all methods
