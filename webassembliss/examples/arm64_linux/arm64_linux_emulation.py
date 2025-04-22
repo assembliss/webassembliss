@@ -8,6 +8,7 @@ if __name__ == "__main__":
         "infiniteLoop.out",
         "ioExample.out",
         "multiExample.out",
+        "multiExampleWithPrintf.out",
         "cExample.out",
         "clArgs.out",
         "fileIO.out",

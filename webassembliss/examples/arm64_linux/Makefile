@@ -1,4 +1,4 @@
-all: hello changingFlags infiniteLoop ioExample multiExample cExample clArgs
+all: hello changingFlags infiniteLoop ioExample multiExample multiExampleWithPrintf cExample clArgs fileIO
 
 hello: hello.S
 	aarch64-linux-gnu-as hello.S -g --gdwarf-5 -o hello.o
@@ -20,6 +20,11 @@ multiExample: multiDriver.S sampleLib.S
 	aarch64-linux-gnu-as multiDriver.S -g --gdwarf-5 -o multiDriver.o
 	aarch64-linux-gnu-as sampleLib.S -g --gdwarf-5 -o sampleLib.o
 	aarch64-linux-gnu-ld multiDriver.o sampleLib.o -o multiExample.out -lc
+
+multiExampleWithPrintf: multiDriverWithPrintf.S sampleLib.S
+	aarch64-linux-gnu-as multiDriverWithPrintf.S -g --gdwarf-5 -o multiDriverWithPrintf.o
+	aarch64-linux-gnu-as sampleLib.S -g --gdwarf-5 -o sampleLib.o
+	aarch64-linux-gnu-ld multiDriverWithPrintf.o sampleLib.o -o multiExampleWithPrintf.out -lc
 
 cExample: cDriver.c sampleLib.S
 	aarch64-linux-gnu-gcc cDriver.c -c -g -gdwarf -o cDriver.o
