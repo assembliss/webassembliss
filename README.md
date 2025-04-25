@@ -38,6 +38,8 @@ This project is under active development.
 	- [maybe helpful? (monarch)](https://microsoft.github.io/monaco-editor/monarch.html)
 - [ ] move these TODOs to the projects tab
 - [ ] update Dockerfile to use newer python version
+- [ ] explore a switch from gcc to clang since it supports multiple architectures by default
+	- [maybe helpful?](https://clang.llvm.org/docs/CrossCompilation.html)
 - [ ] add unit tests for all methods
 	- maybe with [pytest](https://docs.pytest.org/en/stable/getting-started.html)?
 - [ ] CI/CD to auto-run tests on open PRs
