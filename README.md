@@ -13,8 +13,8 @@ This project is under active development.
 ### General Functionality
 - [ ] figure out why `printf` isn't working
 - [ ] show user output of a specific file they create/modify with their code
-- [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 	- could allow them to redirect input/output boxes to a filepath
+- [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [ ] add support for more architectures
 	- overview how to do that: https://github.ncsu.edu/assembliss/webassembliss/pull/9
  	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
