@@ -56,6 +56,7 @@ This project is under active development.
 - [ ] allow user to change timeout
 - [ ] add a button to load code from examples
 - [ ] show instruction information when hovering over it
+	- [maybe helpful?](https://stackoverflow.com/a/49450345)
 
 ### Completed
 - [x] add a button to assemble, link, and run the code from the editor
