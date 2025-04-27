@@ -43,6 +43,53 @@ document.querySelector("#submission").addEventListener("submit", (event) => {
     submitFormData();
 });
 
+let numberOfTests = 0;
+const pointsPerTest = [0]; // already has one element so we can access this 1-indexed.
+function addTestCase() {
+    // TODO: allow user to delete test cases.
+    // Increase the number of total tests and get the new number for this new test.
+    let testNum = ++numberOfTests;
+    // Create new div for the test.
+    let newTestDiv = document.createElement("div");
+    newTestDiv.innerHTML = `
+<div id="test-case-${testNum}-div">        
+    <hr/>
+    <h5>Test Case #${testNum}</h5>
+    <div class="input-group mb-3">
+        <span class="input-group-text" for="testCase-${testNum}-input">Test Case #${testNum} Input</span>
+        <textarea class="form-control" id="testCase-${testNum}-input" aria-label="Test Case #${testNum} Input" placeholder="input..." required></textarea>
+        <span class="input-group-text" for="testCase-${testNum}-output">Test Case #${testNum} Output</span>
+        <textarea class="form-control" id="testCase-${testNum}-output" aria-label="Test Case #${testNum} Output" placeholder="output..." required></textarea>
+        <span class="input-group-text" for="testCase-${testNum}-points">Test Case #${testNum} Points</span>
+        <input type="text" class="form-control" id="testCase-${testNum}-points" name="testCase-${testNum}-points" onchange="updateTotalPoints(${testNum}); return false;" placeholder="0" required>
+    </div>
+    <div class="form-check">
+    <input class="form-check-input" type="checkbox" value="" id="test-case-${testNum}-bytesIO">
+    <label class="form-check-label" for="test-case-${testNum}-bytesIO">
+        Check I/O for test case #${testNum} as bytes.
+    </label>
+    </div>
+</div>
+    `;
+    // Add the new test to the form.
+    document.getElementById("test-cases-div").appendChild(newTestDiv);
+    // Add an entry to store the number of points for this test.
+    pointsPerTest.push(0);
+    // Update the number of test cases.
+    document.getElementById("total-test-cases").innerText = numberOfTests;
+}
+
+function updateTotalPoints(testChanged) {
+    // Get the new number of points for this test from the user.
+    let newTestPoints = parseInt(document.getElementById(`testCase-${testChanged}-points`).value);
+    // Update array with new number of points.
+    pointsPerTest[testChanged] = newTestPoints;
+    // Update the total points shown on the form.
+    document.getElementById("total-test-points").innerText = pointsPerTest.reduce((accumulator, currentValue) => {
+        return accumulator + currentValue
+    }, 0);
+}
+
 async function submitFormData() {
     // Get input values from form.
     let name = document.getElementById("name").value;

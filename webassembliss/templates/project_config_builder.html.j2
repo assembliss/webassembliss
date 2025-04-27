@@ -17,7 +17,6 @@
         <div class="mb3">
           <label for="arch-select" class="form-label">Project Architecture</label>
           <select class="form-select" id="arch-select" name="arch-select" aria-label="Project architecture selection.">
-            <option selected>Click to select option.</option>
           </select>
           <div class="invalid-feedback">
             Please select a valid architecture option.
@@ -47,8 +46,8 @@
 
         <legend>User Required Files</legend>
         <div class="mb-3">
-          <label for="user-files" class="form-label">Space-separeted List of Files the User Will Submit</label>
           <input type="text" name="user-files" id="user-files" class="form-control" aria-label="List of files the user will be required to submit." placeholder="example1.S example2.S"></textarea>
+          <div id="sourceHelp" class="form-text">This should be a space-separated list with the names of the source files the user will submit for grading.</div>
           <div class="invalid-feedback">
             Please enter a list of files the user will need to submit.
           </div>
@@ -63,13 +62,21 @@
         <div class="mb-3">
           <label for="text-data-files" class="form-label">Text Data Files</label>
           <input type="file" class="form-control" id="text-data-files" name="text-data-files" aria-describedby="text-data-files" multiple>
-          <div id="txtsHelp" class="form-text">These are .txt files that will be created in the same directory as user code they can access and process.</div>
+          <div id="txtsHelp" class="form-text">These are .txt files the final binary can access. These files will be created in the same directory as the binary.</div>
         </div>
         <div class="mb-3">
           <label for="bin-data-files" class="form-label">Binary Data Files</label>
           <input type="file" class="form-control" id="bin-data-files" name="bin-data-files" aria-describedby="bin-data-files" multiple>
-          <div id="binsHelp" class="form-text">These are .bin files that will be created in the same directory as user code they can access and process.</div>
+          <div id="binsHelp" class="form-text">These are .bin files the final binary can access. These files will be created in the same directory as the binary.</div>
         </div>
+
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
 
         <legend>Grading Settings</legend>
         <div class="mb-3">
@@ -86,31 +93,69 @@
         </div>
 
 
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
+
         <legend>Documentation Grading</legend>
+
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
+
         <legend>Source Effifiency Grading</legend>
+
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
+
         <legend>Execution Effifiency Grading</legend>
         <div class="mb3">
           <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
           <select class="form-select" id="exec-agg-select" name="exec-agg-select" aria-label="Instructions executed aggregation selection.">
-            <option selected>Click to select option.</option>
           </select>
           <div class="invalid-feedback">
             Please select a valid aggregation option.
           </div>
         </div>
 
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
 
         <legend>Accuracy Grading</legend>
-        <div class="mb-3">
-          <label for="test-cases-json" class="form-label">Test Cases JSON</label>
-          <input type="file" class="form-control" id="test-cases-json" name="test-cases-json" aria-describedby="test-cases-json">
-          <div id="testsHelp" class="form-text">This is a .json file containing the project test cases. Click here to see an example.</div>
+        <span>Total Tests: <span id="total-test-cases">0</span></span>
+        <span>Total Points: <span id="total-test-points">0</span></span>
+        <div id="test-cases-div">
         </div>
+        <button class="btn btn-danger" onclick="addTestCase(); return false;">Add New Test Case</button>
+
+        <br/>
+        <br/>
+        <br/>
+        <hr/>
+        <br/>
+        <br/>
+        <br/>
 
         <legend>Finish</legend>
-        <div class="mb3">
-          <button type="submit" class="btn btn-danger">Create Config Proto</button>
-        </div>
+        <button type="submit" class="btn btn-danger">Create Config Proto</button>
       </form>
     </div>
   </div>
