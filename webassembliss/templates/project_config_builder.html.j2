@@ -7,8 +7,8 @@
       <fieldset id="control-form-editing">
         <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
             enctype=multipart/form-data>
-          <h2>Project Setup</h2>
-          <legend>1: Basic Info</legend>
+          <h2>1: Project Setup</h2>
+          <legend>1.1: Basic Info</legend>
           <div class="mb3">
             <label for="name">Project Name</label>
             <input type="text" class="form-control" id="project-name" name="project-name" placeholder="Example Project" required>
@@ -48,7 +48,7 @@
 
           <hr/>
 
-          <legend>2: User Required Files</legend>
+          <legend>1.2: User Required Files</legend>
           <div id="user-filenames-div">
             <div class="mb-3">
               <label for="user-file-1">User File #1</label>
@@ -63,7 +63,7 @@
 
           <hr/>
 
-          <legend>3: Additional Files Provided</legend>
+          <legend>1.3: Additional Files Provided</legend>
           <div class="mb-3">
             <label for="object-files" class="form-label">Pre-Assembled Object Files</label>
             <input type="file" class="form-control" id="object-files" name="object-files" aria-describedby="object-files" multiple>
@@ -82,11 +82,10 @@
 
           <hr/>
           <hr/>
-          <hr/>
 
-          <h2>Grading</h2>
+          <h2>2: Grading</h2>
 
-          <legend>1: Accuracy Grading</legend>
+          <legend>2.1: Accuracy Grading</legend>
           <div class="col-md-4">
             <label for="accuracy-weight">Accuracy Weight</label>
             <input type="number" class="form-control" id="accuracy-weight" placeholder="25" aria-label="Number of Points for Accuracy" aria-describedby="accuracy-weight">
@@ -120,7 +119,7 @@
           
           <hr/>
 
-          <legend>2: Source Effifiency Grading</legend>
+          <legend>2.2: Source Effifiency Grading</legend>
           <div class="col-md-4">
             <label for="source-eff-weight">Source Effifiency Weight</label>
             <input type="number" class="form-control" id="source-eff-weight" placeholder="25" aria-label="Number of Points for Source Effifiency" aria-describedby="source-eff-weight">
@@ -128,7 +127,7 @@
 
           <hr/>
 
-          <legend>3: Execution Effifiency Grading</legend>
+          <legend>2.3: Execution Effifiency Grading</legend>
           <div class="col-md-4">
             <label for="exec-eff-weight">Execution Effifiency Weight</label>
             <input type="number" class="form-control" id="exec-eff-weight" placeholder="25" aria-label="Number of Points for Execution Effifiency" aria-describedby="exec-eff-weight">
@@ -145,7 +144,7 @@
 
           <hr/>
 
-          <legend>4: Documentation Grading</legend>
+          <legend>2.4: Documentation Grading</legend>
           <div class="col-md-4">
             <label for="documentation-weight">Documentation Weight</label>
             <input type="number" class="form-control" id="documentation-weight" placeholder="25" aria-label="Number of Points for Documentation" aria-describedby="documentation-weight">
@@ -153,9 +152,8 @@
 
           <hr/>
           <hr/>
-          <hr/>
 
-          <h2>Finish</h2>
+          <h2>3. Finish</h2>
           <button type="submit" class="btn btn-danger">Create Config Proto</button>
         </form>
       </fieldset>
