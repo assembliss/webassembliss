@@ -61,7 +61,7 @@ function addTestCase() {
         <span class="input-group-text" for="testCase-${testNum}-output">Test Case #${testNum} Output</span>
         <textarea class="form-control" id="testCase-${testNum}-output" aria-label="Test Case #${testNum} Output" placeholder="output..." required></textarea>
         <span class="input-group-text" for="testCase-${testNum}-points">Test Case #${testNum} Points</span>
-        <input type="text" class="form-control" id="testCase-${testNum}-points" name="testCase-${testNum}-points" onchange="updateTotalPoints(${testNum}); return false;" placeholder="0" required>
+        <input type="number" class="form-control" id="testCase-${testNum}-points" name="testCase-${testNum}-points" onchange="updateTotalPoints(${testNum}); return false;" placeholder="0" required>
     </div>
     <div class="form-check">
     <input class="form-check-input" type="checkbox" value="" id="test-case-${testNum}-bytesIO">
@@ -76,7 +76,7 @@ function addTestCase() {
     // Add an entry to store the number of points for this test.
     pointsPerTest.push(0);
     // Update the number of test cases.
-    document.getElementById("total-test-cases").innerText = numberOfTests;
+    document.getElementById("total-test-cases").value = numberOfTests;
 }
 
 function updateTotalPoints(testChanged) {
@@ -85,7 +85,7 @@ function updateTotalPoints(testChanged) {
     // Update array with new number of points.
     pointsPerTest[testChanged] = newTestPoints;
     // Update the total points shown on the form.
-    document.getElementById("total-test-points").innerText = pointsPerTest.reduce((accumulator, currentValue) => {
+    document.getElementById("total-test-points").value = pointsPerTest.reduce((accumulator, currentValue) => {
         return accumulator + currentValue
     }, 0);
 }
