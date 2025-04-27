@@ -168,6 +168,46 @@ function addNewExecEffCutoff() {
     document.getElementById("exec-eff-cutoffs-div").appendChild(newCutoffDiv);
 }
 
+let numCommentOnlyCutoffs = 1;
+function addNewCommentOnlyCutoff() {
+    // TODO: allow user to delete cutoffs.
+    // Increase the number of exec efficiency cutoffs and get the new number for this new one.
+    let cutoffNum = ++numCommentOnlyCutoffs;
+    // Create new div for the test.
+    let newCutoffDiv = document.createElement("div");
+    newCutoffDiv.classList.add("input-group");
+    newCutoffDiv.classList.add("mb-3");
+    newCutoffDiv.innerHTML = `
+    <span class="input-group-text">A ratio of at least</span>
+    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <span class="input-group-text">% of comment-only lines to instruction lines should receive</span>
+    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <span class="input-group-text">%</span>
+    `;
+    // Add the new test to the form.
+    document.getElementById("docs-commentonly-cutoffs-div").appendChild(newCutoffDiv);
+}
+
+let numInlineCommentsCutoffs = 1;
+function addNewInlineCommentsCutoff() {
+    // TODO: allow user to delete cutoffs.
+    // Increase the number of exec efficiency cutoffs and get the new number for this new one.
+    let cutoffNum = ++numInlineCommentsCutoffs;
+    // Create new div for the test.
+    let newCutoffDiv = document.createElement("div");
+    newCutoffDiv.classList.add("input-group");
+    newCutoffDiv.classList.add("mb-3");
+    newCutoffDiv.innerHTML = `
+    <span class="input-group-text">A ratio of at least</span>
+    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <span class="input-group-text">% of inline-commented lines to instruction lines should receive</span>
+    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <span class="input-group-text">%</span>
+    `;
+    // Add the new test to the form.
+    document.getElementById("docs-inlinecomments-cutoffs-div").appendChild(newCutoffDiv);
+}
+
 async function submitFormData() {
     // Make form read-only.
     document.getElementById("control-form-editing").setAttribute("disabled", "disabled");
