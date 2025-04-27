@@ -84,12 +84,41 @@
           <hr/>
 
           <h2>2: Grading</h2>
-
-          <legend>2.1: Accuracy Grading</legend>
-          <div class="col-md-4">
-            <label for="accuracy-weight">Accuracy Weight</label>
-            <input type="number" class="form-control" id="accuracy-weight" placeholder="25" aria-label="Number of Points for Accuracy" aria-describedby="accuracy-weight">
+          
+          <legend>2.1: Grading Breakdown</legend>
+          <span> Total Points: <span id="total-project-points">100</span></span>
+          <div class="col-md-3">
+            <label for="weight-points-accuracy">Accuracy Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-accuracy" value="25" onchange="updateGradingBreakdown(); return false;">
+              <span class="input-group-text" id="weight-pct-accuracy">25%</span>
+            </div>
           </div>
+          <div class="col-md-3">
+            <label for="weight-points-source">Source Efficiency Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-source" value="25" onchange="updateGradingBreakdown(); return false;">
+              <span class="input-group-text" id="weight-pct-source">25%</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="weight-points-exec">Execution Efficiency Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-exec" value="25" onchange="updateGradingBreakdown(); return false;">
+              <span class="input-group-text" id="weight-pct-exec">25%</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="weight-points-exec">Documentation Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-docs" value="25" onchange="updateGradingBreakdown(); return false;">
+              <span class="input-group-text" id="weight-pct-docs">25%</span>
+            </div>
+          </div>
+
+          <hr/>
+
+          <legend>2.2: Accuracy Grading</legend>
 
           <div class="col-md-4">
             <label for="total-test-cases">Total Number of Test Cases</label>
@@ -119,19 +148,11 @@
           
           <hr/>
 
-          <legend>2.2: Source Effifiency Grading</legend>
-          <div class="col-md-4">
-            <label for="source-eff-weight">Source Effifiency Weight</label>
-            <input type="number" class="form-control" id="source-eff-weight" placeholder="25" aria-label="Number of Points for Source Effifiency" aria-describedby="source-eff-weight">
-          </div>
+          <legend>2.3: Source Effifiency Grading</legend>
 
           <hr/>
 
-          <legend>2.3: Execution Effifiency Grading</legend>
-          <div class="col-md-4">
-            <label for="exec-eff-weight">Execution Effifiency Weight</label>
-            <input type="number" class="form-control" id="exec-eff-weight" placeholder="25" aria-label="Number of Points for Execution Effifiency" aria-describedby="exec-eff-weight">
-          </div>
+          <legend>2.4: Execution Effifiency Grading</legend>
 
           <div class="mb3">
             <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
@@ -144,11 +165,7 @@
 
           <hr/>
 
-          <legend>2.4: Documentation Grading</legend>
-          <div class="col-md-4">
-            <label for="documentation-weight">Documentation Weight</label>
-            <input type="number" class="form-control" id="documentation-weight" placeholder="25" aria-label="Number of Points for Documentation" aria-describedby="documentation-weight">
-          </div>
+          <legend>2.5: Documentation Grading</legend>
 
           <hr/>
           <hr/>

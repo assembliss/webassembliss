@@ -43,6 +43,23 @@ document.querySelector("#submission").addEventListener("submit", (event) => {
     submitFormData();
 });
 
+function updateGradingBreakdown() {
+    // Find the number of points for each category.
+    let accuracyPoints = parseInt(document.getElementById("weight-points-accuracy").value);
+    let sourcePoints = parseInt(document.getElementById("weight-points-source").value);
+    let execPoints = parseInt(document.getElementById("weight-points-exec").value);
+    let docsPoints = parseInt(document.getElementById("weight-points-docs").value);
+    // Find total points for the project.
+    let totalPoints = accuracyPoints + sourcePoints + execPoints + docsPoints;
+    // Update total in form.
+    document.getElementById("total-project-points").innerText = totalPoints;
+    // Update percentages for categories.
+    document.getElementById("weight-pct-accuracy").innerText = `${accuracyPoints * 100 / totalPoints}%`;
+    document.getElementById("weight-pct-source").innerText = `${sourcePoints * 100 / totalPoints}%`;
+    document.getElementById("weight-pct-exec").innerText = `${execPoints * 100 / totalPoints}%`;
+    document.getElementById("weight-pct-docs").innerText = `${docsPoints * 100 / totalPoints}%`;
+}
+
 let numberOfUserFiles = 1;
 function addUserFilename() {
     // TODO: allow user to delete user filenames.
