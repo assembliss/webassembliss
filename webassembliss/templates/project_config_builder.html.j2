@@ -49,13 +49,17 @@
           <hr/>
 
           <legend>2: User Required Files</legend>
-          <div class="mb-3">
-            <input type="text" name="user-files" id="user-files" class="form-control" aria-label="List of files the user will be required to submit." placeholder="example1.S example2.S"></textarea>
-            <div id="sourceHelp" class="form-text">This should be a space-separated list with the names of the source files the user will submit for grading.</div>
-            <div class="invalid-feedback">
-              Please enter a list of files the user will need to submit.
+          <div id="user-filenames-div">
+            <div class="mb-3">
+              <label for="user-file-1">User File #1</label>
+              <input type="text" name="user-file-1" id="user-file-1" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example1.S"></textarea>
+              <div id="sourceHelp" class="form-text">Name of a file the user will need to submit for grading.</div>
+              <div class="invalid-feedback">
+                Please enter a valid filename the user will need to submit.
+              </div>
             </div>
           </div>
+          <button class="btn btn-outline-danger" onclick="addUserFilename(); return false;">Add Another User File</button>
 
           <hr/>
 

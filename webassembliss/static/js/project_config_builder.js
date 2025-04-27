@@ -43,6 +43,27 @@ document.querySelector("#submission").addEventListener("submit", (event) => {
     submitFormData();
 });
 
+let numberOfUserFiles = 1;
+function addUserFilename() {
+    // TODO: allow user to delete user filenames.
+    // Increase the number of user files and get the new number for this new file.
+    let fileNum = ++numberOfUserFiles;
+    // Create new div for the file.
+    let newFileDiv = document.createElement("div");
+    newFileDiv.innerHTML = `
+    <div class="mb-3">
+        <label for="user-file-${fileNum}">User File #${fileNum}</label>
+        <input type="text" name="user-file-${fileNum}" id="user-file-${fileNum}" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example${fileNum}.S"></textarea>
+        <div id="sourceHelp" class="form-text">Name of a file the user will need to submit for grading.</div>
+        <div class="invalid-feedback">
+            Please enter a valid filename the user will need to submit.
+        </div>
+    </div>
+    `;
+    // Add the new file to the form.
+    document.getElementById("user-filenames-div").appendChild(newFileDiv);
+}
+
 let numberOfTests = 0;
 const pointsPerTest = [0]; // already has one element so we can access this 1-indexed.
 function addTestCase() {
