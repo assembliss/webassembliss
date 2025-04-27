@@ -1,9 +1,14 @@
 const MAX_SIZE = 1 * 1024 * 1024;
 
-// Populate available TargetArchitecture from the project_config proto.
+// Load protos that will be needed for project creation.
 protobuf.load("/static/protos/project_config.proto").then(function (root) {
     window.TargetArchitecture = root.lookupEnum("TargetArchitecture");
+    window.ExecutedInstructionsAggregation = root.lookupEnum("ExecutedInstructionsAggregation");
+    window.CompressionAlgorithm = root.lookupEnum("CompressionAlgorithm");
+    window.ProjectConfig = root.lookupType("ProjectConfig");
+    window.WrappedProject = root.lookupType("WrappedProject");
 }).then(() => {
+    // Populate available TargetArchitecture from the project_config proto.
     for (const [i, arch] of Object.entries(window.TargetArchitecture.valuesById)) {
         if (i == 0) {
             // Skip TARGETARCHITECTURE_UNSPECIFIED option.
@@ -16,13 +21,9 @@ protobuf.load("/static/protos/project_config.proto").then(function (root) {
         // Add it to the form.
         document.getElementById("arch-select").appendChild(newOption);
     }
-});
-
-// Populate available ExecutedInstructionsAggregation from the project_config proto.
-protobuf.load("/static/protos/project_config.proto").then(function (root) {
-    window.ExecutedInstructionsAggregation = root.lookupEnum("ExecutedInstructionsAggregation");
 }).then(() => {
-    for (const [i, arch] of Object.entries(window.ExecutedInstructionsAggregation.valuesById)) {
+    // Populate available ExecutedInstructionsAggregation from the project_config proto.
+    for (const [i, agg] of Object.entries(window.ExecutedInstructionsAggregation.valuesById)) {
         if (i == 0) {
             // Skip EXECUTEDINSTRUCTIONSAGGREGATION_UNSPECIFIED option.
             continue;
@@ -30,12 +31,25 @@ protobuf.load("/static/protos/project_config.proto").then(function (root) {
         // Add a new option with its enum id and value.
         let newOption = document.createElement('option');
         newOption.value = i;
-        newOption.innerText = arch;
+        newOption.innerText = agg;
         // Add it to the form.
         document.getElementById("exec-agg-select").appendChild(newOption);
     }
+}).then(() => {
+    // Populate available CompressionAlgorithm from the project_config proto.
+    for (const [i, alg] of Object.entries(window.CompressionAlgorithm.valuesById)) {
+        if (i == 0) {
+            // Skip COMPRESSIONALGORITHM_UNSPECIFIED option.
+            continue;
+        }
+        // Add a new option with its enum id and value.
+        let newOption = document.createElement('option');
+        newOption.value = i;
+        newOption.innerText = alg;
+        // Add it to the form.
+        document.getElementById("compression-alg-select").appendChild(newOption);
+    }
 });
-
 
 // Attach form to our sendData function below.
 document.querySelector("#submission").addEventListener("submit", (event) => {
@@ -93,19 +107,48 @@ function addTestCase() {
 <div id="test-case-${testNum}-div" class="test-case-info">        
     <hr/>
     <h5>Test Case #${testNum}</h5>
-    <div class="input-group mb-3">
-        <span class="input-group-text" for="testCase-${testNum}-input">Test Case #${testNum} Input</span>
-        <textarea class="form-control" id="testCase-${testNum}-input" aria-label="Test Case #${testNum} Input" placeholder="input..." required></textarea>
-        <span class="input-group-text" for="testCase-${testNum}-output">Test Case #${testNum} Output</span>
-        <textarea class="form-control" id="testCase-${testNum}-output" aria-label="Test Case #${testNum} Output" placeholder="output..." required></textarea>
-        <span class="input-group-text" for="testCase-${testNum}-points">Test Case #${testNum} Points</span>
+    <div class="col-md-4">
+        <label for="testCase-${testNum}-name">Test Name</label>
+        <input type="text" class="form-control" id="testCase-${testNum}-name" placeholder="Test ${testNum}" required>
+    </div>
+    <div class="col-md-4">
+        <label for="testCase-${testNum}-name">Test Points</label>
         <input type="number" class="form-control" id="testCase-${testNum}-points" name="testCase-${testNum}-points" onchange="updateTotalPoints(${testNum}); return false;" placeholder="0" required>
     </div>
+    <div class="col-md-4">
+        <label for="testCase-${testNum}-clargs">Test Command-Line Arguments</label>
+        <input type="text" class="form-control" id="testCase-${testNum}-clargs" placeholder="arg1 arg2 arg3..." required>
+    </div>
+    <div class="col-md-6">
+        <label for="testCase-${testNum}-input">Test Input</label>
+        <textarea class="form-control" id="testCase-${testNum}-input" aria-label="Test Case #${testNum} Input" placeholder="input..." required></textarea>
+    </div>
+    <div class="col-md-6">
+        <label for="testCase-${testNum}-output">Test Output</label>
+        <textarea class="form-control" id="testCase-${testNum}-output" aria-label="Test Case #${testNum} Output" placeholder="output..." required></textarea>
+    </div>
     <div class="form-check form-switch">
-    <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-bytesIO">
-    <label class="form-check-label" for="test-case-${testNum}-bytesIO">
-        Check I/O for test case #${testNum} as bytes.
-    </label>
+        <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-bytesIO">
+        <label class="form-check-label" for="test-case-${testNum}-bytesIO">
+            Check I/O for test case #${testNum} as bytes.
+        </label>
+    </div>
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-hidden">
+        <label class="form-check-label" for="test-case-${testNum}-hidden">
+            Hide I/O from user when grading submission.
+        </label>
+    </div>
+    <div class="col-md-4">
+        <label for="testCase-${testNum}-timeout">Test Timeout</label>
+        <div class="input-group">
+            <input type="number" class="form-control" id="testCase-${testNum}-timeout" placeholder="500" required>
+            <span class="input-group-text">ms</span>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <label for="testCase-${testNum}-max-instr">Test Maximum Instructions Executed</label>
+        <input type="number" class="form-control" id="testCase-${testNum}-max-instr" placeholder="500" required>
     </div>
 </div>
     `;
@@ -139,9 +182,9 @@ function addNewSourceEffCutoff() {
     newCutoffDiv.classList.add("mb-3");
     newCutoffDiv.innerHTML = `
     <span class="input-group-text">Up to</span>
-    <input type="number" id="source-eff-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <input type="number" id="source-eff-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions" required>
     <span class="input-group-text">written instructions should receive</span>
-    <input type="number" id="source-eff-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <input type="number" id="source-eff-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff" required>
     <span class="input-group-text">%</span>
     `;
     // Add the new test to the form.
@@ -159,9 +202,9 @@ function addNewExecEffCutoff() {
     newCutoffDiv.classList.add("mb-3");
     newCutoffDiv.innerHTML = `
     <span class="input-group-text">Up to</span>
-    <input type="number" id="exec-eff-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <input type="number" id="exec-eff-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions" required>
     <span class="input-group-text">aggregated executed instructions should receive</span>
-    <input type="number" id="exec-eff-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <input type="number" id="exec-eff-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff" required>
     <span class="input-group-text">%</span>
     `;
     // Add the new test to the form.
@@ -179,9 +222,9 @@ function addNewCommentOnlyCutoff() {
     newCutoffDiv.classList.add("mb-3");
     newCutoffDiv.innerHTML = `
     <span class="input-group-text">A ratio of at least</span>
-    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions" required>
     <span class="input-group-text">% of comment-only lines to instruction lines should receive</span>
-    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <input type="number" id="docs-commentonly-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff" required>
     <span class="input-group-text">%</span>
     `;
     // Add the new test to the form.
@@ -199,9 +242,9 @@ function addNewInlineCommentsCutoff() {
     newCutoffDiv.classList.add("mb-3");
     newCutoffDiv.innerHTML = `
     <span class="input-group-text">A ratio of at least</span>
-    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions" required>
     <span class="input-group-text">% of inline-commented lines to instruction lines should receive</span>
-    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <input type="number" id="docs-inlinecomments-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff" required>
     <span class="input-group-text">%</span>
     `;
     // Add the new test to the form.
