@@ -91,6 +91,9 @@ function updateTotalPoints(testChanged) {
 }
 
 async function submitFormData() {
+    // Make form read-only.
+    document.getElementById("control-form-editing").setAttribute("disabled", "disabled");
+
     // Get input values from form.
     let name = document.getElementById("name").value;
     let ID = document.getElementById("unityID").value;
