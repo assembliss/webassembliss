@@ -52,7 +52,7 @@ function addTestCase() {
     // Create new div for the test.
     let newTestDiv = document.createElement("div");
     newTestDiv.innerHTML = `
-<div id="test-case-${testNum}-div">        
+<div id="test-case-${testNum}-div" class="test-case-info">        
     <hr/>
     <h5>Test Case #${testNum}</h5>
     <div class="input-group mb-3">
