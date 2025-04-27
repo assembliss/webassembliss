@@ -150,6 +150,26 @@
 
           <legend>2.3: Source Effifiency Grading</legend>
 
+          <div class="col-md-3">
+            <label for="source-eff-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="source-eff-default-points" value="0">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="source-eff-cutoffs-div">
+            Cutoffs:
+            <div class="input-group mb-3">
+              <span class="input-group-text">Up to</span>
+              <input type="number" id="source-eff-cutoff-1-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+              <span class="input-group-text">written instructions should receive</span>
+              <input type="number" id="source-eff-cutoff-1-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewSourceEffCutoff(); return false;">Add New Cutoff</button>
+
           <hr/>
 
           <legend>2.4: Execution Effifiency Grading</legend>

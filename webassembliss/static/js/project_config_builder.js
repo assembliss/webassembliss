@@ -128,6 +128,26 @@ function updateTotalPoints(testChanged) {
     }, 0);
 }
 
+let numSourceEffCutoffs = 1;
+function addNewSourceEffCutoff() {
+    // TODO: allow user to delete cutoffs.
+    // Increase the number of source efficiency cutoffs and get the new number for this new one.
+    let cutoffNum = ++numSourceEffCutoffs;
+    // Create new div for the test.
+    let newCutoffDiv = document.createElement("div");
+    newCutoffDiv.classList.add("input-group");
+    newCutoffDiv.classList.add("mb-3");
+    newCutoffDiv.innerHTML = `
+    <span class="input-group-text">Up to</span>
+    <input type="number" id="source-eff-cutoff-${cutoffNum}-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+    <span class="input-group-text">written instructions should receive</span>
+    <input type="number" id="source-eff-cutoff-${cutoffNum}-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+    <span class="input-group-text">%</span>
+    `;
+    // Add the new test to the form.
+    document.getElementById("source-eff-cutoffs-div").appendChild(newCutoffDiv);
+}
+
 async function submitFormData() {
     // Make form read-only.
     document.getElementById("control-form-editing").setAttribute("disabled", "disabled");
