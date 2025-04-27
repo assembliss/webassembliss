@@ -101,8 +101,8 @@ function addTestCase() {
         <span class="input-group-text" for="testCase-${testNum}-points">Test Case #${testNum} Points</span>
         <input type="number" class="form-control" id="testCase-${testNum}-points" name="testCase-${testNum}-points" onchange="updateTotalPoints(${testNum}); return false;" placeholder="0" required>
     </div>
-    <div class="form-check">
-    <input class="form-check-input" type="checkbox" value="" id="test-case-${testNum}-bytesIO">
+    <div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-bytesIO">
     <label class="form-check-label" for="test-case-${testNum}-bytesIO">
         Check I/O for test case #${testNum} as bytes.
     </label>
