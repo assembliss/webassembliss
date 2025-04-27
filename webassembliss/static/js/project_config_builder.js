@@ -54,10 +54,10 @@ function updateGradingBreakdown() {
     // Update total in form.
     document.getElementById("total-project-points").innerText = totalPoints;
     // Update percentages for categories.
-    document.getElementById("weight-pct-accuracy").innerText = `${accuracyPoints * 100 / totalPoints}%`;
-    document.getElementById("weight-pct-source").innerText = `${sourcePoints * 100 / totalPoints}%`;
-    document.getElementById("weight-pct-exec").innerText = `${execPoints * 100 / totalPoints}%`;
-    document.getElementById("weight-pct-docs").innerText = `${docsPoints * 100 / totalPoints}%`;
+    document.getElementById("weight-pct-accuracy").innerText = `${(accuracyPoints * 100 / totalPoints).toFixed(2)}%`;
+    document.getElementById("weight-pct-source").innerText = `${(sourcePoints * 100 / totalPoints).toFixed(2)}%`;
+    document.getElementById("weight-pct-exec").innerText = `${(execPoints * 100 / totalPoints).toFixed(2)}%`;
+    document.getElementById("weight-pct-docs").innerText = `${(docsPoints * 100 / totalPoints).toFixed(2)}%`;
 }
 
 let numberOfUserFiles = 1;
