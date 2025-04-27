@@ -184,6 +184,28 @@
             </div>
           </div>
 
+          <div class="col-md-3">
+            <label for="exec-eff-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="exec-eff-default-points" value="0">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="exec-eff-cutoffs-div">
+            Cutoffs:
+            <div class="input-group mb-3">
+              <span class="input-group-text">Up to</span>
+              <input type="number" id="exec-eff-cutoff-1-num" class="form-control" placeholder="X" aria-label="Number of instructions">
+              <span class="input-group-text">aggregated executed instructions should receive</span>
+              <input type="number" id="exec-eff-cutoff-1-pct" class="form-control" placeholder="Y" aria-label="Percentage for this cutoff">
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewExecEffCutoff(); return false;">Add New Cutoff</button>
+
+
+
           <hr/>
 
           <legend>2.5: Documentation Grading</legend>
