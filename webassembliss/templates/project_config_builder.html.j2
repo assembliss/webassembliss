@@ -6,7 +6,8 @@
       <h1 class="text-center text-body-emphasis">Project Config Builder</h1>
       <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
           enctype=multipart/form-data>
-        <legend>Project Setup</legend>
+        <h2>Project Setup</h2>
+        <legend>1: Basic Info</legend>
         <div class="mb3">
           <label for="name">Project Name</label>
           <input type="text" class="form-control" id="project-name" name="project-name" placeholder="Example Project" required>
@@ -44,7 +45,9 @@
           </div>
         </div>
 
-        <legend>User Required Files</legend>
+        <hr/>
+
+        <legend>2: User Required Files</legend>
         <div class="mb-3">
           <input type="text" name="user-files" id="user-files" class="form-control" aria-label="List of files the user will be required to submit." placeholder="example1.S example2.S"></textarea>
           <div id="sourceHelp" class="form-text">This should be a space-separated list with the names of the source files the user will submit for grading.</div>
@@ -53,7 +56,9 @@
           </div>
         </div>
 
-        <legend>Additional Files Provided</legend>
+        <hr/>
+
+        <legend>3: Additional Files Provided</legend>
         <div class="mb-3">
           <label for="object-files" class="form-label">Pre-Assembled Object Files</label>
           <input type="file" class="form-control" id="object-files" name="object-files" aria-describedby="object-files" multiple>
@@ -70,71 +75,13 @@
           <div id="binsHelp" class="form-text">These are .bin files the final binary can access. These files will be created in the same directory as the binary.</div>
         </div>
 
-        <br/>
-        <br/>
-        <br/>
         <hr/>
-        <br/>
-        <br/>
-        <br/>
-
-        <h1>Grading</h1>
-
-        <br/>
-        <br/>
-
-        <legend>1: Documentation Grading</legend>
-        <div class="col-md-4">
-          <label for="documentation-weight">Documentation Weight</label>
-          <input type="number" class="form-control" id="documentation-weight" placeholder="25" aria-label="Number of Points for Documentation" aria-describedby="documentation-weight">
-        </div>
-        
-        <br/>
-        <br/>
-        <br/>
         <hr/>
-        <br/>
-        <br/>
-        <br/>
-
-        <legend>2: Source Effifiency Grading</legend>
-        <div class="col-md-4">
-          <label for="source-eff-weight">Source Effifiency Weight</label>
-          <input type="number" class="form-control" id="source-eff-weight" placeholder="25" aria-label="Number of Points for Source Effifiency" aria-describedby="source-eff-weight">
-        </div>
-
-        <br/>
-        <br/>
-        <br/>
         <hr/>
-        <br/>
-        <br/>
-        <br/>
 
-        <legend>3: Execution Effifiency Grading</legend>
-        <div class="col-md-4">
-          <label for="exec-eff-weight">Execution Effifiency Weight</label>
-          <input type="number" class="form-control" id="exec-eff-weight" placeholder="25" aria-label="Number of Points for Execution Effifiency" aria-describedby="exec-eff-weight">
-        </div>
+        <h2>Grading</h2>
 
-        <div class="mb3">
-          <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
-          <select class="form-select" id="exec-agg-select" name="exec-agg-select" aria-label="Instructions executed aggregation selection.">
-          </select>
-          <div class="invalid-feedback">
-            Please select a valid aggregation option.
-          </div>
-        </div>
-
-        <br/>
-        <br/>
-        <br/>
-        <hr/>
-        <br/>
-        <br/>
-        <br/>
-
-        <legend>4: Accuracy Grading</legend>
+        <legend>1: Accuracy Grading</legend>
         <div class="col-md-4">
           <label for="accuracy-weight">Accuracy Weight</label>
           <input type="number" class="form-control" id="accuracy-weight" placeholder="25" aria-label="Number of Points for Accuracy" aria-describedby="accuracy-weight">
@@ -165,16 +112,45 @@
         <div id="test-cases-div">
         </div>
         <button class="btn btn-outline-danger" onclick="addTestCase(); return false;">Add New Test Case</button>
-
-        <br/>
-        <br/>
-        <br/>
+        
         <hr/>
-        <br/>
-        <br/>
-        <br/>
 
-        <legend>Finish</legend>
+        <legend>2: Source Effifiency Grading</legend>
+        <div class="col-md-4">
+          <label for="source-eff-weight">Source Effifiency Weight</label>
+          <input type="number" class="form-control" id="source-eff-weight" placeholder="25" aria-label="Number of Points for Source Effifiency" aria-describedby="source-eff-weight">
+        </div>
+
+        <hr/>
+
+        <legend>3: Execution Effifiency Grading</legend>
+        <div class="col-md-4">
+          <label for="exec-eff-weight">Execution Effifiency Weight</label>
+          <input type="number" class="form-control" id="exec-eff-weight" placeholder="25" aria-label="Number of Points for Execution Effifiency" aria-describedby="exec-eff-weight">
+        </div>
+
+        <div class="mb3">
+          <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
+          <select class="form-select" id="exec-agg-select" name="exec-agg-select" aria-label="Instructions executed aggregation selection.">
+          </select>
+          <div class="invalid-feedback">
+            Please select a valid aggregation option.
+          </div>
+        </div>
+
+        <hr class="hr hr-blurry"/>
+
+        <legend>4: Documentation Grading</legend>
+        <div class="col-md-4">
+          <label for="documentation-weight">Documentation Weight</label>
+          <input type="number" class="form-control" id="documentation-weight" placeholder="25" aria-label="Number of Points for Documentation" aria-describedby="documentation-weight">
+        </div>
+
+        <hr/>
+        <hr/>
+        <hr/>
+
+        <h2>Finish</h2>
         <button type="submit" class="btn btn-danger">Create Config Proto</button>
       </form>
     </div>
