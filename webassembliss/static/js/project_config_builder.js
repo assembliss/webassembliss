@@ -5,6 +5,10 @@ protobuf.load("/static/protos/project_config.proto").then(function (root) {
     window.TargetArchitecture = root.lookupEnum("TargetArchitecture");
     window.ExecutedInstructionsAggregation = root.lookupEnum("ExecutedInstructionsAggregation");
     window.CompressionAlgorithm = root.lookupEnum("CompressionAlgorithm");
+    window.TestCase = root.lookupType("TestCase");
+    window.MeasureSourceDocumentation = root.lookupType("MeasureSourceDocumentation");
+    window.MeasureSourceEfficiency = root.lookupType("MeasureSourceEfficiency");
+    window.MeasureExecEfficiency = root.lookupType("MeasureExecEfficiency");
     window.ProjectConfig = root.lookupType("ProjectConfig");
     window.WrappedProject = root.lookupType("WrappedProject");
 }).then(() => {
@@ -117,7 +121,7 @@ function addTestCase() {
     </div>
     <div class="col-md-4">
         <label for="testCase-${testNum}-clargs">Test Command-Line Arguments</label>
-        <input type="text" class="form-control" id="testCase-${testNum}-clargs" placeholder="arg1 arg2 arg3..." required>
+        <input type="text" class="form-control" id="testCase-${testNum}-clargs" placeholder="arg1 arg2 arg3...">
     </div>
     <div class="col-md-6">
         <label for="testCase-${testNum}-input">Test Input</label>
@@ -128,14 +132,14 @@ function addTestCase() {
         <textarea class="form-control" id="testCase-${testNum}-output" aria-label="Test Case #${testNum} Output" placeholder="output..." required></textarea>
     </div>
     <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-bytesIO">
-        <label class="form-check-label" for="test-case-${testNum}-bytesIO">
+        <input class="form-check-input" type="checkbox" role="switch" value="" id="testCase-${testNum}-bytesIO">
+        <label class="form-check-label" for="testCase-${testNum}-bytesIO">
             Check I/O for test case #${testNum} as bytes.
         </label>
     </div>
     <div class="form-check form-switch">
-        <input class="form-check-input" type="checkbox" role="switch" value="" id="test-case-${testNum}-hidden">
-        <label class="form-check-label" for="test-case-${testNum}-hidden">
+        <input class="form-check-input" type="checkbox" role="switch" value="" id="testCase-${testNum}-hidden">
+        <label class="form-check-label" for="testCase-${testNum}-hidden">
             Hide I/O from user when grading submission.
         </label>
     </div>
@@ -255,51 +259,146 @@ async function submitFormData() {
     // Make form read-only.
     document.getElementById("control-form-editing").setAttribute("disabled", "disabled");
 
-    // Get input values from form.
-    let name = document.getElementById("name").value;
-    let ID = document.getElementById("unityID").value;
-    let userCode = document.getElementById("userCode");
-    let projectProto = document.getElementById("projectProto");
+    // TODO: add a loading bar and update it throughout the process.
 
-    // Validate that fields have been provided and are acceptable.
-    if (!name) {
-        showMessage("Missing Information", "You need to fill in your name!");
-        return false;
+    // First, parse the values from the form that need extra handling.
+
+    // Parse filenames the user must submit.
+    let requiredFiles = [];
+    for (let i = 1; i <= numberOfUserFiles; i++) {
+        requiredFiles.push(document.getElementById(`user-file-${i}`).value);
     }
 
-    if (!ID) {
-        showMessage("Missing Information", "You need to fill in your ID!");
-        return false;
+    // Parse the test cases.
+    let testCases = [];
+    for (let i = 1; i <= numberOfTests; i++) {
+        // First, figure out if the I/O should be parsed as text or a sequence of bytes.
+        let stdin_s = expected_out_s = null;
+        let stdin_b = expected_out_b = null;
+        if (document.getElementById(`testCase-${i}-bytesIO`).checked) {
+            // Test I/O is given in bytes.
+            // Parse each individual byte from the input.
+            stdin_b = [];
+            for (const b of document.getElementById(`testCase-${i}-input`).value.split(" ")) {
+                stdin_b.push(parseInt(b, 16));
+            }
+            // Parse each individual byte from the output.
+            expected_out_b = [];
+            for (const b of document.getElementById(`testCase-${i}-output`).value.split(" ")) {
+                expected_out_b.push(parseInt(b, 16));
+            }
+        } else {
+            // Test I/O is given in string.
+            stdin_s = document.getElementById(`testCase-${i}-input`).value;
+            expected_out_s = document.getElementById(`testCase-${i}-output`).value;
+        }
+
+        // Create a new message for this test and add it to the list.
+        testCases.push(TestCase.create({
+            name: document.getElementById(`testCase-${i}-name`).value,
+            stdinS: stdin_s,
+            stdinB: stdin_b,
+            expectedOutS: expected_out_s,
+            expectedOutB: expected_out_b,
+            timeoutMs: parseInt(document.getElementById(`testCase-${i}-timeout`).value),
+            maxInstrExec: parseInt(document.getElementById(`testCase-${i}-max-instr`).value),
+            clArgs: document.getElementById(`testCase-${i}-clargs`).value.split(" "),
+            hidden: document.getElementById(`testCase-${i}-hidden`).checked,
+            points: parseInt(document.getElementById(`testCase-${i}-points`).value),
+        }));
+
     }
 
-    if (!userCode.files.length) {
-        showMessage("Missing Information", "You need to provide a source file!");
-        return false;
+    // Parse source efficiency cutoffs.
+    let source_eff_points = {};
+    for (let i = 1; i <= numSourceEffCutoffs; i++) {
+        let instrCount = parseInt(document.getElementById(`source-eff-cutoff-${i}-num`).value);
+        let points = parseInt(document.getElementById(`source-eff-cutoff-${i}-pct`).value) / 100;
+        source_eff_points[instrCount] = points;
     }
 
-    if (userCode.files[0].size > MAX_SIZE) {
-        showMessage("Invalid File", "Your source file is too big! Maximum allowed size if 1MB.");
-        return false;
+    let source_eff = MeasureSourceEfficiency.create({
+        points: source_eff_points,
+        defaultPoints: parseInt(document.getElementById("source-eff-default-points").value),
+    });
+
+    // Parse execution efficiency cutoffs.
+    let exec_eff_points = {};
+    for (let i = 1; i <= numExecEffCutoffs; i++) {
+        let instrCount = parseInt(document.getElementById(`exec-eff-cutoff-${i}-num`).value);
+        let points = parseInt(document.getElementById(`exec-eff-cutoff-${i}-pct`).value) / 100;
+        exec_eff_points[instrCount] = points;
     }
 
-    if (!projectProto.files.length) {
-        showMessage("Missing Information", "You need to provide a project configuration file!");
-        return false;
+    let exec_eff = MeasureExecEfficiency.create({
+        aggregation: parseInt(document.getElementById("exec-agg-select").value),
+        points: exec_eff_points,
+        default_points: parseInt(document.getElementById("exec-eff-default-points").value),
+    });
+
+    // Parse documentation's two sets of cutoffs.
+
+    comments_ratio_points = {};
+    for (let i = 1; i <= numCommentOnlyCutoffs; i++) {
+        let ratio = parseInt(document.getElementById(`docs-commentonly-cutoff-${i}-num`).value);
+        let points = parseInt(document.getElementById(`docs-commentonly-cutoff-${i}-pct`).value) / 100;
+        comments_ratio_points[ratio] = points;
     }
 
-    if (!projectProto.files[0].name.endsWith(".pb2")) {
-        showMessage("Incorrect File Type", "The project configuration file must be a .pb2 file!");
-        return false;
+    inline_comments_points = {};
+    for (let i = 1; i <= numInlineCommentsCutoffs; i++) {
+        let ratio = parseInt(document.getElementById(`docs-inlinecomments-cutoff-${i}-num`).value);
+        let points = parseInt(document.getElementById(`docs-inlinecomments-cutoff-${i}-pct`).value) / 100;
+        inline_comments_points[ratio] = points;
     }
 
-    if (projectProto.files[0].size > MAX_SIZE) {
-        showMessage("Invalid File", "Your project configuration file is too big! Maximum allowed size if 1MB.");
-        return false;
-    }
+    let docs_grading = MeasureSourceDocumentation.create({
+        commentsToInstrPctPoints: parseInt(document.getElementById("docs-commentonly-default-points").value),
+        commentsToInstrPctDefault: comments_ratio_points,
+        inlineCommentsPctPoints: parseInt(document.getElementById("docs-inlinecomments-default-points").value),
+        inlineCommentsPctDefault: inline_comments_points,
+    });
 
-    // Fields are populated and valid; send form data to the backend.
-    let form = document.forms['submission'];
-    form.action = '/grader';
-    form.submit()
-    return true;
+    // Parse the category weights.
+    let weights = {
+        accuracy: parseInt(document.getElementById("weight-points-accuracy").value),
+        documentation: parseInt(document.getElementById("weight-points-docs").value),
+        source_efficiency: parseInt(document.getElementById("weight-points-source").value),
+        exec_efficiency: parseInt(document.getElementById("weight-points-exec").value),
+    };
+
+    // TODO: load given object files.
+    // TODO: load given .txt data files.
+    // TODO: load given .bin data files.
+
+    // Then, create a project config message.
+    var pcMsg = ProjectConfig.create({
+        name: document.getElementById("project-name").value,
+        arch: parseInt(document.getElementById("arch-select").value),
+        requiredFiles: requiredFiles,
+        providedObjects: null,
+        execName: document.getElementById("executable-name").value,
+        asFlags: document.getElementById("assembler-flags").value.split(" "),
+        ldFlags: document.getElementById("linker-flags").value.split(" "),
+        tests: testCases,
+        stopOnFirstTestFail: document.getElementById("tests-stop-on-fail").checked,
+        mustPassAllTests: document.getElementById("must-pass-all-tests").checked,
+        docs: docs_grading,
+        sourceEff: source_eff,
+        execEff: exec_eff,
+        weights: weights,
+        extraTxtFiles: null,
+        extraBinFiles: null
+    });
+
+    console.log(pcMsg);
+
+    // TODO: Next, compress the ProjectConfig so it's canonical.
+
+    // TODO: Finally, create the WrappedProject message and send it to the user as a downloadable file.
+
+
+    // After the project has been created and sent to the form user, make form editable again.
+    document.getElementById("control-form-editing").removeAttribute("disabled");
+
 }
