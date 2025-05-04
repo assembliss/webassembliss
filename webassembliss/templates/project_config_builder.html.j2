@@ -52,7 +52,7 @@
           <div id="user-filenames-div">
             <div class="mb-3">
               <label for="user-file-1">User File #1</label>
-              <input type="text" name="user-file-1" id="user-file-1" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example1.S"></textarea>
+              <input type="text" name="user-file-1" id="user-file-1" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example1.S" required>
               <div id="sourceHelp" class="form-text">Name of a file the user will need to submit for grading.</div>
               <div class="invalid-feedback">
                 Please enter a valid filename the user will need to submit.
@@ -270,8 +270,8 @@
   </div>
 {% endblock %}
 {% block scripts %}
-  <script src="{{ url_for('static', filename='external/fflate-0.8.2/index.min.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='external/fflate-0.8.2/index.min.js') }}"></script>
   <script src="{{ url_for('static', filename='external/long-5.3.2/long-5.3.2.js') }}" type="module"></script>
   <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}"></script>
 {% endblock %}

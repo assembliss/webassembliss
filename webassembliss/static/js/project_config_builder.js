@@ -74,7 +74,7 @@ function addUserFilename() {
     newFileDiv.innerHTML = `
     <div class="mb-3">
         <label for="user-file-${fileNum}">User File #${fileNum}</label>
-        <input type="text" name="user-file-${fileNum}" id="user-file-${fileNum}" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example${fileNum}.S"></textarea>
+        <input type="text" name="user-file-${fileNum}" id="user-file-${fileNum}" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example${fileNum}.S" required>
         <div id="sourceHelp" class="form-text">Name of a file the user will need to submit for grading.</div>
         <div class="invalid-feedback">
             Please enter a valid filename the user will need to submit.
