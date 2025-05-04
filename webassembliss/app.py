@@ -55,6 +55,7 @@ def grader():
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
 
+
 @app.route("/project-config-builder/", methods=["POST", "GET"])
 def project_config_builder():
     if request.method == "POST":
@@ -65,6 +66,7 @@ def project_config_builder():
 
     # If not POST, show the submission form.
     return render_template("project_config_builder.html.j2")
+
 
 @app.route("/editor/<arch>/")
 def editor_page(arch):

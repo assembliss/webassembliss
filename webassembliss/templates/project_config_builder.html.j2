@@ -263,15 +263,6 @@
 
           <h2>3. Finish</h2>
 
-          <div class="mb3">
-            <label for="compression-alg-select" class="form-label">Compression Algorithm</label>
-            <select class="form-select" id="compression-alg-select" name="compression-alg-select" aria-label="Compression Algorithm">
-            </select>
-            <div class="invalid-feedback">
-              Please select a valid compression option.
-            </div>
-          </div>
-
           <button type="submit" class="btn btn-danger">Create Project Config Proto</button>
         </form>
       </fieldset>
@@ -279,7 +270,8 @@
   </div>
 {% endblock %}
 {% block scripts %}
+  <script src="{{ url_for('static', filename='external/fflate-0.8.2/index.min.js') }}" type="module"></script>
   <script src="{{ url_for('static', filename='external/long-5.3.2/long-5.3.2.js') }}" type="module"></script>
   <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}" type="module"></script>
 {% endblock %}

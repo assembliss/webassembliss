@@ -39,20 +39,6 @@ protobuf.load("/static/protos/project_config.proto").then(function (root) {
         // Add it to the form.
         document.getElementById("exec-agg-select").appendChild(newOption);
     }
-}).then(() => {
-    // Populate available CompressionAlgorithm from the project_config proto.
-    for (const [i, alg] of Object.entries(window.CompressionAlgorithm.valuesById)) {
-        if (i == 0) {
-            // Skip COMPRESSIONALGORITHM_UNSPECIFIED option.
-            continue;
-        }
-        // Add a new option with its enum id and value.
-        let newOption = document.createElement('option');
-        newOption.value = i;
-        newOption.innerText = alg;
-        // Add it to the form.
-        document.getElementById("compression-alg-select").appendChild(newOption);
-    }
 });
 
 // Attach form to our sendData function below.
@@ -273,8 +259,10 @@ async function submitFormData() {
     let testCases = [];
     for (let i = 1; i <= numberOfTests; i++) {
         // First, figure out if the I/O should be parsed as text or a sequence of bytes.
-        let stdin_s = expected_out_s = null;
-        let stdin_b = expected_out_b = null;
+        let stdin_s = null;
+        let expected_out_s = null;
+        let stdin_b = null;
+        let expected_out_b = null;
         if (document.getElementById(`testCase-${i}-bytesIO`).checked) {
             // Test I/O is given in bytes.
             // Parse each individual byte from the input.
@@ -338,14 +326,14 @@ async function submitFormData() {
 
     // Parse documentation's two sets of cutoffs.
 
-    comments_ratio_points = {};
+    let comments_ratio_points = {};
     for (let i = 1; i <= numCommentOnlyCutoffs; i++) {
         let ratio = parseInt(document.getElementById(`docs-commentonly-cutoff-${i}-num`).value);
         let points = parseInt(document.getElementById(`docs-commentonly-cutoff-${i}-pct`).value) / 100;
         comments_ratio_points[ratio] = points;
     }
 
-    inline_comments_points = {};
+    let inline_comments_points = {};
     for (let i = 1; i <= numInlineCommentsCutoffs; i++) {
         let ratio = parseInt(document.getElementById(`docs-inlinecomments-cutoff-${i}-num`).value);
         let points = parseInt(document.getElementById(`docs-inlinecomments-cutoff-${i}-pct`).value) / 100;
@@ -353,10 +341,10 @@ async function submitFormData() {
     }
 
     let docs_grading = MeasureSourceDocumentation.create({
-        commentsToInstrPctPoints: parseInt(document.getElementById("docs-commentonly-default-points").value),
-        commentsToInstrPctDefault: comments_ratio_points,
-        inlineCommentsPctPoints: parseInt(document.getElementById("docs-inlinecomments-default-points").value),
-        inlineCommentsPctDefault: inline_comments_points,
+        commentsToInstrPctPoints: comments_ratio_points,
+        commentsToInstrPctDefault: parseInt(document.getElementById("docs-commentonly-default-points").value),
+        inlineCommentsPctPoints: inline_comments_points,
+        inlineCommentsPctDefault: parseInt(document.getElementById("docs-inlinecomments-default-points").value),
     });
 
     // Parse the category weights.
@@ -372,8 +360,9 @@ async function submitFormData() {
     // TODO: load given .bin data files.
 
     // Then, create a project config message.
+    let project_name = document.getElementById("project-name").value;
     var pcMsg = ProjectConfig.create({
-        name: document.getElementById("project-name").value,
+        name: project_name,
         arch: parseInt(document.getElementById("arch-select").value),
         requiredFiles: requiredFiles,
         providedObjects: null,
@@ -391,12 +380,38 @@ async function submitFormData() {
         extraBinFiles: null
     });
 
-    console.log(pcMsg);
+    // Check that the config generated is valid.
+    let err = ProjectConfig.verify(pcMsg);
+    if (err) {
+        alert("Error creating project config; check console.");
+        console.log(pcMsg);
+        console.log(err);
+        document.getElementById("control-form-editing").removeAttribute("disabled");
+        return;
+    }
 
-    // TODO: Next, compress the ProjectConfig so it's canonical.
+    // Serialize the message so we can distribute it.
+    let spc = ProjectConfig.encode(pcMsg).finish();
 
-    // TODO: Finally, create the WrappedProject message and send it to the user as a downloadable file.
+    // Next, compress the ProjectConfig so it's canonical.
+    let compressed_config = fflate.gzipSync(spc);
 
+    // Calculate its hash so we can validate it later.
+    let project_hash = await window.crypto.subtle.digest("SHA-256", compressed_config);
+
+    // Finally, create the WrappedProject message.
+    let wrapped_project = WrappedProject.create({
+        checksum: new Uint8Array(project_hash),
+        compressionAlg: CompressionAlgorithm.values['GZIP'],
+        compressedConfig: compressed_config,
+    });
+
+    // Lastly, send the wrapped project to the user as a .pb2 file.
+    let filename = project_name.replace(
+        /\w\S*/g,
+        text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+    ).replace(/ /g, '');
+    download_file(`${filename}.pb2`, WrappedProject.encode(wrapped_project).finish(), 'application/x-protobuf')
 
     // After the project has been created and sent to the form user, make form editable again.
     document.getElementById("control-form-editing").removeAttribute("disabled");
