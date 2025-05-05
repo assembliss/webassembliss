@@ -1,6 +1,7 @@
 from bz2 import decompress as bz2_decompress
 from dataclasses import dataclass, field
 from difflib import HtmlDiff
+from gzip import decompress as gzip_decompress
 from hashlib import sha256
 from hmac import compare_digest
 from os import PathLike
@@ -188,4 +189,7 @@ EXECUTION_AGG_MAP = {
 }
 
 # Maps possible compression algorithms to their corresponding decompression functions.
-COMPRESSION_MAP = {CompressionAlgorithm.BZ2: bz2_decompress}
+COMPRESSION_MAP = {
+    CompressionAlgorithm.BZ2: bz2_decompress,
+    CompressionAlgorithm.GZIP: gzip_decompress,
+}

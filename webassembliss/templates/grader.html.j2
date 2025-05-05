@@ -4,6 +4,7 @@
   <div class="container">
     <div class="p-5 bg-body-tertiary rounded-3">
       <h1 class="text-center text-body-emphasis">Grader</h1>
+      <p class="text-center text-body-emphasis"><a target="_blank" class="nav-link" href="/project-config-builder"><span class="badge bg-info-subtle border border-info-subtle text-info-emphasis rounded-pill">New!</span> For instructors: click here to create a new project config.</a></p>
       <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
           enctype=multipart/form-data>
         <legend>Make a submission</legend>
@@ -21,9 +22,10 @@
             Please enter your ID.
           </div>
         </div>
+        {# TODO: generate these fields automatically based on the project config. #}
         <div class="mb-3">
-          <label for="userCode" class="form-label">Source File</label>
-          <input type="file" class="form-control" id="userCode" name="userCode" required>
+          <label for="userCode" class="form-label">Source Files</label>
+          <input type="file" class="form-control" id="userCode" name="userCode" multiple required>
           <div id="emailHelp" class="form-text">This is the source code to be graded.</div>
           <div class="invalid-feedback">
             Please choose a file containing your source code.

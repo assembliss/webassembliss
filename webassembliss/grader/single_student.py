@@ -18,7 +18,7 @@ from ..pyprotos.project_config_pb2 import (
     WrappedProject,
 )
 from ..pyprotos.trace_info_pb2 import TraceStep
-from ..utils import bytes_to_b64
+from ..utils import b64_to_bytes, bytes_to_b64
 from .utils import (
     EXECUTION_AGG_MAP,
     GraderResults,
@@ -46,13 +46,21 @@ def check_project_builds(
     # Convert the config into a dict for easier access.
     config_dict = MessageToDict(config)
 
+    # Parse given binary files from base64.
+    objects = {
+        n: b64_to_bytes(c) for n, c in config_dict.get("providedObjects", {}).items()
+    }
+    bin_data = {
+        n: b64_to_bytes(c) for n, c in config_dict.get("extraBinFiles", {}).items()
+    }
+
     # Emulate the first test for only a single step.
     trace = arch.trace(
         combine_external_steps=False,
         source_files=student_files,
-        object_files=config_dict.get("providedObjects", {}),
+        object_files=objects,
         extra_txt_files=config_dict.get("extraTxtFiles", {}),
-        extra_bin_files=config_dict.get("extraBinFiles", {}),
+        extra_bin_files=bin_data,
         as_flags=config_dict.get("asFlags", None),
         ld_flags=config_dict.get("ldFlags", None),
         max_trace_steps=1,  # single step, we just want to check if the binary is built
@@ -110,6 +118,14 @@ def run_test_cases(
     # Flag to early-stop if project config wants to.
     has_failed_test = False
 
+    # Parse given binary files from base64.
+    objects = {
+        n: b64_to_bytes(c) for n, c in config_dict.get("providedObjects", {}).items()
+    }
+    bin_data = {
+        n: b64_to_bytes(c) for n, c in config_dict.get("extraBinFiles", {}).items()
+    }
+
     # Process each test individually.
     for test in config.tests:
         # Convert command-line arguments into a regular list
@@ -132,9 +148,9 @@ def run_test_cases(
             trace = arch.trace(
                 combine_external_steps=False,
                 source_files=student_files,
-                object_files=config_dict.get("providedObjects", {}),
+                object_files=objects,
                 extra_txt_files=config_dict.get("extraTxtFiles", {}),
-                extra_bin_files=config_dict.get("extraBinFiles", {}),
+                extra_bin_files=bin_data,
                 as_flags=config_dict.get("asFlags", None),
                 ld_flags=config_dict.get("ldFlags", None),
                 max_trace_steps=test.max_instr_exec,

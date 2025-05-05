@@ -59,3 +59,31 @@ function download_Base64File(fileName, contentBase64) {
     downloadLink.download = fileName;
     downloadLink.click();
 }
+
+function formatHumanSize(bytes, decimals) {
+    // Ref: https://gist.github.com/zentala/1e6f72438796d74531803cc3833c039c
+    if (bytes == 0) return '0 Bytes';
+    var k = 1024,
+        dm = decimals || 2,
+        sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+        i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+async function syncReadBinaryFile(file) {
+    let result = await new Promise((resolve) => {
+        let fileReader = new FileReader();
+        fileReader.onload = (e) => resolve(fileReader.result);
+        fileReader.readAsArrayBuffer(file);
+    });
+    return result;
+}
+
+async function syncReadTextFile(file) {
+    let result = await new Promise((resolve) => {
+        let fileReader = new FileReader();
+        fileReader.onload = (e) => resolve(fileReader.result);
+        fileReader.readAsText(file);
+    });
+    return result;
+}

@@ -10,7 +10,7 @@ from .utils import b64_to_bytes
 app = Flask(__name__)
 
 # Limit requests to be a maximum of 1 MB.
-app.config["MAX_CONTENT_LENGTH"] = 1 * 1000 * 1000
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1_024 * 1_024
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
@@ -54,6 +54,18 @@ def grader():
 
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
+
+
+@app.route("/project-config-builder/", methods=["POST", "GET"])
+def project_config_builder():
+    if request.method == "POST":
+        # If POST, make sure we got here from the submission form.
+        if request.referrer != request.url:
+            abort(403)
+        abort(403)
+
+    # If not POST, show the submission form.
+    return render_template("project_config_builder.html.j2")
 
 
 @app.route("/editor/<arch>/")

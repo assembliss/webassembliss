@@ -269,6 +269,7 @@
 {% endblock %}
 
 {% block scripts %}
+    <script src="{{ url_for('static', filename='external/long-5.3.2/long-5.3.2.js') }}" type="module"></script>
     <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}

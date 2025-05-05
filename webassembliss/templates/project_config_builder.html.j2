@@ -1,0 +1,255 @@
+{% extends "base.html.j2" %}
+{% block title %} - Project Config Builder{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">Project Config Builder</h1>
+      <fieldset id="control-form-editing">
+        <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
+            enctype=multipart/form-data>
+          <h2>1: Project Setup</h2>
+          <legend>1.1: Basic Info</legend>
+          <div class="mb3">
+            <label for="name">Project Name</label>
+            <input type="text" class="form-control" id="project-name" name="project-name" placeholder="Example Project" required>
+            <div class="invalid-feedback">
+              Please enter the project name.
+            </div>
+          </div>
+          <div class="mb3">
+            <label for="arch-select" class="form-label">Project Architecture</label>
+            <select class="form-select" id="arch-select" name="arch-select" aria-label="Project architecture selection.">
+            </select>
+            <div class="invalid-feedback">
+              Please select a valid architecture option.
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label for="name">Executable Name</label>
+            <input type="text" class="form-control" id="executable-name" name="executable-name" placeholder="example.exe" required>
+            <div class="invalid-feedback">
+              Please enter the executable name that will be run.
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label for="assembler-flags">Assembler Flags</label>
+            <input type="text" class="form-control" id="assembler-flags" name="assembler-flags" placeholder="-o" required>
+            <div class="invalid-feedback">
+              Please assembler flags.
+            </div>
+          </div>
+          <div class="col-md-4">
+            <label for="linker-flags">Linker Flags</label>
+            <input type="text" class="form-control" id="linker-flags" name="linker-flags" placeholder="-o" required>
+            <div class="invalid-feedback">
+              Please enter linker flags.
+            </div>
+          </div>
+
+          <hr/>
+
+          <legend>1.2: User Required Files</legend>
+          <div id="user-filenames-div">
+            <div class="mb-3">
+              <label for="user-file-1">User File #1</label>
+              <input type="text" name="user-file-1" id="user-file-1" class="form-control user-filenames" aria-label="Name of a file the user will need to submit for grading." placeholder="example1.S" required>
+              <div id="sourceHelp" class="form-text">Name of a file the user will need to submit for grading.</div>
+              <div class="invalid-feedback">
+                Please enter a valid filename the user will need to submit.
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-outline-danger" onclick="addUserFilename(); return false;">Add Another User File</button>
+
+          <hr/>
+
+          <legend>1.3: Additional Files Provided</legend>
+          <div class="mb-3">
+            <label for="object-files" class="form-label">Pre-Assembled Object Files</label>
+            <input type="file" class="form-control" id="object-files" name="object-files" aria-describedby="object-files" multiple>
+            <div id="objsHelp" class="form-text">These are pre-assembled objects that will be linked with the user code.</div>
+          </div>
+          <div class="mb-3">
+            <label for="text-data-files" class="form-label">Text Data Files</label>
+            <input type="file" class="form-control" id="text-data-files" name="text-data-files" aria-describedby="text-data-files" multiple>
+            <div id="txtsHelp" class="form-text">These are .txt files the final binary can access. These files will be created in the same directory as the binary.</div>
+          </div>
+          <div class="mb-3">
+            <label for="bin-data-files" class="form-label">Binary Data Files</label>
+            <input type="file" class="form-control" id="bin-data-files" name="bin-data-files" aria-describedby="bin-data-files" multiple>
+            <div id="binsHelp" class="form-text">These are .bin files the final binary can access. These files will be created in the same directory as the binary.</div>
+          </div>
+
+
+          <hr/>
+          <hr/>
+
+
+          <h2>2: Grading</h2>
+          
+          <legend>2.1: Grading Breakdown</legend>
+          <span> Total Points: <span id="total-project-points">100</span></span>
+          <div class="col-md-3">
+            <label for="weight-points-accuracy">Accuracy Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-accuracy" value="25" onchange="updateGradingBreakdown(); return false;" required>
+              <span class="input-group-text" id="weight-pct-accuracy">25%</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="weight-points-source">Source Efficiency Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-source" value="25" onchange="updateGradingBreakdown(); return false;" required>
+              <span class="input-group-text" id="weight-pct-source">25%</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="weight-points-exec">Execution Efficiency Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-exec" value="25" onchange="updateGradingBreakdown(); return false;" required>
+              <span class="input-group-text" id="weight-pct-exec">25%</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label for="weight-points-exec">Documentation Points</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="weight-points-docs" value="25" onchange="updateGradingBreakdown(); return false;" required>
+              <span class="input-group-text" id="weight-pct-docs">25%</span>
+            </div>
+          </div>
+
+          <hr/>
+
+          <legend>2.2: Accuracy Grading</legend>
+
+          <div class="col-md-4">
+            <label for="total-test-cases">Total Number of Test Cases</label>
+            <input type="text" readonly class="form-control" id="total-test-cases" value="0">
+          </div>
+
+          <div class="col-md-4">
+            <label for="total-test-points">Available Test Case Points</label>
+            <input type="text" readonly class="form-control" id="total-test-points" value="0">
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="must-pass-all-tests">
+              <label class="form-check-label" for="must-pass-all-tests">User must pass all test cases to receive non-zero grade.</label>
+            </div>
+          </div>
+          <div class="mb-3">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" role="switch" id="tests-stop-on-fail">
+              <label class="form-check-label" for="tests-stop-on-fail">Test cases stop executing on first fail.</label>
+            </div>
+          </div>
+          <div id="test-cases-div">
+          </div>
+          <button class="btn btn-outline-danger" onclick="addTestCase(); return false;">Add New Test Case</button>
+          
+          <hr/>
+
+          <legend>2.3: Source Efficiency Grading</legend>
+
+          <div class="col-md-3">
+            <label for="source-eff-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="source-eff-default-points" value="0" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="source-eff-cutoffs-div">
+            Cutoffs:
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewSourceEffCutoff(); return false;">Add New Source Efficiency Cutoff</button>
+
+          <hr/>
+
+          <legend>2.4: Execution Efficiency Grading</legend>
+
+          <div class="mb3">
+            <label for="exec-agg-select" class="form-label">Instructions Executed Aggregation</label>
+            <select class="form-select" id="exec-agg-select" name="exec-agg-select" aria-label="Instructions executed aggregation selection.">
+            </select>
+            <div id="execAggHelp" class="form-text">How the grader should combine the number of executions instructed for each test case.</div>
+            <div class="invalid-feedback">
+              Please select a valid aggregation option.
+            </div>
+          </div>
+
+          <div class="col-md-3">
+            <label for="exec-eff-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="exec-eff-default-points" value="0" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="exec-eff-cutoffs-div">
+            Cutoffs:
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewExecEffCutoff(); return false;">Add New Execution Efficiency Cutoff</button>
+
+          <hr/>
+
+          <legend>2.5: Documentation Grading</legend>
+
+          <span>Documentation score is calculated as the average of the next two subcategories.</span>
+
+          <h5>2.5.1: Ratio of comment-only lines to instruction lines</h5>
+          <div class="col-md-3">
+            <label for="docs-commentonly-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="docs-commentonly-default-points" value="0" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="docs-commentonly-cutoffs-div">
+            Cutoffs:
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewCommentOnlyCutoff(); return false;">Add New Comment-Only Ratio Cutoff</button>
+
+          <hr/>
+
+          <h5>2.5.2: Ratio of instruction lines with inline-comments to instruction lines</h5>
+          <div class="col-md-3">
+            <label for="docs-inlinecomments-default-points">Default Score (if no cutoffs are met)</label>
+            <div class="input-group">
+              <input type="number" class="form-control" id="docs-inlinecomments-default-points" value="0" required>
+              <span class="input-group-text">%</span>
+            </div>
+          </div>
+
+          <div id="docs-inlinecomments-cutoffs-div">
+            Cutoffs:
+          </div>
+          <button class="btn btn-outline-danger" onclick="addNewInlineCommentsCutoff(); return false;">Add New Inline Comments Ratio Cutoff</button>
+
+
+          <hr/>
+          <hr/>
+
+
+          <h2>3. Finish</h2>
+
+          <button type="submit" class="btn btn-danger">Create Project Config Proto</button>
+        </form>
+      </fieldset>
+      <div id="creation-progress-div" hidden>
+        <br/>
+        <div class="progress" role="progressbar" aria-label="Project creation progress" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+          <div id="creation-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='external/fflate-0.8.2/index.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='external/long-5.3.2/long-5.3.2.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/project_config_builder.js') }}"></script>
+{% endblock %}

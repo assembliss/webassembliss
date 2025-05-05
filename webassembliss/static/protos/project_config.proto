@@ -100,6 +100,7 @@ message ProjectConfig {
 enum CompressionAlgorithm {
   COMPRESSIONALGORITHM_UNSPECIFIED = 0;
   BZ2 = 1;
+  GZIP = 2;
 }
 
 // Message to hold a compressed ProjectConfig and its checksum.
