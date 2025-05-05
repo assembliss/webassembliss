@@ -241,21 +241,55 @@ function addNewInlineCommentsCutoff() {
     document.getElementById("docs-inlinecomments-cutoffs-div").appendChild(newCutoffDiv);
 }
 
+function startProgress() {
+    // Reset the bar to its initial state.
+    let progressBar = document.getElementById("creation-progress-bar");
+    progressBar.classList.add("progress-bar-striped");
+    progressBar.classList.add("progress-bar-animated");
+    progressBar.classList.add("progress-bar-animated");
+    progressBar.classList.remove("bg-success");
+    progressBar.innerText = "Starting...";
+    progressBar.style["width"] = "0%";
+    // Show the progress bar.
+    document.getElementById("creation-progress-div").removeAttribute("hidden");
+}
+
+function updateProgress(message, percentage) {
+    let progressBar = document.getElementById("creation-progress-bar");
+    progressBar.innerText = message;
+    progressBar.style["width"] = `${percentage}%`;
+    if (percentage == 100) {
+        // If 100%, remove bar's animation and change its color.
+        progressBar.classList.remove("progress-bar-striped");
+        progressBar.classList.remove("progress-bar-animated");
+        progressBar.classList.remove("progress-bar-animated");
+        progressBar.classList.add("bg-success");
+    }
+}
+
+function hideProgress() {
+    document.getElementById("creation-progress-div").removeAttribute("hidden");
+}
+
 async function submitFormData() {
     // Make form read-only.
     document.getElementById("control-form-editing").setAttribute("disabled", "disabled");
 
-    // TODO: add a loading bar and update it throughout the process.
+    // Reset the progress bar in case the user had created a previous config.
+    startProgress();
 
     // First, parse the values from the form that need extra handling.
 
     // Parse filenames the user must submit.
+    updateProgress("Parsing required filenames...", 5);
     let requiredFiles = [];
     for (let i = 1; i <= numberOfUserFiles; i++) {
         requiredFiles.push(document.getElementById(`user-file-${i}`).value);
     }
 
+
     // Parse the test cases.
+    updateProgress("Parsing test cases...", 10);
     let testCases = [];
     for (let i = 1; i <= numberOfTests; i++) {
         // First, figure out if the I/O should be parsed as text or a sequence of bytes.
@@ -298,6 +332,7 @@ async function submitFormData() {
     }
 
     // Parse source efficiency cutoffs.
+    updateProgress("Parsing efficiency cutoffs...", 25);
     let source_eff_points = {};
     for (let i = 1; i <= numSourceEffCutoffs; i++) {
         let instrCount = parseInt(document.getElementById(`source-eff-cutoff-${i}-num`).value);
@@ -325,6 +360,7 @@ async function submitFormData() {
     });
 
     // Parse documentation's two sets of cutoffs.
+    updateProgress("Parsing documentation cutoffs...", 35);
 
     let comments_ratio_points = {};
     for (let i = 1; i <= numCommentOnlyCutoffs; i++) {
@@ -348,6 +384,8 @@ async function submitFormData() {
     });
 
     // Parse the category weights.
+    updateProgress("Parsing weights...", 45);
+
     let weights = {
         accuracy: parseInt(document.getElementById("weight-points-accuracy").value),
         documentation: parseInt(document.getElementById("weight-points-docs").value),
@@ -356,6 +394,7 @@ async function submitFormData() {
     };
 
     // Load given object files.
+    updateProgress("Loading pre-assembled objects...", 50);
     let preassembled_objects = {};
     const obj_files = document.getElementById("object-files").files;
     for (const file of obj_files) {
@@ -372,9 +411,8 @@ async function submitFormData() {
         preassembled_objects[file.name] = new Uint8Array(await syncReadBinaryFile(file));
     }
 
-    console.log(preassembled_objects);
-
     // Load given .txt data files.
+    updateProgress("Loading text data files...", 55);
     let data_txt_files = {};
     const txt_files = document.getElementById("text-data-files").files;
     for (const file of txt_files) {
@@ -392,6 +430,7 @@ async function submitFormData() {
     }
 
     // Load given .bin data files.
+    updateProgress("Loading binary data files...", 60);
     let data_bin_files = {};
     const bin_files = document.getElementById("bin-data-files").files;
     for (const file of bin_files) {
@@ -409,6 +448,7 @@ async function submitFormData() {
     }
 
     // Then, create a project config message.
+    updateProgress("Creating project message...", 70);
     let project_name = document.getElementById("project-name").value;
     var pcMsg = ProjectConfig.create({
         name: project_name,
@@ -430,6 +470,7 @@ async function submitFormData() {
     });
 
     // Check that the config generated is valid.
+    updateProgress("Validating project message...", 80);
     let err = ProjectConfig.verify(pcMsg);
     if (err) {
         showMessage("ERROR: Could Not Validate Message", "Error creating project config; proto message was not valid. Check console for more information.");
@@ -440,6 +481,7 @@ async function submitFormData() {
     }
 
     // Serialize the message so we can distribute it.
+    updateProgress("Compressing project message...", 85);
     let spc = ProjectConfig.encode(pcMsg).finish();
 
     // Next, compress the ProjectConfig so it's canonical.
@@ -449,6 +491,7 @@ async function submitFormData() {
     let project_hash = await window.crypto.subtle.digest("SHA-256", compressed_config);
 
     // Finally, create the WrappedProject message.
+    updateProgress("Wrapping config and checksum...", 90);
     let wrapped_project = WrappedProject.create({
         checksum: new Uint8Array(project_hash),
         compressionAlg: CompressionAlgorithm.values['GZIP'],
@@ -456,6 +499,7 @@ async function submitFormData() {
     });
 
     // Lastly, send the wrapped project to the user as a .pb2 file.
+    updateProgress("Sending file for download...", 95);
     let filename = project_name.replace(
         /\w\S*/g,
         text => text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
@@ -463,6 +507,7 @@ async function submitFormData() {
     download_file(`${filename}.pb2`, WrappedProject.encode(wrapped_project).finish(), 'application/x-protobuf')
 
     // After the project has been created and sent to the form user, make form editable again.
+    updateProgress("All done!", 100);
     document.getElementById("control-form-editing").removeAttribute("disabled");
 
 }
