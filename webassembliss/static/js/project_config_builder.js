@@ -161,7 +161,7 @@ function updateTotalPoints(testChanged) {
     }, 0);
 }
 
-let numSourceEffCutoffs = 1;
+let numSourceEffCutoffs = 0;
 function addNewSourceEffCutoff() {
     // TODO: allow user to delete cutoffs.
     // Increase the number of source efficiency cutoffs and get the new number for this new one.
@@ -181,7 +181,7 @@ function addNewSourceEffCutoff() {
     document.getElementById("source-eff-cutoffs-div").appendChild(newCutoffDiv);
 }
 
-let numExecEffCutoffs = 1;
+let numExecEffCutoffs = 0;
 function addNewExecEffCutoff() {
     // TODO: allow user to delete cutoffs.
     // Increase the number of exec efficiency cutoffs and get the new number for this new one.
@@ -201,7 +201,7 @@ function addNewExecEffCutoff() {
     document.getElementById("exec-eff-cutoffs-div").appendChild(newCutoffDiv);
 }
 
-let numCommentOnlyCutoffs = 1;
+let numCommentOnlyCutoffs = 0;
 function addNewCommentOnlyCutoff() {
     // TODO: allow user to delete cutoffs.
     // Increase the number of exec efficiency cutoffs and get the new number for this new one.
@@ -221,7 +221,7 @@ function addNewCommentOnlyCutoff() {
     document.getElementById("docs-commentonly-cutoffs-div").appendChild(newCutoffDiv);
 }
 
-let numInlineCommentsCutoffs = 1;
+let numInlineCommentsCutoffs = 0;
 function addNewInlineCommentsCutoff() {
     // TODO: allow user to delete cutoffs.
     // Increase the number of exec efficiency cutoffs and get the new number for this new one.
