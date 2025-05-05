@@ -1,4 +1,4 @@
-const MAX_SIZE = 1 * 1024 * 1024;
+const MAX_FILE_SIZE = 128 * 1024;
 
 // Load protos that will be needed for project creation.
 protobuf.load("/static/protos/project_config.proto").then(function (root) {
@@ -355,9 +355,58 @@ async function submitFormData() {
         exec_efficiency: parseInt(document.getElementById("weight-points-exec").value),
     };
 
-    // TODO: load given object files.
-    // TODO: load given .txt data files.
-    // TODO: load given .bin data files.
+    // Load given object files.
+    let preassembled_objects = {};
+    const obj_files = document.getElementById("object-files").files;
+    for (const file of obj_files) {
+        if (!(file.name.endsWith(".o") || file.name.endsWith(".obj"))) {
+            showMessage("ERROR: Invalid Extension", `Pre-assembled objects must have a '.o' or '.obj' extension. The file '${file.name}' has an invalid extension.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            showMessage("ERROR: Invalid Size", `Each additional file can be at most ${formatHumanSize(MAX_FILE_SIZE)} in size. The file '${file.name}' is ${formatHumanSize(file.size)}.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        preassembled_objects[file.name] = new Uint8Array(await syncReadBinaryFile(file));
+    }
+
+    console.log(preassembled_objects);
+
+    // Load given .txt data files.
+    let data_txt_files = {};
+    const txt_files = document.getElementById("text-data-files").files;
+    for (const file of txt_files) {
+        if (!file.name.endsWith(".txt")) {
+            showMessage("ERROR: Invalid Extension", `Text data files must have a '.txt' extension. The file '${file.name}' has an invalid extension.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            showMessage("ERROR: Invalid Size", `Each additional file can be at most ${formatHumanSize(MAX_FILE_SIZE)} in size. The file '${file.name}' is ${formatHumanSize(file.size)}.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        data_txt_files[file.name] = await syncReadTextFile(file);
+    }
+
+    // Load given .bin data files.
+    let data_bin_files = {};
+    const bin_files = document.getElementById("bin-data-files").files;
+    for (const file of bin_files) {
+        if (!file.name.endsWith(".bin")) {
+            showMessage("ERROR: Invalid Extension", `Binary data files must have a '.bin' extension. The file '${file.name}' has an invalid extension.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        if (file.size > MAX_FILE_SIZE) {
+            showMessage("ERROR: Invalid Size", `Each additional file can be at most ${formatHumanSize(MAX_FILE_SIZE)} in size. The file '${file.name}' is ${formatHumanSize(file.size)}.`);
+            document.getElementById("control-form-editing").removeAttribute("disabled");
+            return;
+        }
+        data_bin_files[file.name] = new Uint8Array(await syncReadBinaryFile(file));
+    }
 
     // Then, create a project config message.
     let project_name = document.getElementById("project-name").value;
@@ -365,7 +414,7 @@ async function submitFormData() {
         name: project_name,
         arch: parseInt(document.getElementById("arch-select").value),
         requiredFiles: requiredFiles,
-        providedObjects: null,
+        providedObjects: preassembled_objects,
         execName: document.getElementById("executable-name").value,
         asFlags: document.getElementById("assembler-flags").value.split(" "),
         ldFlags: document.getElementById("linker-flags").value.split(" "),
@@ -376,14 +425,14 @@ async function submitFormData() {
         sourceEff: source_eff,
         execEff: exec_eff,
         weights: weights,
-        extraTxtFiles: null,
-        extraBinFiles: null
+        extraTxtFiles: data_txt_files,
+        extraBinFiles: data_bin_files
     });
 
     // Check that the config generated is valid.
     let err = ProjectConfig.verify(pcMsg);
     if (err) {
-        alert("Error creating project config; check console.");
+        showMessage("ERROR: Could Not Validate Message", "Error creating project config; proto message was not valid. Check console for more information.");
         console.log(pcMsg);
         console.log(err);
         document.getElementById("control-form-editing").removeAttribute("disabled");

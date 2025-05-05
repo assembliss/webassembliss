@@ -10,7 +10,7 @@ from .utils import b64_to_bytes
 app = Flask(__name__)
 
 # Limit requests to be a maximum of 1 MB.
-app.config["MAX_CONTENT_LENGTH"] = 1 * 1000 * 1000
+app.config["MAX_CONTENT_LENGTH"] = 1 * 1_024 * 1_024
 
 # Register the editor with the Flask app
 # and expose the rocher_editor function to Jinja templates
