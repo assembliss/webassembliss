@@ -9,6 +9,7 @@ enum TargetArchitecture {
   // These should match the names in webassembliss.emulation.arch_config.ARCH_CONFIG_MAP so the grader can see new architectures automatically.
   arm64_linux = 1;
   riscv64_linux = 2;
+  x8664_linux = 3;
 }
 
 // Message to hold information for a single test case.
