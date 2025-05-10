@@ -25,7 +25,6 @@ This project is under active development.
 ### Grading Workflow
 - [ ] allow c-driver code (this could be resolved as a pre-assembled object file)
 	- [ ] pre-assembled object files are done... but printf output does not show for some reason.
-- [ ] create a form to generate project configs
 
 ### Project Setup
 - [ ] add auto-format
@@ -122,3 +121,4 @@ This project is under active development.
 - [x] allow user to upload other files to be processed (e.g., a csv file to be read)
 - [x] show instructions executed after running/tracing code
 - [x] show instructions written after running/tracing code
+- [x] create a form to generate project configs
