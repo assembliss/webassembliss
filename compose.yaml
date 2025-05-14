@@ -3,9 +3,6 @@ services:
     build: .
     ports:
       - "5000:5000"
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
     # You can uncomment the line below so the app docker starts and sleeps;
     # this allows you to launch a terminal and spin up the server yourself.
     # command: sleep infinity
