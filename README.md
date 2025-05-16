@@ -4,9 +4,16 @@ The goal is to have a webapp that allows users to edit, run, and trace assembly 
 This project is under active development.
 
 ## Get started
-1. install [docker](https://www.docker.com/get-started/);
-2. cd into the folder for this repo;
-3. run `docker compose up --build`
+
+### Option 1: access the live app
+You can access the app at [web.assembliss.app](https://web.assembliss.app)
+
+### Option 2: run it locally
+1. clone this repo
+2. generate the required certificates: https://github.com/assembliss/webassembliss/blob/main/nginx/certs/README.md
+3. install [docker](https://www.docker.com/get-started/);
+4. cd into the folder for this repo;
+5. run `docker compose up`
 
 ## Roadmap
 
@@ -16,7 +23,7 @@ This project is under active development.
 	- could allow them to redirect input/output boxes to a filepath
 - [ ] add a cooldown period after the user runs code a few times (could be 1min after each run or an exponential backoff)
 - [ ] add support for more architectures
-	- overview how to do that: https://github.ncsu.edu/assembliss/webassembliss/pull/9
+	- overview how to do that: https://github.ncsu.edu/assembliss/webassembliss/issues/1
  	- [ ] [8086](https://github.com/qilingframework/rootfs/tree/master/8086)
  	- [ ] [x8664_windows](https://github.com/qilingframework/rootfs/tree/master/x8664_windows/)
 	- [ ] [mips](https://github.com/qilingframework/rootfs/tree/master/mips32el_linux)
