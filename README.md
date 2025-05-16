@@ -10,10 +10,11 @@ You can access the app at [web.assembliss.app](https://web.assembliss.app)
 
 ### Option 2: run it locally
 1. clone this repo
-2. generate the required certificates: https://github.com/assembliss/webassembliss/blob/main/nginx/certs/README.md
+2. generate the required certificates inside `nginx/certs` ([see README](https://github.com/assembliss/webassembliss/blob/main/nginx/certs/README.md))
 3. install [docker](https://www.docker.com/get-started/);
 4. cd into the folder for this repo;
 5. run `docker compose up`
+6. you should be able to access the app at `https://localhost`
 
 ## Roadmap
 
