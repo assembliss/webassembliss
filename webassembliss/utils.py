@@ -1,7 +1,7 @@
 from base64 import decode as b64_decode
 from base64 import encode as b64_encode
 from io import BytesIO
-from os.path import isabs
+from urllib.parse import urlparse
 
 
 def create_bin_file(path: str, contents: bytes) -> None:
@@ -32,6 +32,6 @@ def b64_to_bytes(s64: str) -> bytes:
 
 
 def compare_URLs_without_scheme(url1, url2):
-    url1_prefix_len = len("https://") if url1.startswith("https") else (len("http://"))
-    url2_prefix_len = len("https://") if url2.startswith("https") else (len("http://"))
-    return url1[url1_prefix_len:] == url2[url2_prefix_len:]
+    parsed_url1 = urlparse(url1)
+    parsed_url2 = urlparse(url2)
+    return parsed_url1.netloc == parsed_url2.netloc
