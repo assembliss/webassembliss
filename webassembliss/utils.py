@@ -29,3 +29,9 @@ def b64_to_bytes(s64: str) -> bytes:
     out_bio = BytesIO()
     b64_decode(in_bio, out_bio)
     return out_bio.getvalue()
+
+
+def compare_URLs_without_scheme(url1, url2):
+    url1_prefix_len = len("https://") if url1.startswith("https") else (len("http://"))
+    url2_prefix_len = len("https://") if url2.startswith("https") else (len("http://"))
+    return url1[url1_prefix_len:] == url2[url2_prefix_len:]

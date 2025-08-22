@@ -5,7 +5,7 @@ from flask import Flask, abort, render_template, request, send_file
 
 from .emulation import ARCH_CONFIG_MAP
 from .grader.single_student import grade_form_submission
-from .utils import b64_to_bytes
+from .utils import b64_to_bytes, compare_URLs_without_scheme
 
 app = Flask(__name__)
 
@@ -27,11 +27,11 @@ def about():
     return render_template("about.html.j2")
 
 
-@app.route("/grader/", methods=["POST", "GET"])
+@app.route("/grader", methods=["POST", "GET"])
 def grader():
     if request.method == "POST":
         # If POST, make sure we got here from the submission form.
-        if request.referrer != request.url:
+        if not compare_URLs_without_scheme(request.referrer, request.url):
             abort(403)
 
         # Process the information we received.
