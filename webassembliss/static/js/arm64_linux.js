@@ -8,7 +8,7 @@ const qilingARM64Registers = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x
 populateRegisterTable(qilingARM64Registers);
 
 function createEditor(default_code) {
-    BASE_createEditor(default_code, getARM64SyntaxHighlighting)
+    BASE_createEditor(default_code, getARM64SyntaxHighlighting, getARM64HoverInfo)
 }
 
 function startTracing(combineAllSteps) {
@@ -26,8 +26,9 @@ function getARM64SyntaxHighlighting() {
         // Instructions taken from: https://developer.arm.com/documentation/ddi0602/2024-12/Base-Instructions
         instructions: [
             "ABS", "abs", "ADC", "adc", "ADCS", "adcs", "add", "ADD", "ADDG", "addg", "ADDPT", "addpt", "adds", "ADDS", "ADR", "adr", "ADRP", "adrp", "AND", "and", "ands", "ANDS", "apas", "APAS", "ASR", "asr", "asrv", "ASRV", "at", "AT",
-            "AUTDA", "autda", "AUTDB", "autdb", "AUTIA", "autia", "autia171615", "AUTIA171615", "AUTIASPPC", "autiasppc", "autiasppcr", "AUTIASPPCR", "autib", "AUTIB", "AUTIB171615", "autib171615", "AUTIBSPPC", "autibsppc", "autibsppcr", "AUTIBSPPCR", "axflag", "AXFLAG", "b", "B", "bc", "BC", "BFC", "bfc", "BFI", "bfi",
-            "bfm", "BFM", "bfxil", "BFXIL", "bic", "BIC", "BICS", "bics", "bl", "BL", "BLR", "blr", "blraa", "BLRAA", "BR", "br", "BRAA", "braa", "BRB", "brb", "brk", "BRK", "bti", "BTI", "cas", "CAS", "CASB", "casb", "CASH", "cash",
+            "AUTDA", "autda", "AUTDB", "autdb", "AUTIA", "autia", "autia171615", "AUTIA171615", "AUTIASPPC", "autiasppc", "autiasppcr", "AUTIASPPCR", "autib", "AUTIB", "AUTIB171615", "autib171615", "AUTIBSPPC", "autibsppc", "autibsppcr", "AUTIBSPPCR", "axflag", "AXFLAG",
+            "b", "B", "b.eq", "B.EQ", "b.ne", "B.NE", "b.mi", "B.MI", "b.pl", "B.PL", "b.gt", "B.GT", "b.ge", "B.GE", "b.lt", "B.LT", "b.le", "B.LE",
+            "bc", "BC", "BFC", "bfc", "BFI", "bfi", "bfm", "BFM", "bfxil", "BFXIL", "bic", "BIC", "BICS", "bics", "bl", "BL", "BLR", "blr", "blraa", "BLRAA", "BR", "br", "BRAA", "braa", "BRB", "brb", "brk", "BRK", "bti", "BTI", "cas", "CAS", "CASB", "casb", "CASH", "cash",
             "CASP", "casp", "caspt", "CASPT", "cast", "CAST", "CB", "cb", "cbb", "CBB", "cbble", "CBBLE", "cbblo", "CBBLO", "CBBLS", "cbbls", "cbblt", "CBBLT", "CBGE", "cbge", "cbh", "CBH", "CBHLE", "cbhle", "CBHLO", "cbhlo", "cbhls", "CBHLS", "cbhlt", "CBHLT",
             "cbhs", "CBHS", "CBLE", "cble", "cblo", "CBLO", "cbls", "CBLS", "cblt", "CBLT", "cbnz", "CBNZ", "cbz", "CBZ", "ccmn", "CCMN", "ccmp", "CCMP", "cfinv", "CFINV", "cfp", "CFP", "chkfeat", "CHKFEAT", "CINC", "cinc", "CINV", "cinv", "clrbhb", "CLRBHB",
             "CLREX", "clrex", "cls", "CLS", "CLZ", "clz", "CMN", "cmn", "CMP", "cmp", "CMPP", "cmpp", "cneg", "CNEG", "CNT", "cnt", "COSP", "cosp", "cpp", "CPP", "cpyfp", "CPYFP", "cpyfpn", "CPYFPN", "cpyfprn", "CPYFPRN", "CPYFPRT", "cpyfprt", "cpyfprtn", "CPYFPRTN",
@@ -98,7 +99,7 @@ function getARM64SyntaxHighlighting() {
         tokenizer: {
             root: [
                 // Instructions, directives, registers to color things differently.
-                [/(\.)?[a-zA-Z_$][\w$]*(\d+)?/, {
+                [/(\.)?[a-zA-Z_$][\w\.$]*(\d+)?/, {
                     cases: {
                         '@instructions': 'keyword',
                         '@directives': 'constant',
@@ -153,4 +154,310 @@ function getARM64SyntaxHighlighting() {
             ]
         }
     };
+}
+
+const ARM64HoverInfo = {
+    // Initial information taken from Swarthmore's cheat sheet: https://www.cs.swarthmore.edu/~kwebb/cs31/resources/ARM64_Cheat_Sheet.pdf
+    // TODO: add more instructions to this map.
+    "mov": {
+        "format": "mov D, S",
+        "action": "D = S",
+    },
+
+    "ldr": {
+        "format": "ldr D, [R]",
+        "action": "D = Mem[R]",
+    },
+
+    "ldp": {
+        "format": "ldp D1, D2, [R]",
+        "action": "D1 = Mem[R] *and* D2 = Mem[R + 8]",
+    },
+
+    "str": {
+        "format": "str S, [R]",
+        "action": "Mem[R] = S",
+    },
+
+    "stp": {
+        "format": "stp S1, S2, [R]",
+        "action": "Mem[R] = S1 *and* Mem[R + 8] = S2",
+    },
+
+    "add": {
+        "format": "add D, O1, O2",
+        "action": "D = O1 + O2",
+    },
+
+    "sub": {
+        "format": "sub D, O1, O2",
+        "action": "D = O1 - O2",
+    },
+
+    "neg": {
+        "format": "neg D, O1",
+        "action": "D = -(O1)",
+    },
+
+    "mul": {
+        "format": "mul D, O1, O2",
+        "action": "D = O1 * O2",
+    },
+
+    "udiv": {
+        "format": "udiv D, O1, O2",
+        "action": "D = O1 / O2 (unsigned)",
+    },
+
+    "sdiv": {
+        "format": "sdiv D, O1, O2",
+        "action": "D = O1 / O2 (signed)",
+    },
+
+    "lsl": {
+        "format": "lsl D, R, #v",
+        "action": "D = R << v",
+    },
+
+    "lsr": {
+        "format": "lsr D, R, #v",
+        "action": "D = R >> v (logical)",
+    },
+
+    "asr": {
+        "format": "asr D, R, #v",
+        "action": "D = R >> v (arithmetic)",
+    },
+
+    "and": {
+        "format": "and D, O1, O2",
+        "action": "D = O1 & O2",
+    },
+
+    "orr": {
+        "format": "orr D, O1, O2",
+        "action": "D = O1 | O2",
+    },
+
+    "eor": {
+        "format": "eor D, O1, O2",
+        "action": "D = O1 ^ O2",
+    },
+
+    "mvn": {
+        "format": "mvn D, O",
+        "action": "D = ~O",
+    },
+
+    "cmp": {
+        "format": "cmp O1, O2",
+        "action": "Sets CCs: O1 - O2",
+    },
+
+    "tst": {
+        "format": "tst O1, O2",
+        "action": "Sets CCs: O1 & O2",
+    },
+
+    "br": {
+        "format": "br address",
+        "action": "PC = address",
+    },
+
+    "cbz": {
+        "format": "cbz R, label",
+        "action": "If R == 0, PC = addr of label",
+    },
+
+    "cbnz": {
+        "format": "cbnz R, label",
+        "action": "If R != 0, PC = addr of label",
+    },
+
+    "b": {
+        "format": "b label",
+        "action": "branch (PC = address of label)",
+    },
+
+    "b.eq": {
+        "format": "b.eq label",
+        "action": "branch if equal",
+    },
+
+    "b.ne": {
+        "format": "b.ne label",
+        "action": "branch if not equal",
+    },
+
+    "b.mi": {
+        "format": "b.mi label",
+        "action": "branch if negative",
+    },
+
+    "b.pl": {
+        "format": "b.pl label",
+        "action": "branch if non-negative",
+    },
+
+    "b.gt": {
+        "format": "b.gt label",
+        "action": "branch if greater than",
+    },
+
+    "b.ge": {
+        "format": "b.ge label",
+        "action": "branch if greater or equal",
+    },
+
+    "b.lt": {
+        "format": "b.lt label branch",
+        "action": "if less than",
+    },
+
+    "b.le": {
+        "format": "b.le label branch",
+        "action": "if less or equal",
+    },
+
+    "bl": {
+        "format": "bl address <fname>",
+        "action": "x30 = PC + 4 *and* PC = address",
+    },
+
+    "blr": {
+        "format": "blr R <fname>",
+        "action": "x30 = PC + 4 *and* PC = R",
+    },
+
+    "ret": {
+        "format": "ret",
+        "action": "PC = x30 *and* value of x0 returned",
+    },
+
+    "svc": {
+        "format": "svc N",
+        "action": "asks OS to perform syscall N",
+    }
+
+}
+
+function isPossibleBranch(token) {
+    const conditionalBranchInstructions = new Set(["b", "bc"]);
+    return conditionalBranchInstructions.has(token);
+}
+
+function isPossibleCondition(token) {
+    const conditionalBranchInstructions = new Set(["eq", "ne", "mi", "pl", "gt", "ge", "lt", "le"]);
+    return conditionalBranchInstructions.has(token);
+}
+
+function isPossibleBranchOrCondition(token) {
+    if (isPossibleBranch(token)) return 1;
+    if (isPossibleCondition(token)) return 2;
+    return 0;
+}
+
+function getToken(model, position) {
+    // Get token from the hovering position and make it lowercase.
+    let hover = model.getWordAtPosition(position);
+    if (!hover) return hover;
+    let token = hover.word.toLowerCase();
+    let startCol = hover.startColumn;
+    let endCol = hover.endColumn;
+    let lineNum = position.lineNumber;
+
+    // Check if it's a possible branch or condition position.
+    let isBranchStatus = isPossibleBranchOrCondition(token);
+    switch (isBranchStatus) {
+        case 1:
+            // If it's a branch instruction, we need to check if there's a condition attached to it.
+            // First, check if there is a period after the instruction.
+            let nextChar = model.getValueInRange(
+                new monaco.Range(
+                    position.lineNumber,
+                    hover.endColumn,
+                    position.lineNumber,
+                    hover.endColumn + 1,
+                )
+            );
+            if (nextChar != ".") {
+                // No period, so possibly an unconditional jump (i.e., "b").
+                break;
+            }
+            // If there is a period, parse the condition from after it.
+            let cc = model.getWordAtPosition(
+                new monaco.Position(
+                    position.lineNumber,
+                    hover.endColumn + 2,
+                )
+            );
+
+            // Construct the full token.
+            token += "." + cc.word;
+            // Update end column.
+            endCol = cc.endColumn;
+            break;
+
+        case 2:
+            // If it's a condition, we need to move back and check the instruction before that.
+            // First, check if there is a period before the condition.
+            let prevChar = model.getValueInRange(
+                new monaco.Range(
+                    position.lineNumber,
+                    hover.startColumn - 1,
+                    position.lineNumber,
+                    hover.startColumn,
+                )
+            );
+            if (prevChar != ".") {
+                // No period, it's not something in the form of b.CC.
+                break;
+            }
+            // If there is a period, parse the instruction from before it.
+            baseInstr = model.getWordUntilPosition(
+                new monaco.Position(
+                    position.lineNumber,
+                    hover.startColumn - 1,
+                )
+            );
+
+            // Construct the full token.
+            token = baseInstr.word + "." + token;
+            // Update start column.
+            startCol = baseInstr.startColumn;
+            break;
+
+        default:
+            // If it's neither, then we already have the correct token.
+            break;
+    }
+
+    // Finally, return the token.
+    return { token: token, startCol: startCol, endCol: endCol, lineNum: lineNum };
+}
+
+function getARM64HoverInfo(model, position) {
+    let tokenInfo = getToken(model, position);
+    if (!tokenInfo) return null;
+    let instrInfo = ARM64HoverInfo[tokenInfo.token];
+
+    if (!instrInfo) {
+        return null;
+    }
+
+    return {
+        range: new monaco.Range(
+            tokenInfo.lineNum,
+            tokenInfo.startCol,
+            tokenInfo.lineNum,
+            tokenInfo.endCol,
+        ),
+        contents: [
+            {
+                supportHtml: true,
+                value: `<b>Format:</b> ${instrInfo.format}<hr/><b>Action(s):</b> ${instrInfo.action}`,
+            }
+        ]
+    };
+
 }

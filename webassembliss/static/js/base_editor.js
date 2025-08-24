@@ -482,6 +482,7 @@ const localFileStorage = {
         }
 
         // Wait for the editor to load so we can modify its contents.
+        // TODO: make sure this wait is long enough.
         sleep(200).then(() => {
             // Check if the user has the default tab stored in their workspace.
             if (defaultTabName in this.tabs) {
@@ -985,11 +986,21 @@ ld_err: ${ld_err}`;
     }
 }
 
-function BASE_createEditor(default_code, archSyntaxFun) {
+function missingHoverInformation(model, position) {
+    console.log("TODO: Hover information for this architecture has not been implemented yet.");
+    return null;
+}
+
+function BASE_createEditor(default_code, archSyntaxFun, archHoverFun) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
         monaco.languages.register({ id: ARCH_ID });
         monaco.languages.setMonarchTokensProvider(ARCH_ID, archSyntaxFun());
+        if (archHoverFun != null) {
+            monaco.languages.registerHoverProvider(ARCH_ID, { provideHover: archHoverFun });
+        } else {
+            monaco.languages.registerHoverProvider(ARCH_ID, { provideHover: missingHoverInformation });
+        }
         window.editor = monaco.editor.create(document.getElementById('monaco-container'), {
             // Change "value" to upload files
             value: default_code.join('\n'),
