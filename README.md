@@ -61,11 +61,8 @@ You can access the app at [web.assembliss.app](https://web.assembliss.app)
 	- https://docs.gunicorn.org/en/stable/design.html
 
 ### User Experience
-- [ ] allow user to change themes
 - [ ] allow user to change timeout
 - [ ] add a button to load code from examples
-- [ ] show instruction information when hovering over it
-	- [maybe helpful?](https://stackoverflow.com/a/49450345)
 
 ### Completed
 - [x] add a button to assemble, link, and run the code from the editor
@@ -130,3 +127,5 @@ You can access the app at [web.assembliss.app](https://web.assembliss.app)
 - [x] show instructions executed after running/tracing code
 - [x] show instructions written after running/tracing code
 - [x] create a form to generate project configs
+- [x] show instruction information when hovering over it
+- [x] allow user to change themes

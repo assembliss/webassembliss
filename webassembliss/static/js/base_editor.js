@@ -1010,8 +1010,15 @@ function BASE_createEditor(default_code, archSyntaxFun, archHoverFun) {
             lineNumbersMinChars: 2,
             folding: false,
         });
+        window.currentEditorTheme = 'vs-dark';
         window.decorations = editor.createDecorationsCollection([]);
     });
+}
+
+function switchEditorTheme() {
+    let nextTheme = window.currentEditorTheme == 'vs-dark' ? 'vs-light' : 'vs-dark';
+    monaco.editor.setTheme(nextTheme);
+    window.currentEditorTheme = nextTheme;
 }
 
 function showDisplayCheckboxes(type) {

@@ -31,7 +31,7 @@
                 </ul>
             </div>
             <div class="btn-group">
-                <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="uploadFile(importCode)"><i class="fa-solid fa-upload"></i> Upload</button>
+                <button type="button" id="uploadBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="uploadFile(importCode)"><i class="fa-solid fa-upload"></i> Upload</button>
                 <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle dropdown-toggle-split codeActionBtn" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="visually-hidden">Toggle Dropdown</span>
                 </button>
@@ -46,6 +46,7 @@
                     <li><a class="dropdown-item" href="#" onclick="uploadFile(importWorkspace);return false;"><i class="fa-solid fa-file-zipper"></i> JSON Workspace</a></li>
                 </ul>
             </div>
+            <button type="button" id="themeBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="switchEditorTheme()"><i class="fa-solid fa-palette"></i> Light/Dark</button>
             <div id="tabsDiv" style="display: flex">
                 <input class="activeTabBtn" type="button" id="tab{{ default_tab_name }}Btn" value="{{ default_tab_name }}" onclick="openTab('{{ default_tab_name }}')"/>
                 <input class="activeTabBtnX" type="button" id="tab{{ default_tab_name }}BtnX" value="x" onclick="closeTab('{{ default_tab_name }}')" disabled="true" hidden="hidden"/>
