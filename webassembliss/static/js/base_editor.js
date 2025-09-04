@@ -1011,14 +1011,38 @@ function BASE_createEditor(default_code, archSyntaxFun, archHoverFun) {
             folding: false,
         });
         window.currentEditorTheme = 'vs-dark';
+        window.currentFontSize = 12;
         window.decorations = editor.createDecorationsCollection([]);
     });
 }
 
 function switchEditorTheme() {
+    // Find the next theme.
     let nextTheme = window.currentEditorTheme == 'vs-dark' ? 'vs-light' : 'vs-dark';
-    monaco.editor.setTheme(nextTheme);
+    // Update the editor theme.
+    window.editor.updateOptions({ theme: nextTheme })
     window.currentEditorTheme = nextTheme;
+}
+
+function switchFontSize() {
+    let newFontSize = prompt("New font size", window.currentFontSize);
+
+    // Check the user entered something.
+    if (!newFontSize) {
+        console.log("invalid font size");
+        return;
+    }
+
+    // Check the user entered a number.
+    let intNewFontSize = parseInt(newFontSize);
+    if (Number.isNaN(intNewFontSize)) {
+        console.log("invalid font size");
+        return;
+    }
+
+    // Change the font size.
+    window.editor.updateOptions({ fontSize: intNewFontSize })
+    window.currentFontSize = intNewFontSize;
 }
 
 function showDisplayCheckboxes(type) {
