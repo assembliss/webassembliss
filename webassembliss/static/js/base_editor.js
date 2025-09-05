@@ -1171,7 +1171,7 @@ function updateRegisterTable(reg_value_map) {
 
     // Go through the register values we received to update the changed ones.
     for (const [reg, val] of Object.entries(reg_value_map)) {
-        let formattedValue = intToHexBytes(val, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
+        let formattedValue = littleEndianToString(val, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;", true);
         let regValueCell = document.getElementById(`regValueCell-${reg}`);
         if (regValueCell.innerHTML == formattedValue) {
             // If the value has NOT changed, go to next element.
@@ -1198,7 +1198,7 @@ function parseRegisterDeltaMap(reg_delta) {
     let reg_map = {};
     for (const [reg, values] of Object.entries(reg_delta)) {
         if (values.length == 0) {
-            reg_map[reg] = 0;
+            reg_map[reg] = new Uint8Array(0);
         } else {
             reg_map[reg] = values[values.length - 1];
         }
@@ -1930,6 +1930,42 @@ function intToHexBytes(value, bytesToPad, byteSep) {
     }
 
     return hexValue;
+}
+
+
+function littleEndianToString(bytes, bytesToPad, byteSep, makeUpper) {
+    hexValue = "";
+
+    // Add extra bytes at the beginning if needed to match register size.
+    for (let i = 0; i < (bytesToPad - bytes.length); i++) {
+        hexValue += "00";
+    }
+
+    // Add the given bytes in reverse order.
+    for (let i = bytes.length - 1; i >= 0; i--) {
+        let newByte = bytes[i].toString(16);
+        if (newByte.length == 1) {
+            hexValue += "0";
+        }
+        hexValue += newByte;
+    }
+
+    // Make letters uppercase if needed.
+    if (makeUpper) {
+        hexValue = hexValue.toUpperCase();
+    }
+
+    // Adds a separation if needed.
+    if (byteSep) {
+        let separatedBytes = "";
+        for (let i = 0; i < hexValue.length; i += 2) {
+            separatedBytes += hexValue[i] + hexValue[i + 1] + byteSep;
+        }
+        hexValue = separatedBytes.slice(0, -byteSep.length);
+    }
+
+    return hexValue;
+
 }
 
 function asciiPrint(thisByte) {

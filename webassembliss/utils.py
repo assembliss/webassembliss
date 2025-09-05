@@ -35,3 +35,33 @@ def compare_URLs_without_scheme(url1, url2):
     parsed_url1 = urlparse(url1)
     parsed_url2 = urlparse(url2)
     return parsed_url1.netloc == parsed_url2.netloc
+
+
+def int_to_little_endian_bytes(x) -> bytes:
+    """Convert an int into little-endian bytes."""
+    
+    if x < 0:
+        raise ValueError("given value should be unsigned/positive")
+    
+    if not x:
+        return b'\x00'
+
+    byteList = []
+    while x:
+        byteList.append(x & 0b1111_1111)
+        x >>= 8
+
+    return bytes(byteList)
+
+
+def little_endian_bytes_to_int(bs) -> int:
+    """Convert a little-endian bytes object into an int."""
+    if not bs:
+        return 0
+
+    result = 0
+    for i in range(len(bs)-1, -1, -1):
+        result <<= 8
+        result += bs[i]
+
+    return result
