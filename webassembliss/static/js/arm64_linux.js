@@ -82,7 +82,7 @@ function getARM64SyntaxHighlighting() {
 
         // Directives taken from: https://developer.arm.com/documentation/den0013/d/Introduction-to-Assembly-Language/Introduction-to-the-GNU-Assembler/Assembler-directives
         directives: [
-            ".align", ".ascii", ".asciz", ".byte", ".hword", ".word", ".data", ".end", ".equ", ".extern", ".global", ".include", ".quad", ".text", ".xword",
+            ".align", ".ascii", ".asciz", ".byte", ".hword", ".word", ".data", ".end", ".equ", ".extern", ".global", ".include", ".quad", ".space", ".text", ".xword",
         ],
 
         // Operators, symbols, and escapes from default monarch example.
