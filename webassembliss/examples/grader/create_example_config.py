@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(1, "/webassembliss/pyprotos")
 
-from bz2 import compress
+from gzip import compress
 from hashlib import sha256
 
 from project_config_pb2 import (
@@ -136,7 +136,7 @@ config.weights["exec_efficiency"] = 1
 # Create a wrapper message to distribute this config
 #
 wp = WrappedProject()
-wp.compression_alg = CompressionAlgorithm.BZ2
+wp.compression_alg = CompressionAlgorithm.GZIP
 wp.compressed_config = compress(config.SerializeToString())
 wp.checksum = sha256(wp.compressed_config).digest()
 
