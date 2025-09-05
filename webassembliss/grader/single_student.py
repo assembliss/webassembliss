@@ -15,6 +15,7 @@ from ..pyprotos.project_config_pb2 import (
     ExecutedInstructionsAggregation,
     ProjectConfig,
     TargetArchitecture,
+    TestCase,
     WrappedProject,
 )
 from ..pyprotos.trace_info_pb2 import TraceStep
@@ -99,7 +100,79 @@ def combine_stderr(steps: List[TraceStep]) -> str:
     return err
 
 
-def run_test_cases(
+def _evaluate_single_test_case(
+    *,
+    arch: ArchConfig,
+    config_dict: Dict,
+    objects: Dict,
+    bin_data: Dict,
+    student_files: Dict,
+    test: TestCase,
+    results: List[TestCaseResults],
+    instructions_executed: List[int],
+    index: int,
+) -> None:
+    """Run a single test case. Receives result lists as arguments for future thread execution."""
+
+    # Convert command-line arguments into a regular list
+    cl_args = " ".join(list(test.cl_args))
+    is_text, stdin, stdout = validate_and_load_testcase_io(test)
+    bytes_stdin = stdin if isinstance(stdin, bytes) else stdin.encode()
+
+    # Emulate binary to get result
+    trace = arch.trace(
+        combine_external_steps=False,
+        source_files=student_files,
+        object_files=objects,
+        extra_txt_files=config_dict.get("extraTxtFiles", {}),
+        extra_bin_files=bin_data,
+        as_flags=config_dict.get("asFlags", None),
+        ld_flags=config_dict.get("ldFlags", None),
+        max_trace_steps=test.max_instr_exec,
+        timeout=test.timeout_ms,
+        stdin=bytes_stdin,
+        bin_name=config_dict["execName"],
+        cl_args=cl_args,
+        count_user_written_instructions=False,
+    )
+
+    # Parse information from trace.
+    timed_out = trace.reached_max_steps
+    exit_code = trace.exit_code if trace.HasField("exit_code") else None
+    ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
+    exec_count = trace.instructions_executed
+    actual_out = combine_stdout(trace.steps)
+    actual_err = combine_stderr(trace.steps)
+    executed = True
+
+    # Decode i/o if needed.
+    if is_text:
+        actual_out = repr(actual_out.decode())
+        stdout = repr(stdout)
+        stdin = repr(stdin)
+
+    # Create test result object to hold evaluation.
+    test_result = TestCaseResults(
+        name=test.name,
+        points=test.points,
+        executed=executed,
+        timed_out=timed_out,
+        passed=(stdout == actual_out and ran_ok),
+        hidden=test.hidden,
+        exit_code=(None if test.hidden else exit_code),
+        cl_args=([] if test.hidden else cl_args),
+        stdin=("" if test.hidden else stdin),
+        expected_out=("" if test.hidden else stdout),
+        actual_out=("" if test.hidden else actual_out),
+        actual_err=("" if test.hidden else actual_err),
+    )
+
+    # Add test result and execution count to test-suite list.
+    results[index] = test_result
+    instructions_executed[index] = exec_count
+
+
+def run_test_case_suite(
     *,
     config: ProjectConfig,
     arch: ArchConfig,
@@ -110,13 +183,10 @@ def run_test_cases(
     config_dict = MessageToDict(config)
 
     # Create a list to store test results.
-    results: List[TestCaseResults] = []
+    results: List[TestCaseResults] = [None for _ in range(len(config.tests))]
 
     # Create a list to store instructions executed on each test.
-    instructions_executed: List[int] = []
-
-    # Flag to early-stop if project config wants to.
-    has_failed_test = False
+    instructions_executed: List[int] = [None for _ in range(len(config.tests))]
 
     # Parse given binary files from base64.
     objects = {
@@ -127,72 +197,23 @@ def run_test_cases(
     }
 
     # Process each test individually.
-    for test in config.tests:
-        # Convert command-line arguments into a regular list
-        cl_args = " ".join(list(test.cl_args))
-        is_text, stdin, stdout = validate_and_load_testcase_io(test)
-        bytes_stdin = stdin if isinstance(stdin, bytes) else stdin.encode()
-
-        # Check if should stop when a single test fails
-        if config.stop_on_first_test_fail and has_failed_test:
-            ran_ok = False
-            exit_code = None
-            timed_out = False
-            actual_out = "" if is_text else b""
-            actual_err = ""
-            exec_count = 0
-            executed = False
-
-        else:
-            # Emulate binary to get result
-            trace = arch.trace(
-                combine_external_steps=False,
-                source_files=student_files,
-                object_files=objects,
-                extra_txt_files=config_dict.get("extraTxtFiles", {}),
-                extra_bin_files=bin_data,
-                as_flags=config_dict.get("asFlags", None),
-                ld_flags=config_dict.get("ldFlags", None),
-                max_trace_steps=test.max_instr_exec,
-                timeout=test.timeout_ms,
-                stdin=bytes_stdin,
-                bin_name=config_dict["execName"],
-                cl_args=cl_args,
-                count_user_written_instructions=False,
-            )
-            timed_out = trace.reached_max_steps
-            exit_code = trace.exit_code if trace.HasField("exit_code") else None
-            ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
-            exec_count = trace.instructions_executed
-            actual_out = combine_stdout(trace.steps)
-            actual_err = combine_stderr(trace.steps)
-            executed = True
-
-        if is_text:
-            actual_out = repr(actual_out.decode())
-            stdout = repr(stdout)
-            stdin = repr(stdin)
-
-        # Parse through emulation output to evaluate test
-        test_result = TestCaseResults(
-            name=test.name,
-            points=test.points,
-            executed=executed,
-            timed_out=timed_out,
-            passed=(stdout == actual_out and ran_ok),
-            hidden=test.hidden,
-            exit_code=(None if test.hidden else exit_code),
-            cl_args=([] if test.hidden else cl_args),
-            stdin=("" if test.hidden else stdin),
-            expected_out=("" if test.hidden else stdout),
-            actual_out=("" if test.hidden else actual_out),
-            actual_err=("" if test.hidden else actual_err),
+    # TODO: try to speed up test case evaluation with threads.
+    for i, test in enumerate(config.tests):
+        _evaluate_single_test_case(
+            arch=arch,
+            config_dict=config_dict,
+            objects=objects,
+            bin_data=bin_data,
+            student_files=student_files,
+            test=test,
+            results=results,
+            instructions_executed=instructions_executed,
+            index=i,
         )
-        results.append(test_result)
-        instructions_executed.append(exec_count)
-        # Check if last test has failed and set flag accordingly.
-        if not test_result.passed:
-            has_failed_test = True
+
+        # Stop evaluation early if config asks for it and the test failed.
+        if config.stop_on_first_test_fail and not results[i].passed:
+            break
 
     return results, instructions_executed
 
@@ -476,7 +497,7 @@ def grade_student(
     sr.instr_count = src_instr_count
 
     # Run given test cases
-    gr.tests, all_exec_counts = run_test_cases(
+    gr.tests, all_exec_counts = run_test_case_suite(
         config=config, arch=arch, student_files=student_files
     )
     gr.test_diffs = [create_test_diff(t) for t in gr.tests]
