@@ -213,15 +213,15 @@
                         <tbody>
                           <tr>
                             <td>Command Line Arguments:</td>
-                            <td><code>{{ results.tests[i].cl_args }}</code></td>
+                            <td><code>{{ results.tests[i].cl_args | replace(" ","&nbsp;") }}</code></td>
                           </tr>
                           <tr>
                             <td>Input:</td>
-                            <td><code>{{ results.tests[i].stdin }}</code></td>
+                            <td><code>{{ results.tests[i].stdin | replace(" ","&nbsp;") }}</code></td>
                           </tr>
                           <tr>
                             <td>Expected Out:</td>
-                            <td><code>{{ results.tests[i].expected_out }}</code></td>
+                            <td><code>{{ results.tests[i].expected_out | replace(" ","&nbsp;") }}</code></td>
                           </tr>
                           <tr>
                             <td>Exit Code:</td>
