@@ -1,6 +1,10 @@
 # Mac's magic file
 .DS_Store
 
+# nginx certs
+nginx/certs/assembliss_cert.key
+nginx/certs/assembliss_cert.pem
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
