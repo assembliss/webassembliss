@@ -57,6 +57,7 @@ def check_project_builds(
 
     # Emulate the first test for only a single step.
     trace = arch.trace(
+        single_step_trace=False,
         combine_external_steps=False,
         source_files=student_files,
         object_files=objects,
@@ -121,6 +122,7 @@ def _evaluate_single_test_case(
 
     # Emulate binary to get result
     trace = arch.trace(
+        single_step_trace=True,
         combine_external_steps=False,
         source_files=student_files,
         object_files=objects,

@@ -211,6 +211,7 @@ def stepped_emulation(
     get_flags_func: Callable[[Qiling], Dict[str, bool]],
     objdump_cmd: str,
     source_filenames: List[str],
+    single_step_trace: bool,
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
     str,
@@ -275,7 +276,9 @@ def stepped_emulation(
     next_instr_addr = ql.loader.entry_point
 
     # Emulate up to the maximum number of steps.
-    for step_num in range(1, max_steps + 1):
+    num_exec = (max_steps - 1) if single_step_trace else 1
+    step_num = 1
+    while step_num <= max_steps:
         # Create new streams for output; easier to parse only the output for this step.
         out = SimpleOutStream(fd=1)
         err = SimpleOutStream(fd=2)
@@ -289,8 +292,13 @@ def stepped_emulation(
         try:
             # TODO: apply timeout as a sum of each instruction, i.e., timeout the stepped_emulation method.
             ql.emu_start(
-                begin=next_instr_addr, end=exit_address, timeout=timeout, count=1
+                begin=next_instr_addr, end=exit_address, timeout=timeout, count=num_exec
             )
+            # TODO: figure out how to count how many instructions were executed here.
+            #       we can only see how many steps when tracing, not with the single_step_trace;
+            #       however, for grading purposes, using single_step reduces grading time from 80+s to 5s;
+            #       so we need a way to get the execution count from qiling to eventually exec efficiency scores.
+            step_num += num_exec
             # Update the next instruction to be executed.
             last_instr_addr, next_instr_addr = next_instr_addr, find_next_addr(ql)
 
@@ -366,7 +374,7 @@ def stepped_emulation(
     return (
         argv,
         ql.os.exit_code,
-        step_num == max_steps,
+        ql.os.exit_code != 0,  # update this to use the execution count once we have it.
         steps,
         ql.arch.bits,
         ql.arch.endian == QL_ENDIAN.EL,
@@ -481,6 +489,7 @@ def clean_trace(
     max_trace_steps: int,
     step_over_external_steps: bool,
     count_user_written_instructions: bool,
+    single_step_trace: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
 ) -> ExecutionTrace:
@@ -593,6 +602,7 @@ def clean_trace(
             get_flags_func=get_flags_func,
             objdump_cmd=objdump_cmd,
             source_filenames=source_filenames,
+            single_step_trace=single_step_trace,
         )
 
         et.arch_num_bits = arch_num_bits

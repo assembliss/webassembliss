@@ -1605,6 +1605,7 @@ function BASE_startTracing(combineAllSteps) {
             extra_bin_files: localFileStorage.binData,
             user_input: user_input,
             cl_args: window.cl_args,
+            single_step: combineAllSteps ? true : false,
         }),
     }).then(response => response.arrayBuffer())
         .then(data => {

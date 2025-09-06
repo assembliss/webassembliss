@@ -38,6 +38,7 @@ def get_flags(ql: Qiling) -> Dict[str, bool]:
 
 def trace(
     *,  # Force arguments to be named.
+    single_step_trace: bool,
     combine_external_steps: bool,
     source_files: Dict[str, str],
     object_files: Optional[Dict[str, bytes]] = None,
@@ -85,6 +86,7 @@ def trace(
         get_flags_func=get_flags,
         timeout=timeout,
         max_trace_steps=max_trace_steps,
+        single_step_trace=single_step_trace,
         step_over_external_steps=combine_external_steps,
         count_user_written_instructions=count_user_written_instructions,
     )

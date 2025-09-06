@@ -103,6 +103,7 @@ def code_trace():
         )
 
     emulation_trace = arch_info.trace(
+        single_step_trace=request.json["single_step"],
         combine_external_steps=True,
         source_files=request.json["source_files"],
         object_files={
