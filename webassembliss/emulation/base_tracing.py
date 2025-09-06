@@ -34,6 +34,16 @@ class RootfsSandbox:
         self._sandbox.cleanup()
 
 
+class ExecutionCounter:
+    """Class to count executed instructions when emulating code with a single step."""
+
+    def __init__(self):
+        self.count = 0
+
+    def incr(self, *args, **kwargs):
+        self.count += 1
+
+
 def assemble(
     as_cmd: str,
     src_path: Union[str, PathLike],
@@ -214,13 +224,12 @@ def stepped_emulation(
     single_step_trace: bool,
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
-    str,
-    str,
-    bool,
-    List[TraceStep],
-    Dict[
-        int, int
-    ],  # argv  # exit_code  # reached_max_steps  # steps  # mapped memory areas
+    str,  # argv
+    str,  # exit_code
+    bool,  # reached_max_steps
+    List[TraceStep],  # steps
+    Dict[int, int],  # mapped memory areas
+    int,  # executed instructions
 ]:
     """Use the rootfs path and the given binary to emulate execution with qiling."""
     # TODO: add tests to make sure this function works as expected.
@@ -233,6 +242,13 @@ def stepped_emulation(
         verbose=verbose,
         console=False,
     )
+
+    # Set up emulation for single step if appropriate.
+    counter = None
+    if single_step_trace:
+        # Adds a hook to count the executed instructions.
+        counter = ExecutionCounter()
+        ql.hook_code(counter.incr)
 
     # Redirect standard input.
     ql.os.stdin = stdin
@@ -294,10 +310,6 @@ def stepped_emulation(
             ql.emu_start(
                 begin=next_instr_addr, end=exit_address, timeout=timeout, count=num_exec
             )
-            # TODO: figure out how to count how many instructions were executed here.
-            #       we can only see how many steps when tracing, not with the single_step_trace;
-            #       however, for grading purposes, using single_step reduces grading time from 80+s to 5s;
-            #       so we need a way to get the execution count from qiling to eventually exec efficiency scores.
             step_num += num_exec
             # Update the next instruction to be executed.
             last_instr_addr, next_instr_addr = next_instr_addr, find_next_addr(ql)
@@ -371,13 +383,17 @@ def stepped_emulation(
         if ql.os.exit_code is not None or emulation_error:
             break
 
+    # Calculate the number of instructions executed based on the emulation type.
+    instructions_executed = (len(steps) - 1) if not single_step_trace else counter.count
+
     return (
         argv,
         ql.os.exit_code,
-        ql.os.exit_code != 0,  # update this to use the execution count once we have it.
+        instructions_executed == max_steps,
         steps,
         ql.arch.bits,
         ql.arch.endian == QL_ENDIAN.EL,
+        instructions_executed,
     )
 
 
@@ -590,6 +606,7 @@ def clean_trace(
             trace_steps,
             arch_num_bits,
             is_little_endian,
+            instructions_executed,
         ) = stepped_emulation(
             rootfs_path=rootfs_sandbox,
             bin_path=bin_path,
@@ -610,10 +627,10 @@ def clean_trace(
         et.argv = " ".join(argv)
         et.reached_max_steps = reached_max_steps
         # Program should have executed one instruction per step (- the initial setup).
-        et.instructions_executed = len(trace_steps) - 1
+        et.instructions_executed = instructions_executed
 
         # Check if we should merge external steps.
-        if step_over_external_steps:
+        if (not single_step_trace) and step_over_external_steps:
             # Merge external steps into one so it acts like a step over in gdb.
             trace_steps = combine_external_steps(trace_steps)
 
