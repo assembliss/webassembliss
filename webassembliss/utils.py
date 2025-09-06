@@ -39,12 +39,12 @@ def compare_URLs_without_scheme(url1, url2):
 
 def int_to_little_endian_bytes(x) -> bytes:
     """Convert an int into little-endian bytes."""
-    
+
     if x < 0:
         raise ValueError("given value should be unsigned/positive")
-    
+
     if not x:
-        return b'\x00'
+        return b"\x00"
 
     byteList = []
     while x:
@@ -60,7 +60,7 @@ def little_endian_bytes_to_int(bs) -> int:
         return 0
 
     result = 0
-    for i in range(len(bs)-1, -1, -1):
+    for i in range(len(bs) - 1, -1, -1):
         result <<= 8
         result += bs[i]
 

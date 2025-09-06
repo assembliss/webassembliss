@@ -257,7 +257,9 @@ def stepped_emulation(
     # Create a list of steps with an initial step with the start memory and register values.
     steps = [
         TraceStep(
-            register_delta={r: int_to_little_endian_bytes(v) for r, v in cur_reg_values.items() if v},
+            register_delta={
+                r: int_to_little_endian_bytes(v) for r, v in cur_reg_values.items() if v
+            },
             memory_delta=find_mem_delta({}, cur_mem_values),
             flag_delta={r: v for r, v in cur_flag_values.items() if v},
         )
@@ -321,7 +323,11 @@ def stepped_emulation(
 
         # Compare the new values with the old ones and only save the changed entries into our Step.
         mem_delta = find_mem_delta(cur_mem_values, new_mem_values)
-        reg_delta = {r: int_to_little_endian_bytes(v) for r, v in new_reg_values.items() if cur_reg_values[r] != v}
+        reg_delta = {
+            r: int_to_little_endian_bytes(v)
+            for r, v in new_reg_values.items()
+            if cur_reg_values[r] != v
+        }
         flag_delta = {
             f: v for f, v in new_flag_values.items() if cur_flag_values[f] != v
         }
