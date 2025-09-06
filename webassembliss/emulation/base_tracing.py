@@ -290,6 +290,7 @@ def stepped_emulation(
 
     # First instruction address should be the binary's entry point.
     next_instr_addr = ql.loader.entry_point
+    last_instr_addr = None
 
     # Emulate up to the maximum number of steps.
     num_exec = (max_steps - 1) if single_step_trace else 1
