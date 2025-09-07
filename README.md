@@ -11,10 +11,27 @@ You can access the app at [web.assembliss.app](https://web.assembliss.app)
 ### Option 2: run it locally
 1. clone this repo
 2. generate the required certificates inside `nginx/certs` ([see README](https://github.com/assembliss/webassembliss/blob/main/nginx/certs/README.md))
-3. install [docker](https://www.docker.com/get-started/);
-4. cd into the folder for this repo;
+3. install [docker](https://www.docker.com/get-started/)
+4. cd into the folder for this repo
 5. run `docker compose up`
 6. you should be able to access the app at `https://localhost`
+
+### Option 3: developing locally (follow this if you're extending the code)
+1. clone this repo
+2. generate the required certificates inside `nginx/certs` ([see README](https://github.com/assembliss/webassembliss/blob/main/nginx/certs/README.md))
+3. install [docker](https://www.docker.com/get-started/)
+4. install [vs code](https://code.visualstudio.com/download)
+5. install [vs code dev container extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+6. open the repo folder on vs code
+7. open the command palette (`cmd` + `shift` + `p` for mac, `ctrl` + `shift` + `p` for windows/linux)
+8. run the command `Dev Containers: Reopen in Container`
+	- vs code will build the docker container for you (it might take a minute)
+	- vs code will reload the window so you're inside the container
+9. open a terminal through vs code
+	- this terminal is running inside the container
+10. run `cd /` and `python -m webassembliss.app` to launch the app
+11. you can access it on `127.0.0.1:5000`
+12. if you make changes to the code through this vs code window, the app will restart and have the changes
 
 ## Roadmap
 
