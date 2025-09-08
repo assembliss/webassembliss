@@ -53,7 +53,7 @@ async function submitFormData() {
     let name = document.getElementById("name").value;
     let ID = document.getElementById("unityID").value;
     let userCode = document.getElementById("userCode");
-    let projectProto = document.getElementById("projectProto");
+    let wrappedProjectProto = document.getElementById("wrappedProjectProto");
 
     // Validate that fields have been provided and are acceptable.
     if (!name) {
@@ -76,23 +76,23 @@ async function submitFormData() {
         return false;
     }
 
-    if (projectProto.files.length != 1) {
+    if (wrappedProjectProto.files.length != 1) {
         showMessage("Missing Information", "You need to provide exactly one project configuration file!");
         return false;
     }
 
-    if (!projectProto.files[0].name.endsWith(".pb2")) {
+    if (!wrappedProjectProto.files[0].name.endsWith(".pb2")) {
         showMessage("Incorrect File Type", "The project configuration file must be a .pb2 file!");
         return false;
     }
 
-    if (projectProto.files[0].size > MAX_SIZE) {
+    if (wrappedProjectProto.files[0].size > MAX_SIZE) {
         showMessage("Invalid File", "Your project configuration file is too big! Maximum allowed size if 1MB.");
         return false;
     }
 
     // Parse the WrappedProject the user uploaded to find out which compression algorithm it used.
-    const bytes = new Uint8Array(await projectProto.files[0].arrayBuffer());
+    const bytes = new Uint8Array(await wrappedProjectProto.files[0].arrayBuffer());
     const wp = WrappedProject.decode(bytes);
     const compressionAlg = CompressionAlgorithm.valuesById[wp.compressionAlg];
     console.log(`Uploaded WrappedProject proto used ${compressionAlg} to compress the ProjectConfig`)
@@ -100,7 +100,7 @@ async function submitFormData() {
     // Check if the browser can uncompress that algorithm.
     if (compressionAlg in uncompressMap) {
         // If it can, we will uncompress compressed_config into a ProjectConfig and validate it before sending to backend.
-        console.log(`Browser is able to decompress ${compressionAlg}, will validate ProjectConfig before sending data backend.`);
+        console.log(`Browser is able to decompress ${compressionAlg}, will validate ProjectConfig before sending data to backend.`);
         const pcBytes = uncompressMap[compressionAlg](wp.compressedConfig);
         const pc = ProjectConfig.decode(pcBytes);
 
