@@ -243,12 +243,9 @@ def stepped_emulation(
         console=False,
     )
 
-    # Set up emulation for single step if appropriate.
-    counter = None
-    if single_step_trace:
-        # Adds a hook to count the executed instructions.
-        counter = ExecutionCounter()
-        ql.hook_code(counter.incr)
+    # Adds a hook to count the number of executed instructions.
+    counter = ExecutionCounter()
+    ql.hook_code(counter.incr)
 
     # Redirect standard input.
     ql.os.stdin = stdin
@@ -384,13 +381,13 @@ def stepped_emulation(
         if ql.os.exit_code is not None or emulation_error:
             break
 
-    # Calculate the number of instructions executed based on the emulation type.
-    instructions_executed = (len(steps) - 1) if not single_step_trace else counter.count
+    # Get the number of instructions executed from the hooked object.
+    instructions_executed = counter.count
 
     return (
         argv,
         ql.os.exit_code,
-        instructions_executed == max_steps,
+        instructions_executed >= max_steps,
         steps,
         ql.arch.bits,
         ql.arch.endian == QL_ENDIAN.EL,
