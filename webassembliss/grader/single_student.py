@@ -140,8 +140,9 @@ def _evaluate_single_test_case(
 
     # Parse information from trace.
     timed_out = trace.reached_max_steps
-    exit_code = trace.exit_code if trace.HasField("exit_code") else None
-    ran_ok = (not timed_out) and (exit_code is not None and exit_code == 0)
+    actual_exit_code = trace.exit_code if trace.HasField("exit_code") else None
+    expected_exit_code = test.expected_exit_code if test.HasField("expected_exit_code") else 0
+    ran_ok = (not timed_out) and (actual_exit_code is not None and actual_exit_code == expected_exit_code)
     exec_count = trace.instructions_executed
     actual_out = combine_stdout(trace.steps)
     actual_err = combine_stderr(trace.steps)
@@ -161,12 +162,13 @@ def _evaluate_single_test_case(
         timed_out=timed_out,
         passed=(stdout == actual_out and ran_ok),
         hidden=test.hidden,
-        exit_code=(None if test.hidden else exit_code),
+        exit_code=(None if test.hidden else actual_exit_code),
         cl_args=([] if test.hidden else cl_args),
         stdin=("" if test.hidden else stdin),
         expected_out=("" if test.hidden else stdout),
         actual_out=("" if test.hidden else actual_out),
         actual_err=("" if test.hidden else actual_err),
+        expected_exit_code=(None if test.hidden else expected_exit_code),
     )
 
     # Add test result and execution count to test-suite list.

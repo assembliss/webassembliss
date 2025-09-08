@@ -224,12 +224,8 @@
                             <td><code>{{ results.tests[i].expected_out | replace(" ","&nbsp;") }}</code></td>
                           </tr>
                           <tr>
-                            <td>Exit Code:</td>
-                            {% if results.tests[i].executed %}
-                              <td><code>{{ results.tests[i].exit_code }}</code></td>
-                            {% else %}
-                              <td>test did not run</td>
-                            {% endif %}
+                            <td>Expected Exit Code:</td>
+                              <td><code>{{ results.tests[i].expected_exit_code }}</code></td>
                           </tr>
                           <tr>
                             <td>Error Stream:</td>
@@ -243,6 +239,14 @@
                             <td>Actual Out:</td>
                             {% if results.tests[i].executed %}
                               <td><code>{{ results.tests[i].actual_out }}</code></td>
+                            {% else %}
+                              <td>test did not run</td>
+                            {% endif %}
+                          </tr>
+                          <tr>
+                            <td>Actual Exit Code:</td>
+                            {% if results.tests[i].executed %}
+                              <td><code>{{ results.tests[i].exit_code }}</code></td>
                             {% else %}
                               <td>test did not run</td>
                             {% endif %}
