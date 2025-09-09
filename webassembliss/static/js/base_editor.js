@@ -481,20 +481,16 @@ const localFileStorage = {
             }
         }
 
-        // Wait for the editor to load so we can modify its contents.
-        // TODO: make sure this wait is long enough.
-        sleep(200).then(() => {
-            // Check if the user has the default tab stored in their workspace.
-            if (defaultTabName in this.tabs) {
-                // If they do, update its contents.
-                window.editor.setValue(this.tabs[defaultTabName]);
-            } else {
-                // If they don't, open a different tab and remove the default one.
-                let firstFilename = Object.keys(this.tabs)[0];
-                openTab(firstFilename);
-                closeTab(defaultTabName, true);
-            }
-        });
+        // Check if the user has the default tab stored in their workspace.
+        if (defaultTabName in this.tabs) {
+            // If they do, update its contents.
+            window.editor.setValue(this.tabs[defaultTabName]);
+        } else {
+            // If they don't, open a different tab and remove the default one.
+            let firstFilename = Object.keys(this.tabs)[0];
+            openTab(firstFilename);
+            closeTab(defaultTabName, true);
+        }
     },
 
     addAssembledObj(filename, contents) {
@@ -991,7 +987,7 @@ function missingHoverInformation(model, position) {
     return null;
 }
 
-function BASE_createEditor(default_code, archSyntaxFun, archHoverFun) {
+function BASE_createEditor(default_tab, default_code, archSyntaxFun, archHoverFun) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
         monaco.languages.register({ id: ARCH_ID });
@@ -1013,6 +1009,7 @@ function BASE_createEditor(default_code, archSyntaxFun, archHoverFun) {
         window.currentEditorTheme = 'vs-dark';
         window.currentFontSize = 12;
         window.decorations = editor.createDecorationsCollection([]);
+        localFileStorage.init(default_tab);
     });
 }
 

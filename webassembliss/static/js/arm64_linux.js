@@ -7,8 +7,8 @@ const qilingARM64Registers = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x
     "x26", "x27", "x28", "x29", "x30", "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate", "cpsr"];
 populateRegisterTable(qilingARM64Registers);
 
-function createEditor(default_code) {
-    BASE_createEditor(default_code, getARM64SyntaxHighlighting, getARM64HoverInfo)
+function createEditor(default_tab, default_code) {
+    BASE_createEditor(default_tab, default_code, getARM64SyntaxHighlighting, getARM64HoverInfo)
 }
 
 function startTracing(combineAllSteps) {

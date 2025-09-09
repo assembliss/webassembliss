@@ -9,8 +9,8 @@ const qilingRISCV64Registers = ["zero", "ra", "sp", "gp", "tp", "t0", "t1", "t2"
     "fs3", "fs4", "fs5", "fs6", "fs7", "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11", "pc"];
 populateRegisterTable(qilingRISCV64Registers);
 
-function createEditor(default_code) {
-    BASE_createEditor(default_code, getRISCVSyntaxHighlighting)
+function createEditor(default_tab, default_code) {
+    BASE_createEditor(default_tab, default_code, getRISCVSyntaxHighlighting)
 }
 
 function startTracing(combineAllSteps) {

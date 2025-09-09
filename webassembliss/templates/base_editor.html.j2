@@ -284,6 +284,5 @@
     <script src="{{ url_for('static', filename='js/base_editor.js') }}"></script>
     {% block archScript %}{% endblock %}
     <script src="/static/vs/loader.js"></script>
-    <script>createEditor({{ default_code }})</script>
-    <script>localFileStorage.init('{{ default_tab_name }}')</script>
+    <script>createEditor('{{ default_tab_name }}', {{ default_code }})</script>
 {% endblock %}

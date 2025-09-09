@@ -6,8 +6,8 @@ const qilingX8664Registers = ["rax", "rbx", "rcx", "rdx", "rsi", "rdi", "rbp", "
     "r10", "r11", "r12", "r13", "r14", "r15", "rip", "cs", "ss", "ds", "es", "fs", "gs", "eflags"];
 populateRegisterTable(qilingX8664Registers);
 
-function createEditor(default_code) {
-    BASE_createEditor(default_code, getX8664SyntaxHighlighting)
+function createEditor(default_tab, default_code) {
+    BASE_createEditor(default_tab, default_code, getX8664SyntaxHighlighting)
 }
 
 function startTracing(combineAllSteps) {
