@@ -38,13 +38,13 @@ def grader():
         student_name = request.form["name"]
         student_ID = request.form["unityID"]
         user_code = request.files["userCode"]
-        project_proto = request.files["projectProto"]
+        wrapped_project_proto = request.files["wrappedProjectProto"]
         # Run the grader.
         results = grade_form_submission(
             student_name=student_name,
             student_ID=student_ID,
             student_file=user_code,
-            project_proto=project_proto,
+            wrapped_project_proto=wrapped_project_proto,
         )
         # Send that data to the results page.
         return render_template(

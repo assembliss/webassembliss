@@ -29,6 +29,7 @@ message TestCase {
   repeated string cl_args = 8;
   bool hidden = 9;
   uint32 points = 10;
+  optional sint32 expected_exit_code = 11;
 }
 
 // Message with information on how to measure the source code documentation.

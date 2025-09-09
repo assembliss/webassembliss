@@ -32,6 +32,7 @@ class TestCaseResults:
     passed: bool
     hidden: bool
     exit_code: Optional[int]
+    expected_exit_code: Optional[int]
     cl_args: List[str]
     stdin: Union[str, bytes]
     expected_out: Union[str, bytes]
