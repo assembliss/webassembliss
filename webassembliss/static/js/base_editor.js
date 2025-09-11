@@ -1272,11 +1272,11 @@ function updateMemoryTable(mem_values) {
             insertMemoryAddressRow(sortedNewAddresses[newIdx], curIdx);
             curIdx++;
             newIdx++;
-        } else if (currentAddresses[curIdx] == sortedNewAddresses[newIdx]) {
+        } else if (BigInt(currentAddresses[curIdx]) == BigInt(sortedNewAddresses[newIdx])) {
             // Element already in the list, skip.
             curIdx++;
             newIdx++;
-        } else if (currentAddresses[curIdx] < sortedNewAddresses[newIdx]) {
+        } else if (BigInt(currentAddresses[curIdx]) < BigInt(sortedNewAddresses[newIdx])) {
             // New address is larger than the one in current index, skip to next position to check.
             curIdx++;
         } else {
