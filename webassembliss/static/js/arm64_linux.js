@@ -27,7 +27,7 @@ function getARM64SyntaxHighlighting() {
         instructions: [
             "ABS", "abs", "ADC", "adc", "ADCS", "adcs", "add", "ADD", "ADDG", "addg", "ADDPT", "addpt", "adds", "ADDS", "ADR", "adr", "ADRP", "adrp", "AND", "and", "ands", "ANDS", "apas", "APAS", "ASR", "asr", "asrv", "ASRV", "at", "AT",
             "AUTDA", "autda", "AUTDB", "autdb", "AUTIA", "autia", "autia171615", "AUTIA171615", "AUTIASPPC", "autiasppc", "autiasppcr", "AUTIASPPCR", "autib", "AUTIB", "AUTIB171615", "autib171615", "AUTIBSPPC", "autibsppc", "autibsppcr", "AUTIBSPPCR", "axflag", "AXFLAG",
-            "b", "B", "b.eq", "B.EQ", "b.ne", "B.NE", "b.mi", "B.MI", "b.pl", "B.PL", "b.gt", "B.GT", "b.ge", "B.GE", "b.lt", "B.LT", "b.le", "B.LE",
+            "b", "B", "b.eq", "B.EQ", "b.ne", "B.NE", "b.cs", "B.CS", "b.hs", "B.HS", "b.cc", "B.CC", "b.lo", "B.LO", "b.mi", "B.MI", "b.pl", "B.PL", "b.vs", "B.VS", "b.vc", "B.VC", "b.hi", "B.HI", "b.ls", "B.LS", "b.ge", "B.GE", "b.lt", "B.LT", "b.gt", "B.GT", "b.le", "B.LE", "b.al", "B.AL",
             "bc", "BC", "BFC", "bfc", "BFI", "bfi", "bfm", "BFM", "bfxil", "BFXIL", "bic", "BIC", "BICS", "bics", "bl", "BL", "BLR", "blr", "blraa", "BLRAA", "BR", "br", "BRAA", "braa", "BRB", "brb", "brk", "BRK", "bti", "BTI", "cas", "CAS", "CASB", "casb", "CASH", "cash",
             "CASP", "casp", "caspt", "CASPT", "cast", "CAST", "CB", "cb", "cbb", "CBB", "cbble", "CBBLE", "cbblo", "CBBLO", "CBBLS", "cbbls", "cbblt", "CBBLT", "CBGE", "cbge", "cbh", "CBH", "CBHLE", "cbhle", "CBHLO", "cbhlo", "cbhls", "CBHLS", "cbhlt", "CBHLT",
             "cbhs", "CBHS", "CBLE", "cble", "cblo", "CBLO", "cbls", "CBLS", "cblt", "CBLT", "cbnz", "CBNZ", "cbz", "CBZ", "ccmn", "CCMN", "ccmp", "CCMP", "cfinv", "CFINV", "cfp", "CFP", "chkfeat", "CHKFEAT", "CINC", "cinc", "CINV", "cinv", "clrbhb", "CLRBHB",
@@ -289,34 +289,79 @@ const ARM64HoverInfo = {
         "action": "branch if not equal",
     },
 
+    "b.cs": {
+        "format": "b.cs label",
+        "action": "branch if carry set (identical to b.hs)",
+    },
+
+    "b.hs": {
+        "format": "b.hs label",
+        "action": "branch if unsigned higher or same (identical to b.cs)",
+    },
+
+    "b.cc": {
+        "format": "b.cc label",
+        "action": "branch if carry clear (identical to b.lo)",
+    },
+
+    "b.lo": {
+        "format": "b.lo label",
+        "action": "branch if unsigned lower (identical to b.cc)",
+    },
+
     "b.mi": {
         "format": "b.mi label",
-        "action": "branch if negative",
+        "action": "branch if minus or negative result",
     },
 
     "b.pl": {
         "format": "b.pl label",
-        "action": "branch if non-negative",
+        "action": "branch if positive or zero result",
     },
 
-    "b.gt": {
-        "format": "b.gt label",
-        "action": "branch if greater than",
+    "b.vs": {
+        "format": "b.vs label",
+        "action": "branch if overflow",
+    },
+
+    "b.vc": {
+        "format": "b.vc label",
+        "action": "branch if no overflow",
+    },
+
+    "b.hi": {
+        "format": "b.hi label",
+        "action": "branch if unsigned higher",
+    },
+
+    "b.ls": {
+        "format": "b.ls label",
+        "action": "branch if unsigned lower or same",
     },
 
     "b.ge": {
         "format": "b.ge label",
-        "action": "branch if greater or equal",
+        "action": "branch if signed greater than or equal",
     },
 
     "b.lt": {
-        "format": "b.lt label branch",
-        "action": "if less than",
+        "format": "b.lt label",
+        "action": "branch if signed less than",
+    },
+
+    "b.gt": {
+        "format": "b.gt label",
+        "action": "branch if signed greater than",
     },
 
     "b.le": {
-        "format": "b.le label branch",
-        "action": "if less or equal",
+        "format": "b.le label",
+        "action": "branch if signed less than or equal",
+    },
+
+    "b.al": {
+        "format": "b.al label",
+        "action": "branch always (identical to b)",
     },
 
     "bl": {
