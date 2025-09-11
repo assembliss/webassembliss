@@ -1272,7 +1272,7 @@ function updateMemoryTable(mem_values) {
             insertMemoryAddressRow(sortedNewAddresses[newIdx], curIdx);
             curIdx++;
             newIdx++;
-        } else if (BigInt(currentAddresses[curIdx]) == BigInt(sortedNewAddresses[newIdx])) {
+        } else if (currentAddresses[curIdx] == sortedNewAddresses[newIdx]) {
             // Element already in the list, skip.
             curIdx++;
             newIdx++;
