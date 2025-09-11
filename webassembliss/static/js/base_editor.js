@@ -1913,6 +1913,7 @@ function jumpToTracingStep() {
 }
 
 function intToHexBytes(value, bytesToPad, byteSep) {
+    value = value ? value : 0; // replace null values with 0
     let hexValue = value.toString(16);
 
     while (hexValue.length < bytesToPad * 2) {
