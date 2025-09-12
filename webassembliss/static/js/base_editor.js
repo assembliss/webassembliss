@@ -987,6 +987,24 @@ function missingHoverInformation(model, position) {
     return null;
 }
 
+function autoSave() {
+    // Shows autosaving tag.
+    toggleAutoSaveTag();
+    // Saves contents of file.
+    localFileStorage.saveCurrentTab();
+    // Hides autosaving tag after 0.5s.
+    setTimeout(toggleAutoSaveTag, 500);
+}
+
+function toggleAutoSaveTag() {
+    let tag = document.getElementById("autoSaveTag");
+    if (tag.hasAttribute("hidden")) {
+        tag.removeAttribute("hidden");
+    } else {
+        tag.setAttribute("hidden", "hidden");
+    }
+}
+
 function BASE_createEditor(default_tab, default_code, archSyntaxFun, archHoverFun) {
     require.config({ paths: { vs: '/static/vs' } });
     require(['vs/editor/editor.main'], function () {
@@ -1009,7 +1027,17 @@ function BASE_createEditor(default_tab, default_code, archSyntaxFun, archHoverFu
         window.currentEditorTheme = 'vs-dark';
         window.currentFontSize = 12;
         window.decorations = editor.createDecorationsCollection([]);
+        // Set up tabs on editor.
         localFileStorage.init(default_tab);
+        // Turn on autosave to save current tab every 5s.
+        setInterval(autoSave, 5000);
+        // Show a warning message reminding the user to save their code often.
+        showMessage(
+            "Remember to save your work!",
+            "This editor will save the active file in your browser storage every 5s, when you run/trace your code, and when you switch files.\n\n" +
+            "The server does *not* store any files. If you delete them on your browser or clear data/cookies for the website, your files will be lost forever. We cannot help you recover them.\n\n" +
+            "*Make sure to save/download copies of your code frequently!*"
+        );
     });
 }
 

@@ -56,11 +56,12 @@
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="#" onclick="switchFontSize();return false;"><i class="fa-solid fa-text-height"></i> Switch Font Size</a></li>
                 </ul>
-            </div>            
+            </div>
             <div id="tabsDiv" style="display: flex">
                 <input class="activeTabBtn" type="button" id="tab{{ default_tab_name }}Btn" value="{{ default_tab_name }}" onclick="openTab('{{ default_tab_name }}')"/>
                 <input class="activeTabBtnX" type="button" id="tab{{ default_tab_name }}BtnX" value="x" onclick="closeTab('{{ default_tab_name }}')" disabled="true" hidden="hidden"/>
                 <input class="tabBtn" type="button" id="addTabBtn" value="+" onclick="tabs.addTab()"/>
+                <span id="autoSaveTag" class="badge bg-success-subtle border border-success-subtle text-success-emphasis" hidden><i class="fa-solid fa-spinner"></i> autosaving</span>
             </div>
 
             <div id="monaco-container" style="width:720px;height:500px;border:1px solid grey;border-top: 0px"></div>
