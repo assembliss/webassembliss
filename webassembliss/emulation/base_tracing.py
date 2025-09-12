@@ -160,7 +160,7 @@ def get_memory_chunks(
 
 def find_mem_delta(
     original_mem: Dict[int, bytearray], modified_mem: Dict[int, bytearray]
-) -> Dict[int, int]:
+) -> Dict[int, bytearray]:
     """Compare the chunks from the original memory with the modified one so we can store only the changes."""
     og_chunks = get_memory_chunks(original_mem)
     mod_chunks = get_memory_chunks(modified_mem)
@@ -168,7 +168,7 @@ def find_mem_delta(
     delta_chunks = {
         addr: val for addr, val in mod_chunks.items() if val != og_chunks.get(addr, 0)
     }
-    delta_chunks.update({addr: 0 for addr in og_chunks if addr not in mod_chunks})
+    delta_chunks.update({addr: bytearray([0]) for addr in og_chunks if addr not in mod_chunks})
 
     return delta_chunks
 
