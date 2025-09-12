@@ -989,20 +989,20 @@ function missingHoverInformation(model, position) {
 
 function autoSave() {
     // Shows autosaving tag.
-    toggleAutoSaveTag();
+    showAutoSaveTag(true);
     // Saves contents of file.
     localFileStorage.saveCurrentTab();
     // Hides autosaving tag after 0.5s.
-    setTimeout(toggleAutoSaveTag, 500);
+    setTimeout(showAutoSaveTag, 500, false);
 }
 
-function toggleAutoSaveTag() {
+function showAutoSaveTag(show) {
     if (!window.showAutosaveTag) {
         // If we don't have to show the tag, exit the function.
         return;
     }
     let tag = document.getElementById("autoSaveTag");
-    if (tag.hasAttribute("hidden")) {
+    if (show) {
         tag.removeAttribute("hidden");
     } else {
         tag.setAttribute("hidden", "hidden");
@@ -1010,6 +1010,8 @@ function toggleAutoSaveTag() {
 }
 
 function toggleAutosaveNotification() {
+    // Hide the autosave tag.
+    showAutoSaveTag(false);
     // Flip the value that controls whether the autosave tag is shown.
     window.showAutosaveTag = !window.showAutosaveTag;
 }
