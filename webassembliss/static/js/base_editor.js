@@ -997,12 +997,21 @@ function autoSave() {
 }
 
 function toggleAutoSaveTag() {
+    if (!window.showAutosaveTag) {
+        // If we don't have to show the tag, exit the function.
+        return;
+    }
     let tag = document.getElementById("autoSaveTag");
     if (tag.hasAttribute("hidden")) {
         tag.removeAttribute("hidden");
     } else {
         tag.setAttribute("hidden", "hidden");
     }
+}
+
+function toggleAutosaveNotification() {
+    // Flip the value that controls whether the autosave tag is shown.
+    window.showAutosaveTag = !window.showAutosaveTag;
 }
 
 function BASE_createEditor(default_tab, default_code, archSyntaxFun, archHoverFun) {
@@ -1031,6 +1040,7 @@ function BASE_createEditor(default_tab, default_code, archSyntaxFun, archHoverFu
         localFileStorage.init(default_tab);
         // Turn on autosave to save current tab every 5s.
         setInterval(autoSave, 5000);
+        window.showAutosaveTag = true;
         // Show a warning message reminding the user to save their code often.
         showMessage(
             "Remember to save your work!",
