@@ -4,7 +4,7 @@ const ARCH_NUM_BITS = 64;
 // Add registers we want to display to the register table.
 const qilingARM64Registers = ["x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11",
     "x12", "x13", "x14", "x15", "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25",
-    "x26", "x27", "x28", "x29", "x30", "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate", "cpsr", "xzr"];
+    "x26", "x27", "x28", "x29", "x30", "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate", "cpsr"];
 populateRegisterTable(qilingARM64Registers);
 
 function createEditor(default_tab, default_code) {
@@ -63,7 +63,7 @@ function getARM64SyntaxHighlighting() {
         registers: [
             "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
             "x16", "x17", "x18", "x19", "x20", "x21", "x22", "x23", "x24", "x25", "x26", "x27", "x28", "x29", "x30",
-            "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate",
+            "sp", "pc", "lr", "cpacr_el1", "tpidr_el0", "pstate", "xzr",
             "b0", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12", "b13", "b14", "b15",
             "b16", "b17", "b18", "b19", "b20", "b21", "b22", "b23", "b24", "b25", "b26", "b27", "b28", "b29", "b30", "b31",
             "d0", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15",
