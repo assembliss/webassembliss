@@ -58,7 +58,7 @@ def validate_submissions(
     logger.info("Validation start.")
 
     # Create headers.
-    out = "count,path,name,id,timestamp,project_match,checksum_match,reported_score,actual_score,score_match,any_invalid\n"
+    out = "count,path,name,id,timestamp,project_match,checksum_match,instr_count,agg_exec_count,reported_score,actual_score,score_match,any_invalid\n"
 
     # Check each submission individually.
     for i, s_path in enumerate(submissions):
@@ -83,6 +83,9 @@ def validate_submissions(
         cm = validate_checksum(s)
         out += f"{cm},"
         logger.info(f"Submission checksum matched: {cm}")
+
+        # Add the efficiency information.
+        out += f"{s.instr_count},{s.agg_exec_count},"
 
         # Regrade submission if the checksum_only flag hasn't been passed.
         if checksum_only:
