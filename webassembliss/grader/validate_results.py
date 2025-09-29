@@ -28,6 +28,7 @@ from ..pyprotos.project_config_pb2 import WrappedProject
 from ..utils import b64_to_bytes
 from .single_student import grade_student
 from .utils import SubmissionResults, create_checksum, load_wrapped_project
+from werkzeug.datastructures import FileStorage
 
 # Get a logger to export execution information to the user.
 logger = logging.getLogger(__name__)
@@ -246,6 +247,51 @@ def main(
         unzip_dir.cleanup()
 
     logger.info("All done.")
+
+
+def validate_form_submission(
+    wrapped_project_proto: FileStorage,
+    individual_submission_files: List[FileStorage],
+    zipped_submission_files: List[FileStorage],
+) -> str:
+    """Validate the checksum of all given submission files agains the provided project config."""
+    # TODO: validate all the files that are being read; catch exception and show a message.
+
+    # Create tempdir to perform validation.
+    with TemporaryDirectory() as td:
+        # Create reader for the project config.
+        config_proto = BufferedReader(wrapped_project_proto)
+
+        # Create individual submission files inside tempdir.
+        single_submission_paths = []
+        for isf in individual_submission_files:
+            single_submission_paths.append(Path(join(td, isf.filename)))
+            single_submission_paths[-1].write_bytes(isf.read())
+
+        # Create zipped submission files inside tempdir.
+        zip_submission_paths = []
+        for zsf in zipped_submission_files:
+            zip_submission_paths.append(Path(join(td, zsf.filename)))
+            zip_submission_paths[-1].write_bytes(zsf.read())
+
+        # Create result file.
+        result_path = Path(join(td, "validation_result.csv"))
+        result_path.touch()
+
+        # Run validation workflow.
+        main(
+            project_config=config_proto,
+            output_file=result_path.open("w"),
+            submissions=single_submission_paths,
+            zipped_submissions=zip_submission_paths,
+            checksum_only=True,
+            use_tempdir=False,
+            assert_unique_paths=True,
+        )
+
+        # Read and return the CSV results.
+        results = result_path.read_text()
+        return results
 
 
 if __name__ == "__main__":

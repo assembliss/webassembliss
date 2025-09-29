@@ -1,10 +1,11 @@
 from io import BytesIO
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import Flask, abort, render_template, request, send_file
+from flask import Flask, abort, render_template, request, send_file, make_response
 
 from .emulation import ARCH_CONFIG_MAP
 from .grader.single_student import grade_form_submission
+from .grader.validate_results import validate_form_submission
 from .utils import b64_to_bytes, compare_URLs_without_scheme
 
 app = Flask(__name__)
@@ -54,6 +55,40 @@ def grader():
 
     # If not POST, show the submission form.
     return render_template("grader.html.j2")
+
+
+@app.route("/grader-check", methods=["POST", "GET"])
+def grader_check():
+    if request.method == "POST":
+        # If POST, make sure we got here from the validation form.
+        if not compare_URLs_without_scheme(request.referrer, request.url):
+            abort(403)
+
+        # Validate the files with only checksum confirmation.
+        csv_out = validate_form_submission(
+            wrapped_project_proto=request.files["wrappedProjectProto"],
+            individual_submission_files=[
+                f
+                for f in request.files.getlist("submissions")
+                if f.filename.endswith(".json")
+            ],
+            zipped_submission_files=[
+                f
+                for f in request.files.getlist("submissions")
+                if f.filename.endswith(".zip")
+            ],
+        )
+
+        # Create CSV result with validation results.
+        output = make_response(csv_out)
+        output.headers["Content-Disposition"] = (
+            f"attachment; filename={request.files['wrappedProjectProto'].filename}_validation.csv"
+        )
+        output.headers["Content-type"] = "text/csv"
+        return output
+
+    # If not POST, show the validation form.
+    return render_template("grader_check.html.j2")
 
 
 @app.route("/project-config-builder/")

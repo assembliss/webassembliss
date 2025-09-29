@@ -168,7 +168,9 @@ def find_mem_delta(
     delta_chunks = {
         addr: val for addr, val in mod_chunks.items() if val != og_chunks.get(addr, 0)
     }
-    delta_chunks.update({addr: bytearray([0]) for addr in og_chunks if addr not in mod_chunks})
+    delta_chunks.update(
+        {addr: bytearray([0]) for addr in og_chunks if addr not in mod_chunks}
+    )
 
     return delta_chunks
 

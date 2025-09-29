@@ -1,0 +1,36 @@
+{% extends "base.html.j2" %}
+{% block title %} - Grader Check{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3">
+      <h1 class="text-center text-body-emphasis">Grader Check</h1>
+      <form id="submission" class="row gy-2 gx-3 align-items-center" action="#" method="POST"
+          enctype=multipart/form-data>
+        <legend class="text-center">You can use this form to validate that <code>results.json</code> files are valid.</legend>
+        <legend class="text-center">Note: this form validates the checksums of all files, it does *not* regrade submissions!</legend>
+        <div class="mb-3">
+          <label for="wrappedProjectProto" class="form-label">Project Config File</label>
+          <input type="file" class="form-control" id="wrappedProjectProto" name="wrappedProjectProto" aria-describedby="wrappedProjectProto" required>
+          <div id="wrappedProjectProtoHelp" class="form-text">This is the project configuration file in .pb2 format.</div>
+          <div class="invalid-feedback">
+            Please choose a file containing the project configuration; this must have a .pb2 extension.
+          </div>
+        </div>
+        <div class="mb-3">
+          <label for="submissions" class="form-label">Submission Files</label>
+          <input type="file" class="form-control" id="submissions" name="submissions" multiple required>
+          <div id="submissionsHelp" class="form-text">You can upload multiple .json and/or .zip files containing grader results.</div>
+          <div class="invalid-feedback">
+            Please choose a file containing your source code.
+          </div>
+        </div>
+        <div class="mb3">
+          <button type="submit" class="btn btn-danger">Submit</button>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/grader_check.js') }}"></script>
+{% endblock %}
