@@ -93,7 +93,13 @@ async function submitFormData() {
 
     // Parse the WrappedProject the user uploaded to find out which compression algorithm it used.
     const bytes = new Uint8Array(await wrappedProjectProto.files[0].arrayBuffer());
-    const wp = WrappedProject.decode(bytes);
+    let wp = null;
+    try {
+        wp = await WrappedProject.decode(bytes);
+    } catch (e) {
+        showMessage("Invalid Project Configuration", `Unable to load '${wrappedProjectProto.files[0].name}'.`);
+        return false;
+    }
     const compressionAlg = CompressionAlgorithm.valuesById[wp.compressionAlg];
     console.log(`Uploaded WrappedProject proto used ${compressionAlg} to compress the ProjectConfig`)
 

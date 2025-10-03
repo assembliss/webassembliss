@@ -1,10 +1,11 @@
 from io import BytesIO
 
 import rocher.flask  # type: ignore[import-untyped]
-from flask import Flask, abort, render_template, request, send_file, make_response
+from flask import Flask, abort, make_response, render_template, request, send_file
 
 from .emulation import ARCH_CONFIG_MAP
 from .grader.single_student import grade_form_submission
+from .grader.utils import GraderError
 from .grader.validate_results import validate_form_submission
 from .utils import b64_to_bytes, compare_URLs_without_scheme
 
@@ -40,18 +41,26 @@ def grader():
         student_ID = request.form["unityID"]
         user_code = request.files["userCode"]
         wrapped_project_proto = request.files["wrappedProjectProto"]
-        # Run the grader.
-        results = grade_form_submission(
-            student_name=student_name,
-            student_ID=student_ID,
-            student_file=user_code,
-            wrapped_project_proto=wrapped_project_proto,
-        )
-        # Send that data to the results page.
-        return render_template(
-            "grader_results.html.j2",
-            results=results,
-        )
+        try:
+            # Run the grader.
+            results = grade_form_submission(
+                student_name=student_name,
+                student_ID=student_ID,
+                student_file=user_code,
+                wrapped_project_proto=wrapped_project_proto,
+            )
+            # Display grader results through the results page.
+            return render_template(
+                "grader_results.html.j2",
+                results=results,
+            )
+        except GraderError as ge:
+            # If any errors while grading, show them on the error page.
+            return render_template(
+                "grader_error.html.j2",
+                error_code=ge.error_code,
+                error_message=ge.message,
+            )
 
     # If not POST, show the submission form.
     return render_template("grader.html.j2")

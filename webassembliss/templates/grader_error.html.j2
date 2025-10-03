@@ -1,0 +1,12 @@
+{% extends "base.html.j2" %}
+{% block title %} - Grader Error{% endblock %}
+{% block content %}
+  <div class="container">
+    <div class="p-5 bg-body-tertiary rounded-3 text-center">
+      <h1 class="display-4">Grader Error</h1>
+      <p class="col-lg-11 mx-auto fs-4">
+        Error <code>#{{ error_code }}</code>: {{ error_message | replace("\n","<br/>") }}
+      </p>
+    </div>
+  </div>
+{% endblock %}

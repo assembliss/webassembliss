@@ -86,9 +86,9 @@ def create_checksum(buff: bytes) -> bytes:
 def validate_project_config(wp: WrappedProject) -> None:
     """Validate ProjectConfig from given WrappedProject."""
     # Ensure the checksum from the wrapped project matches the project config.
-    # TODO: create custom error for grader pipeline.
     actual_check_sum = create_checksum(wp.compressed_config)
-    assert compare_digest(wp.checksum, actual_check_sum)
+    if not compare_digest(wp.checksum, actual_check_sum):
+        raise GraderError(3, "Invalid checksum for project config.")
     # TODO: have a valid list of project configs we accept.
     # TODO: validate that MeasureSourceDocumentation exists iff weights["documentation"] != 0
     # TODO: validate that MeasureSourceEfficiency exists iff weights["source_efficiency"] != 0
@@ -194,3 +194,12 @@ COMPRESSION_MAP = {
     CompressionAlgorithm.BZ2: bz2_decompress,
     CompressionAlgorithm.GZIP: gzip_decompress,
 }
+
+
+class GraderError(Exception):
+    """Exception raised for errors caught in the grader workflow."""
+
+    def __init__(self, error_code, message):
+        self.message = message
+        self.error_code = error_code
+        super().__init__(message)

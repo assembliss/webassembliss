@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
 
 from google.protobuf.json_format import MessageToDict
+from google.protobuf.message import DecodeError
 from werkzeug.datastructures import FileStorage
 
 from ..emulation import ARCH_CONFIG_MAP, ArchConfig
@@ -22,6 +23,7 @@ from ..pyprotos.trace_info_pb2 import TraceStep
 from ..utils import b64_to_bytes, bytes_to_b64
 from .utils import (
     EXECUTION_AGG_MAP,
+    GraderError,
     GraderResults,
     SubmissionResults,
     TestCaseResults,
@@ -556,9 +558,24 @@ def grade_form_submission(
     wrapped_project_proto: FileStorage,
 ) -> GraderResults:
     """Process files from the submission form, run the grader, and return a dict result."""
-    # TODO: validate all the files that are being read; catch exception and show a message.
-    student_files = {student_file.filename: student_file.read().decode()}
-    wrapped_config = load_wrapped_project(wrapped_project_proto.read())
+    # Read source file that was submitted.
+    try:
+        student_files = {student_file.filename: student_file.read().decode()}
+    except UnicodeDecodeError:
+        raise GraderError(
+            error_code=1,
+            message=f"Unable to read '{student_file.filename}' source file.",
+        )
+    # Read project config that was submitted.
+    try:
+        wrapped_config = load_wrapped_project(wrapped_project_proto.read())
+    except DecodeError:
+        raise GraderError(
+            error_code=2,
+            message=f"Unable to load '{wrapped_project_proto.filename}' project config.",
+        )
+
+    # Grade submitted source with submitted config.
     results = grade_student(
         wrapped_config=wrapped_config,
         student_files=student_files,  # type: ignore[arg-type]
