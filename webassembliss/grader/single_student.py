@@ -156,9 +156,12 @@ def _evaluate_single_test_case(
 
     # Decode i/o if needed.
     if is_text:
-        actual_out = repr(actual_out.decode())
         stdout = repr(stdout)
         stdin = repr(stdin)
+        try:
+            actual_out = repr(actual_out.decode())
+        except UnicodeDecodeError:
+            actual_out = repr("Unable to decode your program's output.")
 
     # Create test result object to hold evaluation.
     test_result = TestCaseResults(
