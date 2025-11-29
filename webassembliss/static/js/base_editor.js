@@ -4,7 +4,6 @@ const ERROR_SYMBOL = "❌";
 window.decorations = null;
 window.cl_args = "";
 
-
 var coll = document.getElementsByClassName("collapsible");
 var i;
 for (i = 0; i < coll.length; i++) {
@@ -1501,6 +1500,66 @@ function setCLArgs() {
     }
 }
 
+var initial_registers = null;
+var initial_memory = null;
+
+/**
+ * Function that sets the initial values for registers and memory based on what the user enters when prompted
+ * If a value was already entered earlier, then that is retained as the default unless the user changes it. 
+ * This method is assigning values to global variables that can be used by other methods
+ */
+function setInitialState() {
+    let defaultRegisterValue = '{"x0": 10, "x1": 20}';
+    if (initial_registers) {
+        defaultRegisterValue = JSON.stringify(initial_registers);
+    }
+    let registerInput = prompt("Set initial register values (JSON format):", defaultRegisterValue);
+    if (registerInput !== null && registerInput.trim()) {
+        try {
+            initial_registers = JSON.parse(registerInput);
+        }
+        catch (e) {
+            alert("Invalid JSON format for register values.");
+            return;
+        }
+    }
+    else if (registerInput !== null) {
+        initial_registers = null;
+    }
+
+    let defaultMemoryValue = '{"4128768": [255]}';
+    if (initial_memory) {
+        defaultMemoryValue = JSON.stringify(initial_memory);
+    }
+
+    let memoryInput = prompt("Set initial memory values (JSON format):", defaultMemoryValue);
+
+    if (memoryInput !== null && memoryInput.trim()) {
+        try {
+            initial_memory = JSON.parse(memoryInput);
+        }
+        catch (e) {
+            alert("Invalid JSON format for memory values.");
+            return;
+        }
+    }
+    else if (memoryInput !== null) {
+        initial_memory = null;
+    }
+
+    let msg = "Initial state saved!\n";
+    if (initial_registers) {
+        msg += "Registers: " + JSON.stringify(initial_registers) + "\n";
+    }
+    if (initial_memory) {
+        msg += "Memory: " + JSON.stringify(initial_memory) + "\n";
+    }
+    if (!initial_registers && !initial_memory) {
+        msg = "Initial state cleared.";
+    }
+    alert(msg);
+}
+
 function getSource() {
     return editor.getValue();;
 }
@@ -1634,6 +1693,7 @@ function BASE_startTracing(combineAllSteps) {
         headers: {
             'Content-Type': 'application/json',
         },
+        //Added the initial_register_values and initial_memory_values fields to the request body
         body: JSON.stringify({
             arch: ARCH_ID,
             source_files: localFileStorage.tabs,
@@ -1643,6 +1703,8 @@ function BASE_startTracing(combineAllSteps) {
             user_input: user_input,
             cl_args: window.cl_args,
             single_step: combineAllSteps ? true : false,
+            initial_register_values: getInitialRegisters(), 
+            initial_memory_values: getInitialMemory()
         }),
     }).then(response => response.arrayBuffer())
         .then(data => {
@@ -1768,6 +1830,20 @@ function exitCodeToEmoji(exitCode) {
         return WAITING_SYMBOL;
     }
     return getNumAsEmojis(exitCode);
+}
+
+/**
+ * This function gets the initial_registers value that was set by setInitialState
+ */
+function getInitialRegisters() {
+    return initial_registers;
+}
+
+/**
+ * This function gets the initial_memory value that was set by setInitialState
+ */
+function getInitialMemory() {
+    return initial_memory;
 }
 
 function advanceOneTraceStep() {

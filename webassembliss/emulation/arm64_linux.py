@@ -61,6 +61,8 @@ def trace(
     cl_args: str = "",
     registers: Optional[List[str]] = None,
     count_user_written_instructions: bool = True,
+    initial_register_values: Optional[Dict[str, int]] = None,
+    initial_memory_values: Optional[Dict[int, bytes]] = None,
 ) -> ExecutionTrace:
     # Create default mutable values if needed.
     if object_files is None:
@@ -97,4 +99,6 @@ def trace(
         single_step_trace=single_step_trace,
         step_over_external_steps=combine_external_steps,
         count_user_written_instructions=count_user_written_instructions,
+        initial_register_values=initial_register_values,
+        initial_memory_values=initial_memory_values
     )
