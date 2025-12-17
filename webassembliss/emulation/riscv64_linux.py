@@ -33,6 +33,8 @@ def trace(
     bin_name: str = "usrCode.exe",
     cl_args: str = "",
     registers: Optional[List[str]] = None,
+    initial_registers_values: Optional[Dict[str, int]] = None,
+    initial_memory_values: Optional[Dict[int, bytes]] = None,
     count_user_written_instructions: bool = True,
 ) -> ExecutionTrace:
     # Create default mutable values if needed.
@@ -68,5 +70,7 @@ def trace(
         max_trace_steps=max_trace_steps,
         single_step_trace=single_step_trace,
         step_over_external_steps=combine_external_steps,
+        initial_registers_values=initial_registers_values,
+        initial_memory_values=initial_memory_values,
         count_user_written_instructions=count_user_written_instructions,
     )
