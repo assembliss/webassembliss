@@ -3,7 +3,7 @@
 # Add the grader directory to the path so we can load the proto.
 import sys
 
-sys.path.insert(1, "/webassembliss/pyprotos")
+sys.path.insert(1, "../../pyprotos")
 
 from gzip import compress
 from hashlib import sha256
