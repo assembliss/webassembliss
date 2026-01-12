@@ -1,6 +1,7 @@
 from io import BytesIO
 
 import rocher.flask  # type: ignore[import-untyped]
+from datetime import datetime
 from flask import Flask, abort, make_response, render_template, request, send_file
 
 from .emulation import ARCH_CONFIG_MAP
@@ -167,6 +168,11 @@ def code_trace():
         BytesIO(emulation_trace.SerializeToString()),
         mimetype="application/x-protobuf",
     )
+
+
+@app.context_processor
+def inject_now():
+    return {"now": datetime.utcnow()}
 
 
 if __name__ == "__main__":
