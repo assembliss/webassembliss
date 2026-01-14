@@ -146,6 +146,28 @@ def code_trace():
             f"Invalid architecture config in JSON data; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
+    
+    # Get and convert initial_memory_values from the request
+    initial_memory_raw = request.json.get("initial_memory_values")
+    initial_memory_values = None
+    if initial_memory_raw:
+        #Convert initial memory values from JSON format to bytes for the Qiling emulator
+        initial_memory_values = {}
+        for addr_str, value in initial_memory_raw.items():
+            # Convert address string to integer
+            addr_int = int(addr_str) 
+            if isinstance(value, list):
+                # Convert list of integers to bytes
+                initial_memory_values[addr_int] = bytes(value)
+            elif isinstance(value, int):
+                # Convert single integer to bytes
+                initial_memory_values[addr_int] = bytes([value])
+            elif isinstance(value, str):
+                # Encode string to UTF-8 bytes
+                initial_memory_values[addr_int] = value.encode()
+            else:
+                # Unknown type
+                initial_memory_values[addr_int] = value
 
     emulation_trace = arch_info.trace(
         single_step_trace=request.json["single_step"],
@@ -162,6 +184,8 @@ def code_trace():
         stdin=request.json["user_input"].encode(),
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
+        initial_register_values=request.json.get("initial_register_values"),
+        initial_memory_values=initial_memory_values,
     )
 
     return send_file(
