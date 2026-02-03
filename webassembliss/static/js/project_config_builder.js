@@ -461,6 +461,7 @@ async function submitFormData() {
         tests: testCases,
         stopOnFirstTestFail: document.getElementById("tests-stop-on-fail").checked,
         mustPassAllTests: document.getElementById("must-pass-all-tests").checked,
+        mustPassAccuracyForEfficiency: document.getElementById("must-pass-accuracy-for-efficiency").checked,
         docs: docs_grading,
         sourceEff: source_eff,
         execEff: exec_eff,
