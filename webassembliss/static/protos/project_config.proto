@@ -96,6 +96,7 @@ message ProjectConfig {
   map<string, uint32> weights = 14;
   map<string, string> extra_txt_files = 15;
   map<string, bytes> extra_bin_files = 16;
+  bool must_pass_accuracy_for_efficiency = 17;
 }
 
 // Define what compression algorithm was used to compress the project config message.

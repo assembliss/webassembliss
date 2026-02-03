@@ -64,6 +64,7 @@ class SubmissionResults:
 class GraderResults:
     submission: SubmissionResults
     must_pass_all_tests: bool
+    must_pass_accuracy_for_efficiency: bool
     assembled: bool = False
     linked: bool = False
     errors: str = ""

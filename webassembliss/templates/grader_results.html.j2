@@ -27,7 +27,7 @@
                 <li class="list-group-item"><strong>Your code assembled:</strong> {{ results.assembled }}</li>
                 <li class="list-group-item"><strong>Your code linked:</strong> {{ results.linked }}</li>
                 <li class="list-group-item"><strong>Error messages:</strong> "{{ results.errors }}"</li>
-                <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                <li class="list-group-item"><strong>Must pass all test cases for a non-zero total grade:</strong> {{ results.must_pass_all_tests }}</li>
               </ul>
             </div>
           </div>
@@ -42,7 +42,6 @@
             <div id="accuracyPanel" class="accordion-collapse collapse">
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
                   <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.accuracy * 100) }}%</li>
                   <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.accuracy * 100) }}%</li>
                   <li class="list-group-item"><strong>Total test points available:</strong> {{ results.submission.max_test_points }}</li>
@@ -60,7 +59,6 @@
             <div id="docsPanel" class="accordion-collapse collapse">
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
                   <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.documentation * 100) }}%</li>
                   <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.documentation * 100) }}</li>
                   <li class="list-group-item"><strong>The documentation score is split into two equally weighted parts.</strong></li>
@@ -120,7 +118,7 @@
             <div id="srcEffPanel" class="accordion-collapse collapse">
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero efficiency score:</strong> {{ results.must_pass_accuracy_for_efficiency }}</li>
                   <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.source_efficiency * 100) }}%</li>
                   <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.source_efficiency * 100) }}%</li>
                   <li class="list-group-item"><strong>Instructions written:</strong> {{ results.submission.instr_count }}</li>
@@ -152,7 +150,7 @@
             <div id="exeEffPanel" class="accordion-collapse collapse">
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
-                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero grade:</strong> {{ results.must_pass_all_tests }}</li>
+                  <li class="list-group-item"><strong>Must pass all test cases for a non-zero efficiency score:</strong> {{ results.must_pass_accuracy_for_efficiency }}</li>
                   <li class="list-group-item"><strong>Your score on this category:</strong> {{ "%.2f"| format(results.scores.exec_efficiency * 100) }}%</li>
                   <li class="list-group-item"><strong>Weight of this category:</strong> {{ "%.2f"| format(results.weights.exec_efficiency * 100) }}%</li>
                   <li class="list-group-item"><strong>Aggregation method:</strong> {{ results.exec_agg_method }}</li>
