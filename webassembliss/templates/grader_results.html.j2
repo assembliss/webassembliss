@@ -36,7 +36,7 @@
           <div class="accordion-item">      
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#accuracyPanel" aria-expanded="false" aria-controls="accuracyPanel">
-                Accuracy
+                Accuracy → {{ results.scores.accuracy * results.weights.accuracy * 100 }} out of {{ results.weights.accuracy * 100 }}
               </button>
             </h2>
             <div id="accuracyPanel" class="accordion-collapse collapse">
@@ -53,7 +53,7 @@
           <div class="accordion-item">      
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#docsPanel" aria-expanded="false" aria-controls="docsPanel">
-                Documentation
+                Documentation → {{ results.scores.documentation * results.weights.documentation * 100 }} out of {{ results.weights.documentation * 100 }}
               </button>
             </h2>
             <div id="docsPanel" class="accordion-collapse collapse">
@@ -112,7 +112,7 @@
           <div class="accordion-item">      
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#srcEffPanel" aria-expanded="false" aria-controls="srcEffPanel">
-                Source Efficiency
+                Source Efficiency → {{ results.scores.source_efficiency * results.weights.source_efficiency * 100 }} out of {{ results.weights.source_efficiency * 100 }}
               </button>
             </h2>
             <div id="srcEffPanel" class="accordion-collapse collapse">
@@ -144,7 +144,7 @@
           <div class="accordion-item">      
             <h2 class="accordion-header">
               <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#exeEffPanel" aria-expanded="false" aria-controls="exeEffPanel">
-                Execution Efficiency
+                Execution Efficiency → {{ results.scores.exec_efficiency * results.weights.exec_efficiency * 100 }} out of {{ results.weights.exec_efficiency * 100 }}
               </button>
             </h2>
             <div id="exeEffPanel" class="accordion-collapse collapse">
