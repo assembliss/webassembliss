@@ -4,9 +4,10 @@ from difflib import HtmlDiff
 from gzip import decompress as gzip_decompress
 from hashlib import sha256
 from hmac import compare_digest
-from os import PathLike
+from os import PathLike, getenv
 from os.path import join
 from typing import Callable, Dict, List, Optional, Tuple, Union
+
 
 from dataclasses_json import dataclass_json
 
@@ -20,6 +21,8 @@ from ..pyprotos.project_config_pb2 import (
     WrappedProject,
 )
 from ..utils import create_bin_file, create_text_file
+
+GRADER_THREADS = int(getenv("WEBASSEMBLISS_GRADER_THREADS", "2"))
 
 
 @dataclass_json
