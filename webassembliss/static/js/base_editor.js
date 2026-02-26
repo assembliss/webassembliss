@@ -20,8 +20,11 @@ for (i = 0; i < coll.length; i++) {
 }
 
 // Initialize tooltips.
-const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
-const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+function initializeTooltips() {
+    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+}
+initializeTooltips();
 
 document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -1153,44 +1156,45 @@ function toggleRowDisplay(rowID, type) {
     }
 }
 
-function addRegisterAddressLink(regName, regValue) {
-  // Add an event listener tying the regName and regValue together
-  regName.addEventListener("click", () => {
-    // Get the address in the regValue element
-    let address_unparsed = regValue.innerHTML;
-
-    // Parse it to be the representation we need
-    let address = address_unparsed.replaceAll("&nbsp;", "").replace(/^0*/,"").toLowerCase();
-    let memcell_format =  address.substring(0, address.length - 1) + "0+" + address.slice(-1)
-
+function getCellInMemoryTable(value) {
+    // Parse given value to be the representation we need
+    let address = value.replaceAll("&nbsp;", "").replace(/^0*/, "").toLowerCase();
+    let memcell_format = address.substring(0, address.length - 1) + "0+" + address.slice(-1)
     // And try to retrieve the memory cell referenced by the instruction
-    let memcell = document.getElementById(`memValueCell-${memcell_format}`);
+    return document.getElementById(`memValueCell-${memcell_format}`);
+}
 
-    // If it is a memory address
+function scrollToMemoryAddress(address) {
+    // Parse given value and find relevant table cell
+    let memcell = getCellInMemoryTable(address);
+    // Check if it is a populated memory address
     if (memcell !== null) {
-      // Move it into view
-      memcell.scrollIntoView(
-        {
-          block: 'nearest',
-          inline: 'center',
-        }
-      );
+        // Move it into view
+        memcell.scrollIntoView(
+            {
+                block: 'nearest',
+                inline: 'center',
+            }
+        );
 
-      // And make it noticeable
-      memcell.animate(
-        [
-          { transform: 'scale(1)' },
-          { transform: `scale(2)` },
-          { transform: 'scale(1)' }
-        ],
-        {
-          duration: 500,
-          easing: 'ease-in-out',
-          iterations: 1
-        }
-      );
+        // And make it noticeable
+        memcell.animate(
+            [
+                { transform: 'scale(1)' },
+                { transform: `scale(2)` },
+                { transform: 'scale(1)' }
+            ],
+            {
+                duration: 500,
+                easing: 'ease-in-out',
+                iterations: 1
+            }
+        );
     }
-  })
+}
+
+function scrollToMemoryAddressInRegister(regName) {
+    scrollToMemoryAddress(document.getElementById(`regValueCell-${regName}`).innerHTML);
 }
 
 function populateRegisterTable(registers) {
@@ -1212,11 +1216,10 @@ function populateRegisterTable(registers) {
         newTr.classList.add("register-row-displayed");
         regValue.classList.add("regValueCells");
         // Assign the appropriate values.
-        regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="${newTr.id}-check" onclick='toggleRowDisplay("${newTr.id}", "register")' hidden checked> ${reg}`;
+        regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="${newTr.id}-check" onclick='toggleRowDisplay("${newTr.id}", "register")' hidden checked>`;
+        regName.innerHTML += reg;
+        regName.innerHTML += `<i class="fa-solid fa-memory" id="${newTr.id}-scrollToMem" data-bs-toggle="tooltip" data-bs-title="Click here to scroll to the memory address stored in this register." onclick='scrollToMemoryAddressInRegister("${reg}")' hidden></i>`;
         regValue.innerHTML = starting_value;
-
-        // add an onclick event to go to the address inside the register.
-        addRegisterAddressLink(regName, regValue);
 
         // Add the new cells to our new row.
         newTr.appendChild(regName);
@@ -1224,6 +1227,8 @@ function populateRegisterTable(registers) {
         // Add the new row to the template table.
         tableRows.appendChild(newTr);
     }
+    // Reinitialize tooltips so the message on the scroll button appears.
+    initializeTooltips();
 }
 
 function clearRegTable() {
@@ -1263,6 +1268,15 @@ function updateRegisterTable(reg_value_map) {
         // Mark this row as changed.
         document.getElementById(`regValueRow-${reg}`).classList.add("table-active");
         document.getElementById(`regValueRow-${reg}`).classList.add("register-value-updated");
+        // Update the scroll to memory button based on the value inside the register
+        scrollButton = document.getElementById(`regValueRow-${reg}-scrollToMem`);
+        if (getCellInMemoryTable(formattedValue) === null) {
+            // If regValue does not point to a populated mem address, hide the scroll button.
+            scrollButton.setAttribute("hidden", "hidden");
+        } else {
+            // If regValue points to a populated mem address, show the scroll button.
+            scrollButton.removeAttribute("hidden");
+        }
     };
 }
 
@@ -2106,11 +2120,12 @@ function updateTraceGUI() {
     }
     document.getElementById("errorBox").value = combinedStderr;
 
+    // Update the memory table with new values.
+    // Make this happen before the register updates since we might have newly populated addresses.
+    updateMemoryTable(parseMemoryDeltaMap(currentTraceStep.mem_changes));
+
     // Update the register table with new values.
     updateRegisterTable(parseRegisterDeltaMap(currentTraceStep.reg_changes), window.lastTrace.arch_num_bits);
-
-    // Update the memory table with new values.
-    updateMemoryTable(parseMemoryDeltaMap(currentTraceStep.mem_changes));
 
     // Update the progress bar.
     let pctComplete = 100 * (currentTraceStep.stepNum + 1) / window.lastTrace.steps.length;
