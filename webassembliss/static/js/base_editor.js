@@ -1172,7 +1172,7 @@ function scrollToMemoryAddress(address) {
         // Move it into view
         memcell.scrollIntoView(
             {
-                block: 'nearest',
+                block: 'center',
                 inline: 'center',
             }
         );
