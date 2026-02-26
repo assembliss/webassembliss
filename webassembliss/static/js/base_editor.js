@@ -1170,24 +1170,40 @@ function scrollToMemoryAddress(address) {
     // Check if it is a populated memory address
     if (memcell !== null) {
         // Move it into view
-        memcell.scrollIntoView(
-            {
-                block: 'center',
-                inline: 'center',
-            }
-        );
+
+        // Find the scrollable container wrapping the memory table
+        let container = memcell.closest('.tableFixHead');
+
+        if (container) {
+            // Get the spatial coordinates of both the cell and the container
+            let containerRect = container.getBoundingClientRect();
+            let cellRect = memcell.getBoundingClientRect();
+
+            // Calculate the exact scroll position needed to center the cell
+            // (Cell position relative to container) + (Current Scroll) - (Half container height) + (Half cell height)
+            let scrollY = (cellRect.top - containerRect.top) + container.scrollTop - (container.clientHeight / 2) + (cellRect.height / 2);
+
+            // Scroll only the mem table container instead of the whole page 
+            container.scrollTo({
+                top: scrollY,
+                behavior: 'smooth'
+            });
+        } else {
+            // Fallback to scrolling element to view if cannot get container
+            memcell.scrollIntoView({ block: 'center', inline: 'center' });
+        }
 
         // And make it noticeable
         memcell.animate(
             [
                 { transform: 'scale(1)' },
-                { transform: `scale(2)` },
+                { transform: 'scale(2)' },
                 { transform: 'scale(1)' }
             ],
             {
                 duration: 500,
                 easing: 'ease-in-out',
-                iterations: 1
+                iterations: 2
             }
         );
     }
