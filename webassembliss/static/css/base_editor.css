@@ -166,3 +166,17 @@ td.memory-value-in-ascii {
     top: 0;
     z-index: 1;
 }
+
+/* Set the regName cells to relative so we can position items inside it */
+td[id^="regNameCell"] {
+    position: relative;
+    text-align: center;
+}
+
+/* Position scroll-to-memory icon on the right edge */
+td[id^="regNameCell"] .fa-memory {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
