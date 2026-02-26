@@ -1153,6 +1153,46 @@ function toggleRowDisplay(rowID, type) {
     }
 }
 
+function addRegisterAddressLink(regName, regValue) {
+  // Add an event listener tying the regName and regValue together
+  regName.addEventListener("click", () => {
+    // Get the address in the regValue element
+    let address_unparsed = regValue.innerHTML;
+
+    // Parse it to be the representation we need
+    let address = address_unparsed.replaceAll("&nbsp;", "").replace(/^0*/,"").toLowerCase();
+    let memcell_format =  address.substring(0, address.length - 1) + "0+" + address.slice(-1)
+
+    // And try to retrieve the memory cell referenced by the instruction
+    let memcell = document.getElementById(`memValueCell-${memcell_format}`);
+
+    // If it is a memory address
+    if (memcell !== null) {
+      // Move it into view
+      memcell.scrollIntoView(
+        {
+          block: 'nearest',
+          inline: 'center',
+        }
+      );
+
+      // And make it noticeable
+      memcell.animate(
+        [
+          { transform: 'scale(1)' },
+          { transform: `scale(2)` },
+          { transform: 'scale(1)' }
+        ],
+        {
+          duration: 500,
+          easing: 'ease-in-out',
+          iterations: 1
+        }
+      );
+    }
+  })
+}
+
 function populateRegisterTable(registers) {
     // Create a starting values with enough zeros for the number of bits given.
     let starting_value = intToHexBytes(0, ARCH_NUM_BITS / 8, "&nbsp;&nbsp;");
@@ -1174,6 +1214,10 @@ function populateRegisterTable(registers) {
         // Assign the appropriate values.
         regName.innerHTML = `<input class="form-check-input register-display-check" type="checkbox" value="" id="${newTr.id}-check" onclick='toggleRowDisplay("${newTr.id}", "register")' hidden checked> ${reg}`;
         regValue.innerHTML = starting_value;
+
+        // add an onclick event to go to the address inside the register.
+        addRegisterAddressLink(regName, regValue);
+
         // Add the new cells to our new row.
         newTr.appendChild(regName);
         newTr.appendChild(regValue);
