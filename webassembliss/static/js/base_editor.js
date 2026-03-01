@@ -74,7 +74,6 @@ function openTab(tabName) {
 
     if (currentTab.name == tabName && !document.getElementById(`tab${currentTab.name}Rename`)) {
         // TODO: Extract all this logic into a separate function we can call independently from openTab.
-        // TODO(BUG): If user enters renaming functionality, they cannot exit and keep the original name (at least on firefox).
         // TODO(BUG): If user renames a tab, the button's id does not update automatically (at least on firefox).
         // Tab renaming functionality
         // There might need to exist some sort of character check to make sure the filename isn't something illegal?
@@ -142,8 +141,9 @@ function openTab(tabName) {
             }
 
             // Make sure newTabName is unique (not the same value as another existing tab name).
+            // NOTE: works only if the rename can occur only from the current tab
             for (const tabTitle of tabTitles) {
-                if (tabTitle.value == newTabName) {
+                if (tabTitle.value == newTabName && newTabName != currentTab.name) {
                     tabNameIsDuplicate = true;
                     break;
                 }
