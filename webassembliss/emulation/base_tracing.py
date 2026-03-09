@@ -4,7 +4,7 @@ import tempfile
 from io import BytesIO
 from os import PathLike
 from os.path import getsize, isabs, join, pardir
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union, Optional
 
 from qiling import Qiling  # type: ignore[import-untyped]
 from qiling.const import QL_ENDIAN  # type: ignore[import-untyped]
@@ -224,6 +224,8 @@ def stepped_emulation(
     objdump_cmd: str,
     source_filenames: List[str],
     single_step_trace: bool,
+    initial_register_values: Optional[Dict[str, int]] = None,
+    initial_memory_values: Optional[Dict[int, bytes]] = None,
     verbose: QL_VERBOSE = QL_VERBOSE.OFF,
 ) -> Tuple[
     str,  # argv
@@ -245,6 +247,32 @@ def stepped_emulation(
         console=False,
     )
 
+    # Set the initial register values using Qiling's API.
+    if initial_register_values:
+        for registerName, value in initial_register_values.items():
+            ql.arch.regs.write(registerName, value) # Write the initial value to the register
+
+    # Set the initial memory values using Qiling's API.
+    if initial_memory_values:
+        for address, data in initial_memory_values.items():
+            # Calculate the page-aligned address
+            page = address & ~0xFFF
+            #Map memory page using qiling API if it hasn't been mapped yet
+            if not ql.mem.is_mapped(page, 0x1000):
+                ql.mem.map(page, 0x1000, info="[initial_memory_values]")
+            # Ensure that the data is of bytes type before writing to qiling
+            if not isinstance(data, bytes):
+                if isinstance(data, (list, tuple)):
+                    data = bytes(data)
+                elif isinstance(data, str):
+                    data = data.encode('utf-8')
+                else:
+                    data = bytes([data])
+            # Write bytes to memroy at specified address
+            ql.mem.write(address, data)
+    
+    
+
     # Adds a hook to count the number of executed instructions.
     counter = ExecutionCounter()
     ql.hook_code(counter.incr)
@@ -255,7 +283,7 @@ def stepped_emulation(
     # Find memory allocated for the user code's execution and the stack.
     relevant_mem_area = []
     for _start, _end, _, _label, _ in ql.mem.get_mapinfo():
-        if _label not in {bin_name, "[stack]"}:
+        if _label not in {bin_name, "[stack]", "[initial_memory_values]"}:
             continue
         relevant_mem_area.append((_start, _end))
 
@@ -508,6 +536,8 @@ def clean_trace(
     single_step_trace: bool,
     get_flags_func: Callable[[Qiling], Dict[str, bool]] = lambda _: {},
     workdir: Union[str, PathLike] = "userprograms",
+    initial_register_values: Optional[Dict[str, int]] = None,
+    initial_memory_values: Optional[Dict[int, bytes]] = None,
 ) -> ExecutionTrace:
     """Emulates the given code step by step and return the execution trace."""
     # TODO: add tests to make sure this function works as expected.
@@ -620,6 +650,8 @@ def clean_trace(
             objdump_cmd=objdump_cmd,
             source_filenames=source_filenames,
             single_step_trace=single_step_trace,
+            initial_register_values=initial_register_values,
+            initial_memory_values=initial_memory_values
         )
 
         et.arch_num_bits = arch_num_bits

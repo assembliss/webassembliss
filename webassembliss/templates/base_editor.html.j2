@@ -18,6 +18,7 @@
             <button type="button" id="runBtn" class="btn btn-danger btn-sm codeActionBtn" onclick="runCode()"><i class="fa-solid fa-play"></i> Run Code</button>
             <button type="button" id="traceStart" class="btn btn-outline-danger btn-sm codeActionBtn" onclick="startTracing()"><i class="fa-solid fa-bug"></i> Trace Code</button>
             <button type="button" id="clargsBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setCLArgs()"><i class="fa-solid fa-gears"></i> Set CL Args</button>
+            <button type="button" id="initialStateBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="setInitialState()"><i class="fa-solid fa-database"></i> Set Initial State</button>
             <button type="button" id="resetBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="clearOutput()"><i class="fa-solid fa-rotate-left"></i> Clear</button>
             <div class="btn-group">
                 <button type="button" id="saveBtn" class="btn btn-outline-secondary btn-sm codeActionBtn" onclick="downloadCurrentTab()"><i class="fa-solid fa-download"></i> Save</button>
@@ -280,7 +281,18 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="initialStateModal" tabindex="-1" aria-labelledby="initialStateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="initialStateModalLabel">Set Initial State</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body
 {% endblock %}
+
+
 
 {% block scripts %}
     <script src="{{ url_for('static', filename='external/protobuf-7.4.0/protobuf-7.4.0.min.js') }}"></script>
