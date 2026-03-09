@@ -175,5 +175,8 @@ def inject_now():
     return {"now": datetime.utcnow()}
 
 
-if __name__ == "__main__":
+def main():
     app.run(debug=True, host="0.0.0.0")
+
+if __name__ == "__main__":
+    main()
