@@ -2115,7 +2115,27 @@ function formatMemoryChunk(chunk, chunkShowLength, byteSep, showAscii) {
     return chunkStr;
 }
 
-const utf8Decoder = new TextDecoder();
+function formatBytesForDisplay(uint8Array) {
+    // Convert an array of UTF-8 values into a printable string; non-printable characters are shown as \x?? bytes.
+    let result = "";
+    for (let i = 0; i < uint8Array.length; i++) {
+        const byte = uint8Array[i];
+        // Handle common readable control characters
+        if (byte === 9) { result += "\\t"; }
+        else if (byte === 10) { result += "\n"; }
+        else if (byte === 13) { result += "\\r"; }
+        // Handle standard printable ASCII (32-space to 126-tilde)
+        else if (byte >= 32 && byte <= 126) {
+            result += String.fromCharCode(byte);
+        }
+        // Handle non-printable or non-ASCII (shows up as \x??)
+        else {
+            result += "\\x" + byte.toString(16).padStart(2, '0').toUpperCase();
+        }
+    }
+    return result;
+}
+
 function updateTraceGUI() {
     // Show the combined decoded stdout.
     let combinedStdout = "";
@@ -2125,7 +2145,7 @@ function updateTraceGUI() {
             continue;
         }
         // Decode and append the UTF-8 bytes into characters we can display in the output box.
-        combinedStdout += utf8Decoder.decode(currentTraceStep.stdout[i]);
+        combinedStdout += formatBytesForDisplay(currentTraceStep.stdout[i]);
     }
     document.getElementById("outputBox").value = combinedStdout;
 
