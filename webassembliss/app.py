@@ -146,6 +146,9 @@ def code_trace():
             f"Invalid architecture config in JSON data; valid options are {ARCH_CONFIG_MAP.keys()}",
             400,
         )
+    
+    # Fix escaped sequences from input.
+    user_input = request.json["user_input"].encode('utf-8').decode('unicode_escape')
 
     emulation_trace = arch_info.trace(
         single_step_trace=request.json["single_step"],
@@ -159,7 +162,7 @@ def code_trace():
             n: b64_to_bytes(c)
             for n, c in request.json.get("extra_bin_files", {}).items()
         },
-        stdin=request.json["user_input"].encode(),
+        stdin=user_input.encode(),
         cl_args=request.json["cl_args"],
         registers=request.json.get("registers", "").split(),
     )
