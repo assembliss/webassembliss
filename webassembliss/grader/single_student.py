@@ -5,10 +5,14 @@ from os.path import join
 from subprocess import PIPE, Popen, run
 from tempfile import TemporaryDirectory
 from typing import Dict, List, Tuple, Union
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
+
 
 from google.protobuf.json_format import MessageToDict
 from google.protobuf.message import DecodeError
 from werkzeug.datastructures import FileStorage
+from .utils import GRADER_THREADS
 
 from ..emulation import ARCH_CONFIG_MAP, ArchConfig
 from ..emulation.base_tracing import check_for_bad_paths
@@ -210,27 +214,71 @@ def run_test_case_suite(
         n: b64_to_bytes(c) for n, c in config_dict.get("extraBinFiles", {}).items()
     }
 
-    # Process each test individually.
-    # TODO: try to speed up test case evaluation with threads.
-    for i, test in enumerate(config.tests):
-        _evaluate_single_test_case(
-            arch=arch,
-            config_dict=config_dict,
-            objects=objects,
-            bin_data=bin_data,
-            student_files=student_files,
-            test=test,
-            results=results,
-            instructions_executed=instructions_executed,
-            index=i,
-        )
+    # # Process each test individually.
+    # # TODO: try to speed up test case evaluation with threads.
+    # for i, test in enumerate(config.tests):
+    #     _evaluate_single_test_case(
+    #         arch=arch,
+    #         config_dict=config_dict,
+    #         objects=objects,
+    #         bin_data=bin_data,
+    #         student_files=student_files,
+    #         test=test,
+    #         results=results,
+    #         instructions_executed=instructions_executed,
+    #         index=i,
+    #     )
 
-        # Stop evaluation early if config asks for it and the test failed.
-        if config.stop_on_first_test_fail and not results[i].passed:
-            break
+    #     # Stop evaluation early if config asks for it and the test failed.
+    #     if config.stop_on_first_test_fail and not results[i].passed:
+    #         break
+
+    # return results, instructions_executed
+
+    # Use ThreadPoolExecutor to process each test case concurrently
+    # Utilizing 2 threads
+    with ThreadPoolExecutor(max_workers=GRADER_THREADS) as executor:
+        # keep track of the tests as they're submitted to the workers
+        parallelTests = []
+        
+        # Submit each test case for parallel execution
+        for i, test in enumerate(config.tests):
+            submittedTask = executor.submit(
+                _evaluate_single_test_case,
+                arch=arch,
+                config_dict=config_dict,
+                objects=objects,
+                bin_data=bin_data,
+                student_files=student_files,
+                test=test,
+                results=results,
+                instructions_executed=instructions_executed,
+                index=i,
+            )
+
+            # Store all the submitted tasks for evaluation later once all are submitted and the for loop is exited
+            parallelTests.append(submittedTask)
+
+        # Process the test results as they complete
+        for task in as_completed(parallelTests):
+            # Retrieve the result for this test
+            try:
+                task.result()
+            #Throw exception if any error occurred during test execution
+            except Exception as e:
+                # once one test fails, cancel remaining tests
+                if config.stop_on_first_test_fail:
+                    for t in parallelTests:
+                        t.cancel()
+                    break
+
+            # Check for early stopping condition after each test
+            if config.stop_on_first_test_fail and not results[parallelTests.index(task)].passed:
+                for t in parallelTests:
+                    t.cancel()
+                break
 
     return results, instructions_executed
-
 
 def match_value_to_cutoff(
     *,
