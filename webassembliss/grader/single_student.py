@@ -595,7 +595,7 @@ def grade_form_submission(
     return results
 
 
-if __name__ == "__main__":
+def main():
     example_path = "/webassembliss/examples/grader"
     source_name = "hello.S"
     source_path = join(example_path, source_name)
@@ -612,3 +612,6 @@ if __name__ == "__main__":
                 student_ID="00112233",
             )
         )
+
+if __name__ == "__main__":
+    main()

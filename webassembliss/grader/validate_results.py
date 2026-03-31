@@ -294,7 +294,7 @@ def validate_form_submission(
         return results
 
 
-if __name__ == "__main__":
+def validate_cli():
     parser = argparse.ArgumentParser(
         prog="ValidateResults",
         description="Validate that given result(s) are valid according to provided project config.",
@@ -372,3 +372,7 @@ if __name__ == "__main__":
         args.checksum_only,
         args.no_tempdir == False,
     )
+
+
+if __name__ == "__main__":
+    validate_cli()

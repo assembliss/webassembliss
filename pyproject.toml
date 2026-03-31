@@ -1,0 +1,27 @@
+[project]
+name = "webassembliss"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.8" #TODO: bump when docker version si updated
+dependencies = [
+    "dataclasses-json==0.6.7",
+    "flask==3.0.3",
+    "gunicorn==23.0.0",
+    "protobuf==5.29.3",
+    "qiling==1.4.6",
+    "rocher==0.52.2",
+]
+
+[project.scripts]
+webassembliss = "webassembliss.app:main"
+validate = "webassembliss.grader.validate_results:validate_cli"
+grade = "webassembliss.grader.single_student:main"
+
+[build-system]
+requires = ["uv_build>=0.10.9,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "webassembliss"
+module-root = ""
