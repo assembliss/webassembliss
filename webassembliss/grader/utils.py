@@ -199,6 +199,11 @@ COMPRESSION_MAP = {
 
 class GraderError(Exception):
     """Exception raised for errors caught in the grader workflow."""
+    # TODO: find a better way to keep track of error codes.
+    # List of errors:
+    #   1. user submitted a source file that couldn't be decoded
+    #   2. user submitted an invalid project configuration file
+    #   3. user submitted an empty file as a source file
 
     def __init__(self, error_code, message):
         self.message = message

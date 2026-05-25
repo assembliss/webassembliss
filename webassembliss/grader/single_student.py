@@ -576,6 +576,14 @@ def grade_form_submission(
             error_code=1,
             message=f"Unable to read '{student_file.filename}' source file.",
         )
+
+    # Make sure that all files contain something.
+    if any((len(contents) == 0 for contents in student_files.values())):
+        raise GraderError(
+            error_code=3,
+            message=f"The file '{student_file.filename}' seems to be empty.",
+        )
+
     # Read project config that was submitted.
     try:
         wrapped_config = load_wrapped_project(wrapped_project_proto.read())
